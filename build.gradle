@@ -1,0 +1,80 @@
+plugins {
+	id "net.fabricmc.fabric-loom" version "${loom_version}"
+	id "maven-publish"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = "sulkan"
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"sulkan" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${project.fabric_lifecycle_events_version}"
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version
+	}
+}
+
+tasks.withType(ProcessResources).configureEach {
+	doLast {
+		fileTree(dir: destinationDir, includes: ["**/*.fsh", "**/*.vsh", "**/*.glsl"]).each { File file ->
+			def content = file.text
+			content = content.replaceAll(/(?s)\/\*.*?\*\//, "")
+			content = content.replaceAll(/\/\/[^\n]*/, "")
+			content = content.replaceAll(/\n{3,}/, "\n\n")
+			file.text = content.trim() + "\n"
+		}
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+}
+
+tasks.named("jar", Jar).configure {
+	archiveVersion = "${project.mod_version}-${project.minecraft_version}"
+
+	from("LICENSE") {
+		rename { "${it}_${project.name}" }
+	}
+}
+
+tasks.matching { it.name == "remapJar" }.configureEach {
+	archiveVersion = "${project.mod_version}-${project.minecraft_version}"
+}
+
+tasks.named("sourcesJar", Jar).configure {
+	archiveVersion = "${project.mod_version}-${project.minecraft_version}"
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "com.sulkan.core.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"DebugScreenOverlayMixin",
+		"DynamicUniformsCapacityMixin",
+		"VulkanRenderPassAccessor",
+		"VulkanBackendOptionalFeaturesMixin",
+		"VulkanRenderPassDrawStatsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

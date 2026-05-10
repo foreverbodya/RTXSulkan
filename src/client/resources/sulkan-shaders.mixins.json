@@ -1,0 +1,22 @@
+{
+	"required": true,
+	"package": "com.sulkan.shaders.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ChunkSectionLayerMixin",
+		"ChunkSectionsToRenderMixin",
+		"CloudRendererMixin",
+		"LevelRendererPostMixin",
+		"LevelRendererShadowMixin",
+		"OptionsScreenMixin",
+		"RenderPipelinesAccessor",
+		"RenderTypeMixin",
+		"SkyRendererMixin",
+		"SubmitNodeStorageMixin",
+		"ViewAreaAccessor",
+		"VulkanDeviceShaderCompilerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
