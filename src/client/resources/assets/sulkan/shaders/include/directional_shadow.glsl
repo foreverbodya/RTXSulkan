@@ -27,11 +27,86 @@ float sulkanShadowDepth(int cascade, vec2 uv) {
 	return texture(SulkanShadowMap3, uv).r;
 }
 
+vec4 sulkanShadowGather(int cascade, vec2 uv) {
+	if (cascade == 0) return textureGather(SulkanShadowMap0, uv);
+	if (cascade == 1) return textureGather(SulkanShadowMap1, uv);
+	if (cascade == 2) return textureGather(SulkanShadowMap2, uv);
+	return textureGather(SulkanShadowMap3, uv);
+}
+
+vec4 sulkanEntityShadowGather(int cascade, vec2 uv) {
+	if (cascade == 0) return textureGather(SulkanEntityShadowMap0, uv);
+	return textureGather(SulkanEntityShadowMap1, uv);
+}
+
+vec2 sulkanEntityShadowTexel(int cascade) {
+	if (cascade == 0) return 1.0 / vec2(textureSize(SulkanEntityShadowMap0, 0));
+	return 1.0 / vec2(textureSize(SulkanEntityShadowMap1, 0));
+}
+
+float sulkanEntityBilinearVisibility(int cascade, vec2 uv, float compareDepth) {
+	vec2 size = 1.0 / sulkanEntityShadowTexel(cascade);
+	vec2 blend = fract(uv * size - 0.5);
+	vec4 depths = sulkanEntityShadowGather(cascade, uv);
+	vec4 visible = step(vec4(compareDepth), depths);
+	float lower = mix(visible.w, visible.z, blend.x);
+	float upper = mix(visible.x, visible.y, blend.x);
+	return mix(lower, upper, blend.y);
+}
+
+float sulkanEntityShadowVisibility(int cascade, vec2 uv, float compareDepth) {
+	if (ShadowParams.w < 6.0) {
+		return sulkanEntityBilinearVisibility(cascade, uv, compareDepth);
+	}
+
+	vec2 texel = sulkanEntityShadowTexel(cascade);
+	float radius = ShadowParams.w < 12.0 ? 0.55 : 0.85;
+	vec2 offset = texel * radius;
+	float corners = sulkanEntityBilinearVisibility(cascade, uv + vec2(-offset.x, -offset.y), compareDepth);
+	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2( offset.x, -offset.y), compareDepth);
+	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2(-offset.x,  offset.y), compareDepth);
+	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2( offset.x,  offset.y), compareDepth);
+	corners *= 0.25;
+	if (ShadowParams.w < 12.0) return corners;
+
+	float center = sulkanEntityBilinearVisibility(cascade, uv, compareDepth);
+	return mix(center, corners, 0.65);
+}
+
 vec2 sulkanShadowTexel(int cascade) {
 	if (cascade == 0) return 1.0 / vec2(textureSize(SulkanShadowMap0, 0));
 	if (cascade == 1) return 1.0 / vec2(textureSize(SulkanShadowMap1, 0));
 	if (cascade == 2) return 1.0 / vec2(textureSize(SulkanShadowMap2, 0));
 	return 1.0 / vec2(textureSize(SulkanShadowMap3, 0));
+}
+
+float sulkanShadowBilinearVisibility(int cascade, vec2 uv, float compareDepth) {
+	vec2 size = 1.0 / sulkanShadowTexel(cascade);
+	vec2 blend = fract(uv * size - 0.5);
+	vec4 depths = sulkanShadowGather(cascade, uv);
+	vec4 visible = step(vec4(compareDepth), depths);
+	float lower = mix(visible.w, visible.z, blend.x);
+	float upper = mix(visible.x, visible.y, blend.x);
+	return mix(lower, upper, blend.y);
+}
+
+float sulkanCloseTerrainVisibility(int cascade, vec2 uv, float compareDepth) {
+	if (ShadowParams.w < 6.0) {
+		return sulkanShadowBilinearVisibility(cascade, uv, compareDepth);
+	}
+
+	vec2 texel = sulkanShadowTexel(cascade);
+	float radius = ShadowParams.w < 12.0 ? 0.55 : 0.85;
+	vec2 offset = texel * radius;
+	float corners = sulkanShadowBilinearVisibility(cascade, uv + vec2(-offset.x, -offset.y), compareDepth);
+	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2( offset.x, -offset.y), compareDepth);
+	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2(-offset.x,  offset.y), compareDepth);
+	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2( offset.x,  offset.y), compareDepth);
+	corners *= 0.25;
+	if (ShadowParams.w < 12.0) return corners;
+
+	float center = sulkanShadowBilinearVisibility(cascade, uv, compareDepth);
+	return mix(center, corners, 0.65);
 }
 
 vec3 sulkanShadowCoord(int cascade, vec3 position) {
@@ -51,20 +126,39 @@ float sulkanShadowBias(int cascade, vec3 normal) {
 float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal) {
 	vec3 coord = sulkanShadowCoord(cascade, position);
 	vec2 texel = sulkanShadowTexel(cascade);
-	vec2 guard = texel * 1.5;
+	vec2 entityTexel = cascade < 2 ? sulkanEntityShadowTexel(cascade) : vec2(0.0);
+	vec2 guard = max(texel, entityTexel) * 1.5;
 	if (coord.x <= guard.x || coord.x >= 1.0 - guard.x
 			|| coord.y <= guard.y || coord.y >= 1.0 - guard.y
 			|| coord.z <= 0.0 || coord.z >= 1.0) return 1.0;
 
 	float compareDepth = coord.z - sulkanShadowBias(cascade, normal);
-	float visible = 0.0;
-	for (int y = -1; y <= 1; ++y) {
-		for (int x = -1; x <= 1; ++x) {
-			vec2 uv = coord.xy + vec2(float(x), float(y)) * texel;
-			visible += step(compareDepth, sulkanShadowDepth(cascade, uv));
+	float visible;
+	if (cascade == 0) {
+		visible = sulkanCloseTerrainVisibility(cascade, coord.xy, compareDepth);
+	} else if (ShadowParams.w < 1.5) {
+		visible = step(compareDepth, sulkanShadowDepth(cascade, coord.xy));
+	} else if (ShadowParams.w < 6.0) {
+		visible = 0.0;
+		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2(-0.5, -0.5) * texel));
+		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2( 0.5, -0.5) * texel));
+		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2(-0.5,  0.5) * texel));
+		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2( 0.5,  0.5) * texel));
+		visible *= 0.25;
+	} else {
+		visible = 0.0;
+		for (int y = -1; y <= 1; ++y) {
+			for (int x = -1; x <= 1; ++x) {
+				vec2 uv = coord.xy + vec2(float(x), float(y)) * texel;
+				visible += step(compareDepth, sulkanShadowDepth(cascade, uv));
+			}
 		}
+		visible /= 9.0;
 	}
-	return visible / 9.0;
+	float entityVisible = cascade < 2
+		? sulkanEntityShadowVisibility(cascade, coord.xy, compareDepth)
+		: 1.0;
+	return min(visible, entityVisible);
 }
 
 float sulkanCastShadowVisibility(vec3 position, vec3 normal) {

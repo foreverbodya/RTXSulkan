@@ -13,6 +13,7 @@
 		"SubmitNodeStorageMixin",
 		"VulkanDeviceShaderCompilerMixin",
 		"sodium.DefaultChunkRendererMixin",
+		"sodium.RenderRegionMixin",
 		"sodium.RenderSectionManagerAccessor",
 		"sodium.ShaderChunkRendererMixin",
 		"sodium.SodiumWorldRendererAccessor",

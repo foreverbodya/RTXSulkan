@@ -1,12 +1,12 @@
 #version 460 core
 
-#define SULKAN_GLOBALS_BINDING 6
+#define SULKAN_GLOBALS_BINDING 10
 #moj_import <sulkan:sodium_globals.glsl>
 #moj_import <sodium:fog.glsl>
 #moj_import <sodium:chunk_vertex.glsl>
 
 layout(binding = 0) uniform sampler2D u_LightTex;
-layout(binding = 7) uniform isamplerBuffer u_SectionTimeInfo;
+layout(binding = 11) uniform isamplerBuffer u_SectionTimeInfo;
 layout(location = 0) out vec4 v_Color;
 layout(location = 1) out vec2 v_TexCoord;
 layout(location = 2) out vec2 v_FragDistance;

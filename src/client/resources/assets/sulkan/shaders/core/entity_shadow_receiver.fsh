@@ -10,6 +10,10 @@ layout(binding = 4) uniform sampler2D SulkanShadowMap0;
 layout(binding = 5) uniform sampler2D SulkanShadowMap1;
 layout(binding = 6) uniform sampler2D SulkanShadowMap2;
 layout(binding = 7) uniform sampler2D SulkanShadowMap3;
+layout(binding = 8) uniform sampler2D SulkanEntityShadowMap0;
+layout(binding = 9) uniform sampler2D SulkanEntityShadowMap1;
+layout(binding = 10) uniform sampler2D SulkanEntityShadowMap2;
+layout(binding = 11) uniform sampler2D SulkanEntityShadowMap3;
 
 layout(std140) uniform SulkanShadowData {
 	mat4 ShadowViewProjection[4];

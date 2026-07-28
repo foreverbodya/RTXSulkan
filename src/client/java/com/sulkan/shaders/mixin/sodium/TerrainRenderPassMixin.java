@@ -16,7 +16,7 @@ public abstract class TerrainRenderPassMixin {
 			return;
 		}
 
-		RenderTarget target = DirectionalShadowRenderer.get().target(DirectionalShadowRenderer.activeCascade());
+		RenderTarget target = DirectionalShadowRenderer.get().activeTarget();
 		if (target != null) {
 			cir.setReturnValue(target);
 		}

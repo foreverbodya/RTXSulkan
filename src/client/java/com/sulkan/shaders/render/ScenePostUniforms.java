@@ -5,6 +5,7 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -138,7 +139,7 @@ public final class ScenePostUniforms {
 		uploadBuffer.position(128);
 		putVec4(sunDirectionView.x, sunDirectionView.y, sunDirectionView.z, sunVisibility);
 		putVec4(upDirectionView.x, upDirectionView.y, upDirectionView.z, rainFactor);
-		putVec4((float) screenWidth, (float) screenHeight, timeSeconds, 0.0F);
+		putVec4((float) screenWidth, (float) screenHeight, timeSeconds, ShaderRuntime.config().waterQualityPreset().tier());
 		putVec4(fogColor.x, fogColor.y, fogColor.z, fogIntensity);
 		inverseViewRotation.get(uploadBuffer);
 		uploadBuffer.position(256);

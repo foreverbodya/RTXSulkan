@@ -15,7 +15,6 @@ import com.sulkan.shaders.mixin.sodium.SodiumWorldRendererAccessor;
 import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
-import net.caffeinemc.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -142,18 +141,33 @@ public abstract class LevelRendererShadowMixin {
 			try {
 				try {
 					for (int cascade = 0; cascade < shadows.activeCascadeCount(); cascade++) {
-						shadows.clearCascade(encoder, cascade);
+						boolean terrainUpdate = shadows.shouldUpdateCascade(cascade);
+						boolean entityUpdate = shadows.shouldUpdateEntityCascade(cascade);
+						if (!terrainUpdate && !entityUpdate) {
+							continue;
+						}
 						shadows.uploadCascade(encoder, cascade);
-						DirectionalShadowRenderer.beginCascade(cascade);
-						try {
-							if (sodiumRenderer != null && levelRenderState.cameraRenderState != null) {
-								this.sulkan$renderSodiumTerrainShadow(sodiumRenderer, shadows, cascade, sampler);
+						if (terrainUpdate) {
+							shadows.clearCascade(encoder, cascade);
+							DirectionalShadowRenderer.beginCascade(cascade);
+							try {
+								if (sodiumRenderer != null && levelRenderState.cameraRenderState != null) {
+									this.sulkan$renderSodiumTerrainShadow(sodiumRenderer, shadows, cascade, sampler);
+								}
+							} finally {
+								DirectionalShadowRenderer.endCascade();
 							}
+						}
+						if (entityUpdate) {
+							shadows.clearEntityCascade(encoder, cascade);
+							DirectionalShadowRenderer.beginEntityCascade(cascade);
+							try {
 							if (shadowEntityFrame != null) {
 								this.sulkan$renderShadowEntityFrame(shadowEntityFrame);
 							}
-						} finally {
-							DirectionalShadowRenderer.endCascade();
+							} finally {
+								DirectionalShadowRenderer.endCascade();
+							}
 						}
 					}
 				} finally {
@@ -187,12 +201,8 @@ public abstract class LevelRendererShadowMixin {
 		ChunkRenderMatrices matrices = new ChunkRenderMatrices(
 				new Matrix4f(shadows.cascadeMatrix(cascade)),
 				new Matrix4f());
-		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
-				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.SOLID, sampler);
-		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
-				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.CUTOUT, sampler);
-		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
-				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.TRANSLUCENT, sampler);
+		SodiumShadowTerrainRenderer.renderCascade(renderer, shadows, cascade, matrices,
+				cameraPos.x, cameraPos.y, cameraPos.z, sampler);
 	}
 
 	@Inject(method = "close", at = @At("HEAD"))

@@ -44,6 +44,11 @@ public abstract class DefaultChunkRendererMixin {
 		for (int cascade = 0; cascade < 4; cascade++) {
 			var target = shadows.target(cascade);
 			renderPass.bindTexture("SulkanShadowMap" + cascade, target.getDepthTextureView(), sulkan$shadowSampler());
+			var entityTarget = shadows.entityTarget(cascade);
+			renderPass.bindTexture(
+					"SulkanEntityShadowMap" + cascade,
+					entityTarget != null ? entityTarget.getDepthTextureView() : target.getDepthTextureView(),
+					sulkan$shadowSampler());
 		}
 	}
 

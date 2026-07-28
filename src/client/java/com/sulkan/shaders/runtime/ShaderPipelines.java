@@ -88,7 +88,11 @@ public final class ShaderPipelines {
 			layout.withSampler("SulkanShadowMap0")
 					.withSampler("SulkanShadowMap1")
 					.withSampler("SulkanShadowMap2")
-					.withSampler("SulkanShadowMap3");
+					.withSampler("SulkanShadowMap3")
+					.withSampler("SulkanEntityShadowMap0")
+					.withSampler("SulkanEntityShadowMap1")
+					.withSampler("SulkanEntityShadowMap2")
+					.withSampler("SulkanEntityShadowMap3");
 		}
 		layout.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER);
 		if (shadowsEnabled) {

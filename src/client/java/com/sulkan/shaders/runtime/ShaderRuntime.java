@@ -12,6 +12,7 @@ import com.sulkan.shaders.render.atmosphere.AtmosphereRenderer;
 import com.sulkan.shaders.render.cloud.VolumetricCloudRenderer;
 import com.sulkan.shaders.render.shadow.DirectionalShadowPipelines;
 import com.sulkan.shaders.render.shadow.DirectionalShadowRenderer;
+import com.sulkan.shaders.render.shadow.SodiumShadowTerrainRenderer;
 import com.sulkan.shaders.render.shadow.SodiumTerrainShadowPipelines;
 import com.sulkan.shaders.render.water.WaterSceneCapture;
 import net.minecraft.client.Minecraft;
@@ -120,6 +121,7 @@ public final class ShaderRuntime {
 		ShaderPipelines.close();
 		DirectionalShadowPipelines.close();
 		DirectionalShadowRenderer.close();
+		SodiumShadowTerrainRenderer.close();
 		SodiumTerrainShadowPipelines.close();
 		FullscreenPostRenderer.close();
 		ScenePostUniforms.close();
@@ -149,6 +151,7 @@ public final class ShaderRuntime {
 		} else {
 			DirectionalShadowRenderer.close();
 			DirectionalShadowPipelines.close();
+			SodiumShadowTerrainRenderer.close();
 			SodiumTerrainShadowPipelines.close();
 		}
 		if (!pipelineState.waterEnabled()) {
@@ -160,6 +163,7 @@ public final class ShaderRuntime {
 		ShaderPipelines.close();
 		DirectionalShadowPipelines.close();
 		DirectionalShadowRenderer.close();
+		SodiumShadowTerrainRenderer.close();
 		SodiumTerrainShadowPipelines.close();
 		FullscreenPostRenderer.close();
 		ScenePostUniforms.close();

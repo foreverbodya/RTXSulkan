@@ -207,10 +207,10 @@ public final class AtmosphereRenderer {
 	private static int sampleCount(ShaderQualityPreset quality) {
 		return switch (quality) {
 			case OFF -> 0;
-			case LOW -> 8;
-			case MEDIUM -> 12;
-			case HIGH -> 20;
-			case ULTRA -> 40;
+			case LOW -> 4;
+			case MEDIUM -> 6;
+			case HIGH -> 10;
+			case ULTRA -> 16;
 		};
 	}
 

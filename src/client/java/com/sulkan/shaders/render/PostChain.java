@@ -68,8 +68,5 @@ public final class PostChain {
 
 	private void copy(CommandEncoder encoder, RenderTarget source, RenderTarget target, int width, int height) {
 		encoder.copyTextureToTexture(source.getColorTexture(), target.getColorTexture(), 0, 0, 0, 0, 0, width, height);
-		if (source.getDepthTexture() != null && target.getDepthTexture() != null) {
-			encoder.copyTextureToTexture(source.getDepthTexture(), target.getDepthTexture(), 0, 0, 0, 0, 0, width, height);
-		}
 	}
 }

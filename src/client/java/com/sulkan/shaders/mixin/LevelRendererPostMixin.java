@@ -130,42 +130,42 @@ public abstract class LevelRendererPostMixin {
 
 			if (state.aoEnabled()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyAmbientOcclusion(encoder, source, output)) {
+				if (FullscreenPostRenderer.applyAmbientOcclusion(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
 			if (state.waterEnabled()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyWaterComposite(encoder, source, output)) {
+				if (FullscreenPostRenderer.applyWaterComposite(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
 			if (renderVolumetricClouds) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (cloudRenderer.execute(encoder, source, output, source)) {
+				if (cloudRenderer.execute(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
 			if (renderAtmosphere) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (AtmosphereRenderer.get().execute(encoder, source, output, source)) {
+				if (AtmosphereRenderer.get().execute(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
 			if (state.bloomEnabled()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyBloom(encoder, source, output)) {
+				if (FullscreenPostRenderer.applyBloom(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
 			if (state.fxaaEnabled()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyFxaa(encoder, source, output)) {
+				if (FullscreenPostRenderer.applyFxaa(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 			}

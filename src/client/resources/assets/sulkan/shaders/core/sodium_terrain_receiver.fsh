@@ -11,9 +11,13 @@ layout(binding = 2) uniform sampler2D SulkanShadowMap0;
 layout(binding = 3) uniform sampler2D SulkanShadowMap1;
 layout(binding = 4) uniform sampler2D SulkanShadowMap2;
 layout(binding = 5) uniform sampler2D SulkanShadowMap3;
-layout(binding = 7) uniform isamplerBuffer u_SectionTimeInfo;
+layout(binding = 6) uniform sampler2D SulkanEntityShadowMap0;
+layout(binding = 7) uniform sampler2D SulkanEntityShadowMap1;
+layout(binding = 8) uniform sampler2D SulkanEntityShadowMap2;
+layout(binding = 9) uniform sampler2D SulkanEntityShadowMap3;
+layout(binding = 11) uniform isamplerBuffer u_SectionTimeInfo;
 
-layout(std140, binding = 8) uniform SulkanShadowData {
+layout(std140, binding = 12) uniform SulkanShadowData {
 	mat4 ShadowViewProjection[4];
 	vec4 CascadeParams[4];
 	vec4 LightDirection;

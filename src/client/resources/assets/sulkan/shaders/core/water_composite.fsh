@@ -9,10 +9,14 @@ layout(binding = 4) uniform sampler2D SulkanShadowMap0;
 layout(binding = 5) uniform sampler2D SulkanShadowMap1;
 layout(binding = 6) uniform sampler2D SulkanShadowMap2;
 layout(binding = 7) uniform sampler2D SulkanShadowMap3;
+layout(binding = 8) uniform sampler2D SulkanEntityShadowMap0;
+layout(binding = 9) uniform sampler2D SulkanEntityShadowMap1;
+layout(binding = 10) uniform sampler2D SulkanEntityShadowMap2;
+layout(binding = 11) uniform sampler2D SulkanEntityShadowMap3;
 #endif
 
 #ifdef SULKAN_WATER_SHADOWS
-#define SULKAN_SCENE_BINDING 8
+#define SULKAN_SCENE_BINDING 12
 #else
 #define SULKAN_SCENE_BINDING 4
 #endif
@@ -29,7 +33,7 @@ layout(std140, binding = SULKAN_SCENE_BINDING) uniform SulkanSceneParams {
 };
 
 #ifdef SULKAN_WATER_SHADOWS
-layout(std140, binding = 9) uniform SulkanShadowData {
+layout(std140, binding = 13) uniform SulkanShadowData {
 	mat4 ShadowViewProjection[4];
 	vec4 CascadeParams[4];
 	vec4 LightDirection;
@@ -49,6 +53,38 @@ const float SSR_MAX_DISTANCE_NEAR = 112.0;
 const float SSR_MAX_DISTANCE_FAR = 54.0;
 const float SSR_VERTICAL_MARGIN = 0.025;
 const vec2 SSR_THICKNESS_PARAMS = vec2(0.22, 0.055);
+
+float waterQuality() {
+	return ScreenAndTime.w;
+}
+
+float ssrMinSteps() {
+	if (waterQuality() < 1.5) return 6.0;
+	if (waterQuality() < 2.5) return 8.0;
+	if (waterQuality() < 3.5) return 10.0;
+	return 12.0;
+}
+
+float ssrMaxSteps() {
+	if (waterQuality() < 1.5) return 24.0;
+	if (waterQuality() < 2.5) return 48.0;
+	if (waterQuality() < 3.5) return 80.0;
+	return 120.0;
+}
+
+int ssrBinarySteps() {
+	if (waterQuality() < 1.5) return 2;
+	if (waterQuality() < 2.5) return 3;
+	if (waterQuality() < 3.5) return 5;
+	return 6;
+}
+
+float ssrPixelStride() {
+	if (waterQuality() < 1.5) return 2.0;
+	if (waterQuality() < 2.5) return 1.35;
+	if (waterQuality() < 3.5) return 0.95;
+	return SSR_PIXEL_STRIDE;
+}
 
 bool isSkyDepth(float depth) {
 	return depth < 0.0001 || depth > 0.9999;
@@ -211,7 +247,7 @@ bool traceReflection(vec3 origin, vec3 direction, out vec2 hitUv) {
 	float stepDirection = delta.x < 0.0 ? -1.0 : 1.0;
 	float invAbsDx = 1.0 / max(abs(delta.x), 0.0001);
 	float travelPixels = abs(delta.x);
-	float stepTarget = clamp(travelPixels / SSR_PIXEL_STRIDE, float(SSR_MIN_STEP_COUNT), float(SSR_MAX_STEP_COUNT));
+	float stepTarget = clamp(travelPixels / ssrPixelStride(), ssrMinSteps(), ssrMaxSteps());
 	float stride = travelPixels / stepTarget;
 	vec2 dP = vec2(stepDirection * stride, delta.y * invAbsDx * stride);
 	vec3 dQ = (q1 - q0) * invAbsDx * stride;
@@ -286,6 +322,7 @@ bool traceReflection(vec3 origin, vec3 direction, out vec2 hitUv) {
 	float hi = currentT;
 	vec2 refinedUv = mix(p0Uv, p1Uv, currentT);
 	for (int i = 0; i < SSR_BINARY_SEARCH_STEPS; i++) {
+		if (i >= ssrBinarySteps()) break;
 		float w = (lo + hi) * 0.5;
 		vec3 q = mix(q0, q1, w);
 		vec2 uv = mix(p0Uv, p1Uv, w);

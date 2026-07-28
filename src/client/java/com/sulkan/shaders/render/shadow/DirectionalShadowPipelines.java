@@ -112,6 +112,10 @@ public final class DirectionalShadowPipelines {
 				.withSampler("SulkanShadowMap1")
 				.withSampler("SulkanShadowMap2")
 				.withSampler("SulkanShadowMap3")
+				.withSampler("SulkanEntityShadowMap0")
+				.withSampler("SulkanEntityShadowMap1")
+				.withSampler("SulkanEntityShadowMap2")
+				.withSampler("SulkanEntityShadowMap3")
 				.withUniform("SulkanShadowData", UniformType.UNIFORM_BUFFER)
 				.build();
 	}

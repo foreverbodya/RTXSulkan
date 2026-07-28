@@ -22,19 +22,38 @@ import java.nio.ByteOrder;
 
 public final class DirectionalShadowRenderer {
 	private static final int CASCADE_COUNT = 4;
+	private static final int ENTITY_CASCADE_COUNT = 2;
+	private static final int[] CASCADE_UPDATE_INTERVALS = {2, 6, 16, 32};
+	private static final int[] ENTITY_UPDATE_INTERVALS = {1, 2, 4, 8};
+	private static final double[] CASCADE_MOVEMENT_LIMITS = {0.0, 4.0, 12.0, 24.0};
 	private static final int CASCADE_UBO_BYTES = 64 + 16 + 64;
 	private static final int SHADOW_DATA_BYTES = 64 * CASCADE_COUNT + 16 * CASCADE_COUNT + 16 + 16 + 64;
 	private static final Vector4f CLEAR = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
 	private static final ThreadLocal<Integer> ACTIVE_CASCADE = ThreadLocal.withInitial(() -> -1);
+	private static final ThreadLocal<Boolean> ACTIVE_ENTITY_PASS = ThreadLocal.withInitial(() -> false);
 	private static DirectionalShadowRenderer instance;
 
 	private final RenderTarget[] targets = new RenderTarget[CASCADE_COUNT];
+	private final RenderTarget[] entityTargets = new RenderTarget[CASCADE_COUNT];
 	private final Matrix4f[] cascadeMatrices = new Matrix4f[CASCADE_COUNT];
+	private final Matrix4f[] renderedCascadeMatrices = new Matrix4f[CASCADE_COUNT];
 	private final Vector3f[] frustumCorners = new Vector3f[8];
+	private final Vector3f[] renderedLightDirections = new Vector3f[CASCADE_COUNT];
+	private final Vector3f[] renderedCameraForwards = new Vector3f[CASCADE_COUNT];
 	private final float[] cascadeEnds = new float[CASCADE_COUNT];
 	private final float[] cascadeTexelWorldSizes = new float[CASCADE_COUNT];
 	private final float[] cascadeDepthRanges = new float[CASCADE_COUNT];
 	private final int[] targetSizes = new int[CASCADE_COUNT];
+	private final int[] entityTargetSizes = new int[CASCADE_COUNT];
+	private final boolean[] cascadeUpdates = new boolean[CASCADE_COUNT];
+	private final boolean[] cascadeInitialized = new boolean[CASCADE_COUNT];
+	private final boolean[] entityCascadeUpdates = new boolean[CASCADE_COUNT];
+	private final boolean[] entityCascadeInitialized = new boolean[CASCADE_COUNT];
+	private final double[] renderedCameraX = new double[CASCADE_COUNT];
+	private final double[] renderedCameraY = new double[CASCADE_COUNT];
+	private final double[] renderedCameraZ = new double[CASCADE_COUNT];
+	private final long[] renderedFrameSerial = new long[CASCADE_COUNT];
+	private final long[] renderedEntityFrameSerial = new long[CASCADE_COUNT];
 	private final ByteBuffer cascadeUpload = ByteBuffer.allocateDirect(CASCADE_UBO_BYTES).order(ByteOrder.nativeOrder());
 	private final ByteBuffer shadowUpload = ByteBuffer.allocateDirect(SHADOW_DATA_BYTES).order(ByteOrder.nativeOrder());
 	private GpuBuffer cascadeBuffer;
@@ -45,7 +64,11 @@ public final class DirectionalShadowRenderer {
 	private final Vector3f lightDirection = new Vector3f(0.0f, -1.0f, 0.0f);
 	private final Vector3f sunDirection = new Vector3f();
 	private final Vector3f moonDirection = new Vector3f();
+	private final Vector3f cameraForward = new Vector3f(0.0f, 0.0f, -1.0f);
 	private final Matrix4f inverseViewRotation = new Matrix4f();
+	private long frameSerial;
+	private float lastCoverage = -1.0f;
+	private int lastActiveCascadeCount = -1;
 	private double cameraX;
 	private double cameraY;
 	private double cameraZ;
@@ -53,6 +76,9 @@ public final class DirectionalShadowRenderer {
 	private DirectionalShadowRenderer() {
 		for (int i = 0; i < CASCADE_COUNT; i++) {
 			this.cascadeMatrices[i] = new Matrix4f();
+			this.renderedCascadeMatrices[i] = new Matrix4f();
+			this.renderedLightDirections[i] = new Vector3f();
+			this.renderedCameraForwards[i] = new Vector3f();
 		}
 		for (int i = 0; i < this.frustumCorners.length; i++) {
 			this.frustumCorners[i] = new Vector3f();
@@ -76,10 +102,17 @@ public final class DirectionalShadowRenderer {
 
 	public static void beginCascade(int cascade) {
 		ACTIVE_CASCADE.set(cascade);
+		ACTIVE_ENTITY_PASS.set(false);
+	}
+
+	public static void beginEntityCascade(int cascade) {
+		ACTIVE_CASCADE.set(cascade);
+		ACTIVE_ENTITY_PASS.set(true);
 	}
 
 	public static void endCascade() {
 		ACTIVE_CASCADE.set(-1);
+		ACTIVE_ENTITY_PASS.set(false);
 	}
 
 	public void prepare(LevelRenderState levelRenderState) {
@@ -89,13 +122,15 @@ public final class DirectionalShadowRenderer {
 			return;
 		}
 
-		this.activeCascadeCount = switch (quality) {
+		int nextActiveCascadeCount = switch (quality) {
 			case LOW -> 1;
 			case MEDIUM -> 3;
 			case HIGH, ULTRA -> 4;
 			case OFF -> 0;
 		};
-		this.ensureResources(targetSizes(quality));
+		boolean resourcesChanged = this.ensureResources(targetSizes(quality), quality);
+		this.activeCascadeCount = nextActiveCascadeCount;
+		this.frameSerial++;
 
 		if (levelRenderState.skyRenderState != null) {
 			CustomCelestials.setCelestialDirection(levelRenderState.skyRenderState.sunAngle, this.sunDirection);
@@ -110,8 +145,11 @@ public final class DirectionalShadowRenderer {
 		}
 		if (levelRenderState.cameraRenderState.viewRotationMatrix != null) {
 			this.inverseViewRotation.set(levelRenderState.cameraRenderState.viewRotationMatrix).invert();
+			this.cameraForward.set(0.0f, 0.0f, -1.0f);
+			this.inverseViewRotation.transformDirection(this.cameraForward).normalize();
 		} else {
 			this.inverseViewRotation.identity();
+			this.cameraForward.set(0.0f, 0.0f, -1.0f);
 		}
 		if (levelRenderState.cameraRenderState.pos != null) {
 			this.cameraX = levelRenderState.cameraRenderState.pos.x;
@@ -124,16 +162,53 @@ public final class DirectionalShadowRenderer {
 		}
 
 		float coverage = Math.min(384.0f, Math.max(64.0f, Minecraft.getInstance().options.getEffectiveRenderDistance() * 16.0f));
+		boolean layoutChanged = resourcesChanged
+				|| this.lastActiveCascadeCount != this.activeCascadeCount
+				|| Math.abs(this.lastCoverage - coverage) > 0.5f;
+		this.lastActiveCascadeCount = this.activeCascadeCount;
+		this.lastCoverage = coverage;
 		float[] splits = splitDistances(coverage, this.activeCascadeCount);
 		Matrix4f inverseProjection = new Matrix4f(levelRenderState.cameraRenderState.projectionMatrix).invert();
 		for (int i = 0; i < CASCADE_COUNT; i++) {
 			float end = i < this.activeCascadeCount ? splits[i] : 0.0f;
-			this.cascadeEnds[i] = end;
 			if (i < this.activeCascadeCount) {
-				float start = i == 0 ? 0.5f : splits[i - 1] * 0.82f;
-				this.fitCascadeMatrix(i, inverseProjection, start, end, this.cascadeMatrices[i]);
+				boolean update = this.shouldUpdateCascade(i, layoutChanged);
+				this.cascadeUpdates[i] = update;
+				if (update) {
+					float start = i == 0 ? 0.5f : splits[i - 1] * 0.82f;
+					this.cascadeEnds[i] = end;
+					this.fitCascadeMatrix(i, inverseProjection, start, end, this.renderedCascadeMatrices[i]);
+					this.renderedCameraX[i] = this.cameraX;
+					this.renderedCameraY[i] = this.cameraY;
+					this.renderedCameraZ[i] = this.cameraZ;
+					this.renderedFrameSerial[i] = this.frameSerial;
+					this.renderedLightDirections[i].set(this.lightDirection);
+					this.renderedCameraForwards[i].set(this.cameraForward);
+					this.cascadeInitialized[i] = true;
+				}
+				this.cascadeMatrices[i]
+						.set(this.renderedCascadeMatrices[i])
+						.translate(
+								(float) (this.cameraX - this.renderedCameraX[i]),
+								(float) (this.cameraY - this.renderedCameraY[i]),
+								(float) (this.cameraZ - this.renderedCameraZ[i]));
+				boolean entityUpdate = i < ENTITY_CASCADE_COUNT && (layoutChanged
+						|| !this.entityCascadeInitialized[i]
+						|| update
+						|| this.frameSerial - this.renderedEntityFrameSerial[i] >= ENTITY_UPDATE_INTERVALS[i]);
+				this.entityCascadeUpdates[i] = entityUpdate;
+				if (entityUpdate) {
+					this.renderedEntityFrameSerial[i] = this.frameSerial;
+					this.entityCascadeInitialized[i] = true;
+				}
 			} else {
+				this.cascadeUpdates[i] = false;
+				this.cascadeInitialized[i] = false;
+				this.entityCascadeUpdates[i] = false;
+				this.entityCascadeInitialized[i] = false;
+				this.cascadeEnds[i] = 0.0f;
 				this.cascadeMatrices[i].identity();
+				this.renderedCascadeMatrices[i].identity();
 				this.cascadeTexelWorldSizes[i] = 0.0f;
 				this.cascadeDepthRanges[i] = 0.0f;
 			}
@@ -148,12 +223,40 @@ public final class DirectionalShadowRenderer {
 		return this.cascadeMatrices[cascade];
 	}
 
+	public boolean shouldUpdateCascade(int cascade) {
+		return cascade >= 0 && cascade < this.activeCascadeCount && this.cascadeUpdates[cascade];
+	}
+
+	public boolean shouldUpdateEntityCascade(int cascade) {
+		return cascade >= 0 && cascade < this.activeCascadeCount && this.entityCascadeUpdates[cascade];
+	}
+
+	public float cascadeEnd(int cascade) {
+		return cascade >= 0 && cascade < this.activeCascadeCount ? this.cascadeEnds[cascade] : 0.0f;
+	}
+
+	public Vector3f lightDirection(Vector3f destination) {
+		return destination.set(this.lightDirection);
+	}
+
+	public Vector3f cameraForward(Vector3f destination) {
+		return destination.set(this.cameraForward);
+	}
+
 	public float shadowDistance() {
 		return this.activeCascadeCount <= 0 ? 0.0f : this.cascadeEnds[this.activeCascadeCount - 1];
 	}
 
 	public RenderTarget target(int cascade) {
 		return cascade >= 0 && cascade < CASCADE_COUNT ? this.targets[cascade] : null;
+	}
+
+	public RenderTarget entityTarget(int cascade) {
+		return cascade >= 0 && cascade < CASCADE_COUNT ? this.entityTargets[cascade] : null;
+	}
+
+	public RenderTarget activeTarget() {
+		return ACTIVE_ENTITY_PASS.get() ? this.entityTarget(activeCascade()) : this.target(activeCascade());
 	}
 
 	public boolean sectionIntersectsCascade(int cascade, int originX, int originY, int originZ) {
@@ -226,7 +329,14 @@ public final class DirectionalShadowRenderer {
 			putVec4(this.cascadeTexelWorldSizes[i], i == 0 ? 0.0f : this.cascadeEnds[i - 1], this.cascadeEnds[i], depthRange, this.shadowUpload);
 		}
 		putVec4(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z, 0.0f, this.shadowUpload);
-		putVec4(0.92f, 0.0f, 0.30f, 1.0f, this.shadowUpload);
+		float filterSamples = switch (ShaderRuntime.config().shadowQualityPreset()) {
+			case LOW -> 1.0f;
+			case MEDIUM -> 4.0f;
+			case HIGH -> 9.0f;
+			case ULTRA -> 16.0f;
+			case OFF -> 1.0f;
+		};
+		putVec4(0.92f, 0.0f, 0.30f, filterSamples, this.shadowUpload);
 		this.inverseViewRotation.get(this.shadowUpload);
 		this.shadowUpload.rewind();
 		encoder.writeToBuffer(this.shadowDataSlice, this.shadowUpload);
@@ -245,6 +355,12 @@ public final class DirectionalShadowRenderer {
 				return false;
 			}
 		}
+		for (int cascade = 0; cascade < ENTITY_CASCADE_COUNT; cascade++) {
+			RenderTarget target = this.entityTargets[cascade];
+			if (target == null || target.getDepthTextureView() == null || target.getColorTextureView() == null) {
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -255,7 +371,14 @@ public final class DirectionalShadowRenderer {
 		}
 	}
 
-	private void ensureResources(int[] sizes) {
+	public void clearEntityCascade(CommandEncoder encoder, int cascade) {
+		RenderTarget target = this.entityTarget(cascade);
+		if (target != null && target.getColorTexture() != null && target.getDepthTexture() != null) {
+			encoder.clearColorAndDepthTextures(target.getColorTexture(), CLEAR, target.getDepthTexture(), 1.0);
+		}
+	}
+
+	private boolean ensureResources(int[] sizes, ShaderQualityPreset quality) {
 		if (this.cascadeBuffer == null) {
 			this.cascadeBuffer = RenderSystem.getDevice().createBuffer(() -> "sulkan:cascade_shadow_matrix", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, CASCADE_UBO_BYTES);
 			this.shadowDataBuffer = RenderSystem.getDevice().createBuffer(() -> "sulkan:directional_shadow_data", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, SHADOW_DATA_BYTES);
@@ -265,9 +388,12 @@ public final class DirectionalShadowRenderer {
 		boolean sameSizes = this.targets[0] != null;
 		for (int i = 0; i < CASCADE_COUNT; i++) {
 			sameSizes &= this.targetSizes[i] == sizes[i];
+			if (i < ENTITY_CASCADE_COUNT) {
+				sameSizes &= this.entityTargetSizes[i] == entityTargetSize(quality, sizes, i);
+			}
 		}
 		if (sameSizes) {
-			return;
+			return false;
 		}
 		this.destroyTargets();
 		for (int i = 0; i < CASCADE_COUNT; i++) {
@@ -275,7 +401,34 @@ public final class DirectionalShadowRenderer {
 			RenderTargetDescriptor descriptor = new RenderTargetDescriptor(sizes[i], sizes[i], true, CLEAR, GpuFormat.R8_UNORM);
 			this.targets[i] = descriptor.allocate();
 			descriptor.prepare(this.targets[i]);
+			if (i < ENTITY_CASCADE_COUNT) {
+				int entitySize = entityTargetSize(quality, sizes, i);
+				this.entityTargetSizes[i] = entitySize;
+				RenderTargetDescriptor entityDescriptor = new RenderTargetDescriptor(entitySize, entitySize, true, CLEAR, GpuFormat.R8_UNORM);
+				this.entityTargets[i] = entityDescriptor.allocate();
+				entityDescriptor.prepare(this.entityTargets[i]);
+			}
 		}
+		return true;
+	}
+
+	private boolean shouldUpdateCascade(int cascade, boolean force) {
+		if (force || !this.cascadeInitialized[cascade] || cascade == 0) {
+			return true;
+		}
+		int interval = CASCADE_UPDATE_INTERVALS[cascade];
+		if (this.frameSerial - this.renderedFrameSerial[cascade] >= interval) {
+			return true;
+		}
+		double dx = this.cameraX - this.renderedCameraX[cascade];
+		double dy = this.cameraY - this.renderedCameraY[cascade];
+		double dz = this.cameraZ - this.renderedCameraZ[cascade];
+		double movementLimit = CASCADE_MOVEMENT_LIMITS[cascade];
+		if (dx * dx + dy * dy + dz * dz >= movementLimit * movementLimit) {
+			return true;
+		}
+		return this.renderedLightDirections[cascade].dot(this.lightDirection) < 0.9998f
+				|| this.renderedCameraForwards[cascade].dot(this.cameraForward) < 0.9659f;
 	}
 
 	private void fitCascadeMatrix(int cascade, Matrix4f inverseProjection, float start, float end, Matrix4f destination) {
@@ -341,7 +494,12 @@ public final class DirectionalShadowRenderer {
 				this.targets[i].destroyBuffers();
 				this.targets[i] = null;
 			}
+			if (this.entityTargets[i] != null) {
+				this.entityTargets[i].destroyBuffers();
+				this.entityTargets[i] = null;
+			}
 			this.targetSizes[i] = 0;
+			this.entityTargetSizes[i] = 0;
 			this.cascadeTexelWorldSizes[i] = 0.0f;
 			this.cascadeDepthRanges[i] = 0.0f;
 		}
@@ -364,8 +522,18 @@ public final class DirectionalShadowRenderer {
 			case LOW -> new int[] {1536, 1024, 1024, 1024};
 			case MEDIUM -> new int[] {2048, 1536, 1024, 1024};
 			case HIGH -> new int[] {3072, 2048, 1536, 1024};
-			case ULTRA -> new int[] {4096, 2048, 2048, 1024};
+			case ULTRA -> new int[] {6144, 2048, 2048, 1024};
 			case OFF -> new int[] {1024, 1024, 1024, 1024};
+		};
+	}
+
+	private static int entityTargetSize(ShaderQualityPreset quality, int[] terrainSizes, int cascade) {
+		return switch (quality) {
+			case LOW -> Math.max(512, terrainSizes[cascade] / 2);
+			case MEDIUM -> cascade == 0 ? 1536 : 768;
+			case HIGH -> cascade == 0 ? 3072 : 1024;
+			case ULTRA -> cascade == 0 ? 6144 : 2048;
+			case OFF -> 512;
 		};
 	}
 

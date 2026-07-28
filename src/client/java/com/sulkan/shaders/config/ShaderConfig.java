@@ -18,6 +18,13 @@ public final class ShaderConfig {
 	private static final Logger LOGGER = LogUtils.getLogger();
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final String CONFIG_FILE_NAME = "sulkan-shaders.json";
+	private static final ShaderQualityPreset DEFAULT_SHADOW_QUALITY = ShaderQualityPreset.HIGH;
+	private static final ShaderQualityPreset DEFAULT_AO_QUALITY = ShaderQualityPreset.OFF;
+	private static final ShaderQualityPreset DEFAULT_WATER_QUALITY = ShaderQualityPreset.HIGH;
+	private static final ShaderQualityPreset DEFAULT_CLOUD_QUALITY = ShaderQualityPreset.OFF;
+	private static final ShaderQualityPreset DEFAULT_ATMOSPHERE_QUALITY = ShaderQualityPreset.OFF;
+	private static final boolean DEFAULT_BLOOM_ENABLED = false;
+	private static final AntiAliasingMode DEFAULT_ANTI_ALIASING = AntiAliasingMode.FXAA;
 
 	private boolean enabled;
 	private String selectedPackId;
@@ -30,27 +37,27 @@ public final class ShaderConfig {
 	private String antiAliasingMode;
 
 	public ShaderConfig() {
-		this(false,
+		this(true,
 				BUILTIN_PACK_ID,
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				true,
-				AntiAliasingMode.FXAA.serializedName());
+				DEFAULT_SHADOW_QUALITY.serializedName(),
+				DEFAULT_AO_QUALITY.serializedName(),
+				DEFAULT_WATER_QUALITY.serializedName(),
+				DEFAULT_CLOUD_QUALITY.serializedName(),
+				DEFAULT_ATMOSPHERE_QUALITY.serializedName(),
+				DEFAULT_BLOOM_ENABLED,
+				DEFAULT_ANTI_ALIASING.serializedName());
 	}
 
 	public ShaderConfig(boolean enabled, String selectedPackId) {
 		this(enabled,
 				selectedPackId,
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				true,
-				AntiAliasingMode.FXAA.serializedName());
+				DEFAULT_SHADOW_QUALITY.serializedName(),
+				DEFAULT_AO_QUALITY.serializedName(),
+				DEFAULT_WATER_QUALITY.serializedName(),
+				DEFAULT_CLOUD_QUALITY.serializedName(),
+				DEFAULT_ATMOSPHERE_QUALITY.serializedName(),
+				DEFAULT_BLOOM_ENABLED,
+				DEFAULT_ANTI_ALIASING.serializedName());
 	}
 
 	public ShaderConfig(
@@ -65,13 +72,15 @@ public final class ShaderConfig {
 			String antiAliasingMode) {
 		this.enabled = enabled;
 		this.selectedPackId = selectedPackId == null || selectedPackId.isBlank() ? BUILTIN_PACK_ID : selectedPackId;
-		this.shadowQualityPreset = resolveQuality(shadowQualityPreset, ShaderQualityPreset.MEDIUM).serializedName();
-		this.aoQualityPreset = resolveQuality(aoQualityPreset, ShaderQualityPreset.OFF).serializedName();
-		this.waterQualityPreset = resolveQuality(waterQualityPreset, ShaderQualityPreset.MEDIUM).serializedName();
-		this.cloudQualityPreset = resolveQuality(cloudQualityPreset, ShaderQualityPreset.OFF).serializedName();
-		this.atmosphereQualityPreset = resolveQuality(atmosphereQualityPreset, ShaderQualityPreset.MEDIUM).serializedName();
+		this.shadowQualityPreset = resolveQuality(shadowQualityPreset, DEFAULT_SHADOW_QUALITY).serializedName();
+		this.aoQualityPreset = resolveQuality(aoQualityPreset, DEFAULT_AO_QUALITY).serializedName();
+		this.waterQualityPreset = resolveQuality(waterQualityPreset, DEFAULT_WATER_QUALITY).serializedName();
+		this.cloudQualityPreset = resolveQuality(cloudQualityPreset, DEFAULT_CLOUD_QUALITY).serializedName();
+		this.atmosphereQualityPreset = resolveQuality(atmosphereQualityPreset, DEFAULT_ATMOSPHERE_QUALITY).serializedName();
 		this.bloomEnabled = bloomEnabled;
-		this.antiAliasingMode = AntiAliasingMode.fromSerializedName(antiAliasingMode).serializedName();
+		this.antiAliasingMode = antiAliasingMode == null || antiAliasingMode.isBlank()
+				? DEFAULT_ANTI_ALIASING.serializedName()
+				: AntiAliasingMode.fromSerializedName(antiAliasingMode).serializedName();
 	}
 
 	public boolean enabled() {
@@ -96,7 +105,7 @@ public final class ShaderConfig {
 	}
 
 	public ShaderConfig withAntiAliasingMode(AntiAliasingMode nextAntiAliasingMode) {
-		AntiAliasingMode resolved = nextAntiAliasingMode == null ? AntiAliasingMode.OFF : nextAntiAliasingMode;
+		AntiAliasingMode resolved = nextAntiAliasingMode == null ? DEFAULT_ANTI_ALIASING : nextAntiAliasingMode;
 		return new ShaderConfig(
 				this.enabled,
 				this.selectedPackId,
@@ -131,11 +140,11 @@ public final class ShaderConfig {
 		return new ShaderConfig(
 				this.enabled,
 				this.selectedPackId,
-				qualityOrDefault(nextShadowQualityPreset, ShaderQualityPreset.MEDIUM).serializedName(),
-				qualityOrDefault(nextAoQualityPreset, ShaderQualityPreset.OFF).serializedName(),
-				qualityOrDefault(nextWaterQualityPreset, ShaderQualityPreset.MEDIUM).serializedName(),
-				qualityOrDefault(nextCloudQualityPreset, ShaderQualityPreset.OFF).serializedName(),
-				qualityOrDefault(nextAtmosphereQualityPreset, ShaderQualityPreset.MEDIUM).serializedName(),
+				qualityOrDefault(nextShadowQualityPreset, DEFAULT_SHADOW_QUALITY).serializedName(),
+				qualityOrDefault(nextAoQualityPreset, DEFAULT_AO_QUALITY).serializedName(),
+				qualityOrDefault(nextWaterQualityPreset, DEFAULT_WATER_QUALITY).serializedName(),
+				qualityOrDefault(nextCloudQualityPreset, DEFAULT_CLOUD_QUALITY).serializedName(),
+				qualityOrDefault(nextAtmosphereQualityPreset, DEFAULT_ATMOSPHERE_QUALITY).serializedName(),
 				this.bloomEnabled,
 				this.antiAliasingMode);
 	}
@@ -144,13 +153,13 @@ public final class ShaderConfig {
 		return new ShaderConfig(
 				this.enabled,
 				this.selectedPackId,
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				ShaderQualityPreset.MEDIUM.serializedName(),
-				true,
-				AntiAliasingMode.FXAA.serializedName());
+				DEFAULT_SHADOW_QUALITY.serializedName(),
+				DEFAULT_AO_QUALITY.serializedName(),
+				DEFAULT_WATER_QUALITY.serializedName(),
+				DEFAULT_CLOUD_QUALITY.serializedName(),
+				DEFAULT_ATMOSPHERE_QUALITY.serializedName(),
+				DEFAULT_BLOOM_ENABLED,
+				DEFAULT_ANTI_ALIASING.serializedName());
 	}
 
 	public ShaderQualityPreset shadowQualityPreset() {
@@ -158,7 +167,7 @@ public final class ShaderConfig {
 	}
 
 	public ShaderQualityPreset aoQualityPreset() {
-		return resolveQuality(this.aoQualityPreset, ShaderQualityPreset.OFF);
+		return resolveQuality(this.aoQualityPreset, DEFAULT_AO_QUALITY);
 	}
 
 	public ShaderQualityPreset waterQualityPreset() {
@@ -166,7 +175,7 @@ public final class ShaderConfig {
 	}
 
 	public ShaderQualityPreset cloudQualityPreset() {
-		return resolveQuality(this.cloudQualityPreset, ShaderQualityPreset.OFF);
+		return resolveQuality(this.cloudQualityPreset, DEFAULT_CLOUD_QUALITY);
 	}
 
 	public ShaderQualityPreset atmosphereQualityPreset() {

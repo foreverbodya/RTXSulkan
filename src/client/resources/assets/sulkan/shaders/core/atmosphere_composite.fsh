@@ -35,7 +35,7 @@ float screenMask(vec2 uv) {
 
 float sampleSkyVisibility(vec2 uv, vec2 texelSize) {
     float visibility = isSkyDepth(texture(SceneDepthSampler, uv).r) ? 1.0 : 0.0;
-    if (ScreenAndSamples.z <= 20.5) {
+    if (ScreenAndSamples.z <= 10.5) {
         return visibility;
     }
 

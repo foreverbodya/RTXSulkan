@@ -59,7 +59,7 @@ public abstract class RenderTypeMixin {
 		}
 
 		DirectionalShadowRenderer shadows = DirectionalShadowRenderer.get();
-		RenderTarget target = shadows.target(DirectionalShadowRenderer.activeCascade());
+		RenderTarget target = shadows.activeTarget();
 		if (target == null || target.getColorTextureView() == null || target.getDepthTextureView() == null) {
 			ci.cancel();
 			return;
@@ -116,6 +116,13 @@ public abstract class RenderTypeMixin {
 			if (target != null && target.getDepthTextureView() != null) {
 				pass.bindTexture("SulkanShadowMap" + cascade, target.getDepthTextureView(), sulkan$shadowSampler());
 			}
+			RenderTarget entityTarget = shadows.entityTarget(cascade);
+			pass.bindTexture(
+					"SulkanEntityShadowMap" + cascade,
+					entityTarget != null && entityTarget.getDepthTextureView() != null
+							? entityTarget.getDepthTextureView()
+							: target.getDepthTextureView(),
+					sulkan$shadowSampler());
 		}
 	}
 
