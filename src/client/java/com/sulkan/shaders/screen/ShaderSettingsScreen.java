@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 public final class ShaderSettingsScreen extends ShaderScreenBase {
 	private static final Component TITLE = Component.literal("Shader Settings");
 	private static final Component SUBTITLE = Component.literal("Tune the rewritten Sulkan effects independently. Changes apply after pressing Apply.");
+	private static final Component COMPACT_SUBTITLE = Component.literal("Choose quality, then apply.");
 	private static final int MAX_CONTENT_WIDTH = 760;
 	private static final int BUTTON_HEIGHT = 20;
 	private static final int ROW_HEIGHT = 34;
@@ -81,21 +82,25 @@ public final class ShaderSettingsScreen extends ShaderScreenBase {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor guiGraphicsExtractor, int mouseX, int mouseY, float partialTick) {
-		int margin = this.width < 520 ? 10 : 18;
-		int panelWidth = Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH);
-		int panelX = (this.width - panelWidth) / 2;
-		int panelY = margin + 8;
-		int panelHeight = this.height - margin - panelY;
-		this.fillPanel(guiGraphicsExtractor, panelX, panelY, panelWidth, panelHeight);
-		guiGraphicsExtractor.text(this.font, TITLE, panelX + 16, panelY + 14, TEXT_PRIMARY, true);
-		guiGraphicsExtractor.textWithWordWrap(this.font, SUBTITLE, panelX + 16, panelY + 30, panelWidth - 32, TEXT_SECONDARY);
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.shadowsButton.getY(), panelWidth - 32, Component.literal("Shadows"), Component.literal("Cascaded directional terrain and entity shadows from the current sun direction."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.aoButton.getY(), panelWidth - 32, Component.literal("Ambient Occlusion"), Component.literal("Depth-aware screen-space ambient occlusion."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.waterButton.getY(), panelWidth - 32, Component.literal("Water"), Component.literal("Depth-edge water tinting with reflection-style scene sampling."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.cloudsButton.getY(), panelWidth - 32, Component.literal("Clouds"), Component.literal("Sky-only cloud composite driven by the scene depth buffer."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.atmosphereButton.getY(), panelWidth - 32, Component.literal("Atmosphere"), Component.literal("Depth-based fog, sun glow, and sky color grading."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.bloomButton.getY(), panelWidth - 32, Component.literal("Bloom"), Component.literal("Light highlight bloom composite."));
-		this.drawRow(guiGraphicsExtractor, panelX + 16, this.aaButton.getY(), panelWidth - 32, Component.literal("Anti-Aliasing"), Component.literal("Late full-scene FXAA smoothing."));
+		Layout layout = this.layout();
+		this.fillPanel(guiGraphicsExtractor, layout.panelX, layout.panelY, layout.panelWidth, layout.panelHeight);
+		guiGraphicsExtractor.text(this.font, TITLE, layout.panelX + 16, layout.panelY + 14, TEXT_PRIMARY, true);
+		guiGraphicsExtractor.textWithWordWrap(
+				this.font,
+				layout.compact ? COMPACT_SUBTITLE : SUBTITLE,
+				layout.panelX + 16,
+				layout.panelY + 30,
+				Math.max(1, layout.panelWidth - 32),
+				TEXT_SECONDARY);
+		if (!layout.compact) {
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.shadowsButton.getY(), layout.panelWidth - 32, Component.literal("Shadows"), Component.literal("Cascaded directional terrain and entity shadows from the current sun direction."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.aoButton.getY(), layout.panelWidth - 32, Component.literal("Ambient Occlusion"), Component.literal("Depth-aware screen-space ambient occlusion."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.waterButton.getY(), layout.panelWidth - 32, Component.literal("Water"), Component.literal("Depth-edge water tinting with reflection-style scene sampling."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.cloudsButton.getY(), layout.panelWidth - 32, Component.literal("Clouds"), Component.literal("Sky-only cloud composite driven by the scene depth buffer."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.atmosphereButton.getY(), layout.panelWidth - 32, Component.literal("Atmosphere"), Component.literal("Depth-based fog, sun glow, and sky color grading."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.bloomButton.getY(), layout.panelWidth - 32, Component.literal("Bloom"), Component.literal("Light highlight bloom composite."));
+			this.drawRow(guiGraphicsExtractor, layout.panelX + 16, this.aaButton.getY(), layout.panelWidth - 32, Component.literal("Anti-Aliasing"), Component.literal("Late full-scene FXAA smoothing."));
+		}
 		super.extractRenderState(guiGraphicsExtractor, mouseX, mouseY, partialTick);
 	}
 
@@ -104,13 +109,14 @@ public final class ShaderSettingsScreen extends ShaderScreenBase {
 		if (this.applyButton == null) {
 			return;
 		}
-		int margin = this.width < 520 ? 10 : 18;
-		int panelWidth = Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH);
-		int panelX = (this.width - panelWidth) / 2;
-		int panelY = margin + 8;
-		int buttonWidth = Math.min(210, Math.max(132, panelWidth / 3));
-		int buttonX = panelX + panelWidth - 16 - buttonWidth;
-		int y = panelY + 74;
+		Layout layout = this.layout();
+		if (layout.compact) {
+			this.repositionCompact(layout);
+			return;
+		}
+		int buttonWidth = Math.min(210, Math.max(132, layout.panelWidth / 3));
+		int buttonX = layout.panelX + layout.panelWidth - 16 - buttonWidth;
+		int y = layout.panelY + 74;
 		this.shadowsButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
 		y += ROW_HEIGHT;
 		this.aoButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
@@ -124,10 +130,61 @@ public final class ShaderSettingsScreen extends ShaderScreenBase {
 		this.bloomButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
 		y += ROW_HEIGHT;
 		this.aaButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
-		int footerY = this.height - margin - 30;
-		int halfWidth = Math.min(150, (panelWidth - 40) / 2);
-		this.applyButton.setRectangle(halfWidth, BUTTON_HEIGHT, panelX + panelWidth - 16 - halfWidth * 2 - 8, footerY);
-		this.backButton.setRectangle(halfWidth, BUTTON_HEIGHT, panelX + panelWidth - 16 - halfWidth, footerY);
+		int footerY = layout.panelY + layout.panelHeight - 30;
+		int halfWidth = Math.min(150, (layout.panelWidth - 40) / 2);
+		this.applyButton.setRectangle(halfWidth, BUTTON_HEIGHT, layout.panelX + layout.panelWidth - 16 - halfWidth * 2 - 8, footerY);
+		this.backButton.setRectangle(halfWidth, BUTTON_HEIGHT, layout.panelX + layout.panelWidth - 16 - halfWidth, footerY);
+	}
+
+	private void repositionCompact(Layout layout) {
+		int innerX = layout.panelX + 12;
+		int innerWidth = Math.max(1, layout.panelWidth - 24);
+		int columns = innerWidth >= 280 ? 2 : 1;
+		int rows = (7 + columns - 1) / columns;
+		int footerHeight = Math.min(BUTTON_HEIGHT, Math.max(12, layout.panelHeight / 10));
+		int footerY = layout.panelY + layout.panelHeight - 10 - footerHeight;
+		int settingsY = layout.panelY + 48;
+		int availableHeight = Math.max(rows, footerY - 6 - settingsY);
+		int rowGap = availableHeight >= rows * BUTTON_HEIGHT + (rows - 1) * 4 ? 4 : 2;
+		int settingHeight = Math.max(10, Math.min(BUTTON_HEIGHT, (availableHeight - (rows - 1) * rowGap) / rows));
+		int columnGap = 6;
+		int settingWidth = Math.max(1, (innerWidth - (columns - 1) * columnGap) / columns);
+		Button[] settings = {
+				this.shadowsButton,
+				this.aoButton,
+				this.waterButton,
+				this.cloudsButton,
+				this.atmosphereButton,
+				this.bloomButton,
+				this.aaButton
+		};
+		for (int i = 0; i < settings.length; i++) {
+			int column = i % columns;
+			int row = i / columns;
+			settings[i].setRectangle(
+					settingWidth,
+					settingHeight,
+					innerX + column * (settingWidth + columnGap),
+					settingsY + row * (settingHeight + rowGap));
+		}
+
+		int footerGap = 6;
+		int footerWidth = Math.max(1, (innerWidth - footerGap) / 2);
+		this.applyButton.setRectangle(footerWidth, footerHeight, innerX, footerY);
+		this.backButton.setRectangle(footerWidth, footerHeight, innerX + footerWidth + footerGap, footerY);
+	}
+
+	private Layout layout() {
+		int margin = this.width < 520 || this.height < 320 ? 6 : 18;
+		int panelWidth = Math.max(1, Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH));
+		int panelHeight = Math.max(1, this.height - margin * 2);
+		int panelX = (this.width - panelWidth) / 2;
+		int panelY = margin;
+		boolean compact = panelWidth < 620 || panelHeight < 340;
+		return new Layout(panelX, panelY, panelWidth, panelHeight, compact);
+	}
+
+	private record Layout(int panelX, int panelY, int panelWidth, int panelHeight, boolean compact) {
 	}
 
 	private void drawRow(GuiGraphicsExtractor guiGraphicsExtractor, int x, int buttonY, int width, Component title, Component description) {

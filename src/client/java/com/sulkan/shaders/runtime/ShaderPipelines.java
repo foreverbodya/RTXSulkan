@@ -82,15 +82,17 @@ public final class ShaderPipelines {
 				.withSampler("SceneColorSampler")
 				.withSampler("SceneDepthSampler")
 				.withSampler("WaterSceneColorSampler")
-				.withSampler("WaterSceneDepthSampler")
-				.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER);
+				.withSampler("WaterSceneDepthSampler");
 		if (shadowsEnabled) {
 			builder.withShaderDefine("SULKAN_WATER_SHADOWS");
 			layout.withSampler("SulkanShadowMap0")
 					.withSampler("SulkanShadowMap1")
 					.withSampler("SulkanShadowMap2")
-					.withSampler("SulkanShadowMap3")
-					.withUniform("SulkanShadowData", UniformType.UNIFORM_BUFFER);
+					.withSampler("SulkanShadowMap3");
+		}
+		layout.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER);
+		if (shadowsEnabled) {
+			layout.withUniform("SulkanShadowData", UniformType.UNIFORM_BUFFER);
 		}
 		return builder.withBindGroupLayout(layout.build()).build();
 	}

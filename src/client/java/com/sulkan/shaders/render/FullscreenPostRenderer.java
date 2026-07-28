@@ -24,46 +24,46 @@ public final class FullscreenPostRenderer {
 	private FullscreenPostRenderer() {
 	}
 
-	public static boolean applyFxaa(RenderTarget source, RenderTarget output) {
+	public static boolean applyFxaa(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.FXAA == null) {
 			return false;
 		}
-		return apply("Sulkan FXAA", ShaderPipelines.FXAA, source, output);
+		return apply(encoder, "Sulkan FXAA", ShaderPipelines.FXAA, source, output);
 	}
 
-	public static boolean applyBloom(RenderTarget source, RenderTarget output) {
+	public static boolean applyBloom(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.BLOOM_PREFILTER == null) {
 			return false;
 		}
-		return apply("Sulkan Bloom", ShaderPipelines.BLOOM_PREFILTER, source, output);
+		return apply(encoder, "Sulkan Bloom", ShaderPipelines.BLOOM_PREFILTER, source, output);
 	}
 
-	public static boolean applyAmbientOcclusion(RenderTarget source, RenderTarget output) {
+	public static boolean applyAmbientOcclusion(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.AO_APPLY == null) {
 			return false;
 		}
-		return apply("Sulkan AO", ShaderPipelines.AO_APPLY, source, output);
+		return apply(encoder, "Sulkan AO", ShaderPipelines.AO_APPLY, source, output);
 	}
 
-	public static boolean applyAtmosphere(RenderTarget source, RenderTarget output) {
+	public static boolean applyAtmosphere(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.ATMOSPHERE_COMPOSITE == null) {
 			return false;
 		}
-		return apply("Sulkan Atmosphere", ShaderPipelines.ATMOSPHERE_COMPOSITE, source, output);
+		return apply(encoder, "Sulkan Atmosphere", ShaderPipelines.ATMOSPHERE_COMPOSITE, source, output);
 	}
 
-	public static boolean applyClouds(RenderTarget source, RenderTarget output) {
+	public static boolean applyClouds(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.CLOUDS_COMPOSITE == null) {
 			return false;
 		}
-		return apply("Sulkan Clouds", ShaderPipelines.CLOUDS_COMPOSITE, source, output);
+		return apply(encoder, "Sulkan Clouds", ShaderPipelines.CLOUDS_COMPOSITE, source, output);
 	}
 
-	public static boolean applyWaterComposite(RenderTarget source, RenderTarget output) {
+	public static boolean applyWaterComposite(CommandEncoder encoder, RenderTarget source, RenderTarget output) {
 		if (ShaderPipelines.WATER_COMPOSITE == null) {
 			return false;
 		}
-		return apply("Sulkan Water Composite", ShaderPipelines.WATER_COMPOSITE, source, output);
+		return apply(encoder, "Sulkan Water Composite", ShaderPipelines.WATER_COMPOSITE, source, output);
 	}
 
 	public static void close() {
@@ -77,12 +77,11 @@ public final class FullscreenPostRenderer {
 		}
 	}
 
-	private static boolean apply(String label, RenderPipeline pipeline, RenderTarget source, RenderTarget output) {
+	private static boolean apply(CommandEncoder encoder, String label, RenderPipeline pipeline, RenderTarget source, RenderTarget output) {
 		if (source == null || output == null || source.getColorTextureView() == null || output.getColorTextureView() == null) {
 			return false;
 		}
 		ensureSampler();
-		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
 		if (source.getDepthTexture() != null && output.getDepthTexture() != null && source != output) {
 			encoder.copyTextureToTexture(
 					source.getDepthTexture(),
@@ -124,10 +123,8 @@ public final class FullscreenPostRenderer {
 			}
 			pass.setUniform("SulkanSceneParams", sceneParams);
 			pass.draw(3, 1, 0, 0);
-			return true;
-		} finally {
-			encoder.submit();
 		}
+		return true;
 	}
 
 	private static void ensureSampler() {

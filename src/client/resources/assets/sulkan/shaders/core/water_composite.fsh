@@ -11,7 +11,13 @@ layout(binding = 6) uniform sampler2D SulkanShadowMap2;
 layout(binding = 7) uniform sampler2D SulkanShadowMap3;
 #endif
 
-layout(std140, binding = 2) uniform SulkanSceneParams {
+#ifdef SULKAN_WATER_SHADOWS
+#define SULKAN_SCENE_BINDING 8
+#else
+#define SULKAN_SCENE_BINDING 4
+#endif
+
+layout(std140, binding = SULKAN_SCENE_BINDING) uniform SulkanSceneParams {
 	mat4 ProjectionMat;
 	mat4 InverseProjectionMat;
 	vec4 SunDirAndVisibility;
@@ -23,7 +29,7 @@ layout(std140, binding = 2) uniform SulkanSceneParams {
 };
 
 #ifdef SULKAN_WATER_SHADOWS
-layout(std140) uniform SulkanShadowData {
+layout(std140, binding = 9) uniform SulkanShadowData {
 	mat4 ShadowViewProjection[4];
 	vec4 CascadeParams[4];
 	vec4 LightDirection;
@@ -71,121 +77,7 @@ bool validUv(vec2 uv) {
 }
 
 #ifdef SULKAN_WATER_SHADOWS
-bool cascadeActive(int cascade) {
-	return CascadeParams[cascade].w > 0.5;
-}
-
-int lastActiveCascade() {
-	for (int i = 3; i >= 0; i--) {
-		if (cascadeActive(i)) {
-			return i;
-		}
-	}
-	return 0;
-}
-
-int nextActiveCascade(int cascade) {
-	for (int i = cascade + 1; i < 4; i++) {
-		if (cascadeActive(i)) {
-			return i;
-		}
-	}
-	return cascade;
-}
-
-int pickCascade(float distanceToCamera) {
-	int last = lastActiveCascade();
-	for (int i = 0; i < 4; i++) {
-		if (cascadeActive(i) && (distanceToCamera <= CascadeParams[i].z || i == last)) {
-			return i;
-		}
-	}
-	return last;
-}
-
-vec2 shadowTexelSize(int cascade) {
-	if (cascade == 0) return 1.0 / vec2(textureSize(SulkanShadowMap0, 0));
-	if (cascade == 1) return 1.0 / vec2(textureSize(SulkanShadowMap1, 0));
-	if (cascade == 2) return 1.0 / vec2(textureSize(SulkanShadowMap2, 0));
-	return 1.0 / vec2(textureSize(SulkanShadowMap3, 0));
-}
-
-float sampleShadowDepth(int cascade, vec2 uv) {
-	if (cascade == 0) return texture(SulkanShadowMap0, uv).r;
-	if (cascade == 1) return texture(SulkanShadowMap1, uv).r;
-	if (cascade == 2) return texture(SulkanShadowMap2, uv).r;
-	return texture(SulkanShadowMap3, uv).r;
-}
-
-vec3 shadowTap(int cascade, vec2 uv, float compareDepth, float shadowFloor) {
-	float lit = step(compareDepth, sampleShadowDepth(cascade, uv));
-	return mix(vec3(shadowFloor), vec3(1.0), lit);
-}
-
-vec3 waterPcf3x3(int cascade, vec3 coord, float bias, vec2 texelSize, float shadowFloor) {
-	vec3 sum = vec3(0.0);
-	float totalWeight = 0.0;
-	float radius = max(0.90, ShadowParams.w);
-	for (int y = -1; y <= 1; y++) {
-		for (int x = -1; x <= 1; x++) {
-			vec2 offset = vec2(float(x), float(y));
-			float weight = x == 0 && y == 0 ? 1.0 : (abs(x) + abs(y) == 1 ? 0.72 : 0.48);
-			sum += shadowTap(cascade, coord.xy + offset * texelSize * radius, coord.z - bias, shadowFloor) * weight;
-			totalWeight += weight;
-		}
-	}
-	return sum / max(totalWeight, 0.0001);
-}
-
-float shadowBias(int cascade, vec3 normal) {
-	float lightFacing = dot(normal, normalize(LightDirection.xyz));
-	float grazing = 1.0 - clamp(lightFacing, 0.0, 1.0);
-	float texelWorldSize = max(CascadeParams[cascade].x, 0.0001);
-	float cascadeRange = max(CascadeParams[cascade].z - CascadeParams[cascade].y, 1.0);
-	return 0.00004 + texelWorldSize / cascadeRange * (0.22 + grazing * 0.58);
-}
-
-vec3 shadowCoordForCascade(int cascade, vec3 receiverPosition) {
-	vec4 shadowClip = ShadowViewProjection[cascade] * vec4(receiverPosition, 1.0);
-	float safeW = abs(shadowClip.w) < 0.000001 ? 0.000001 : abs(shadowClip.w);
-	return vec3(shadowClip.xy / safeW * 0.5 + 0.5, shadowClip.z / safeW);
-}
-
-vec3 sampleWaterCascadeShadow(int cascade, vec3 receiverPosition, vec3 normal) {
-	float normalOffset = CascadeParams[cascade].x * LightDirection.w * 0.18;
-	vec3 shadowCoord = shadowCoordForCascade(cascade, receiverPosition + normal * normalOffset);
-	vec2 texel = shadowTexelSize(cascade);
-	float edgeGuard = max(texel.x, texel.y) * 2.0;
-	if (shadowCoord.x <= edgeGuard || shadowCoord.x >= 1.0 - edgeGuard || shadowCoord.y <= edgeGuard || shadowCoord.y >= 1.0 - edgeGuard || shadowCoord.z < 0.0 || shadowCoord.z > 1.0) {
-		return vec3(1.0);
-	}
-	float waterShadowFloor = max(0.68, ShadowParams.z);
-	vec3 visibility = clamp(waterPcf3x3(cascade, shadowCoord, shadowBias(cascade, normal), texel, waterShadowFloor), vec3(0.0), vec3(1.0));
-	float edgeFade = smoothstep(0.0, 0.018, min(min(shadowCoord.x, 1.0 - shadowCoord.x), min(shadowCoord.y, 1.0 - shadowCoord.y)));
-	return mix(vec3(1.0), visibility, edgeFade);
-}
-
-vec3 sampleWaterShadow(vec3 receiverPosition, vec3 normal) {
-	float distanceToCamera = length(receiverPosition.xz);
-	int current = pickCascade(distanceToCamera);
-	int last = lastActiveCascade();
-	if (current >= last) {
-		return sampleWaterCascadeShadow(current, receiverPosition, normal);
-	}
-	float blendStart = mix(CascadeParams[current].y, CascadeParams[current].z, 0.88);
-	float blend = smoothstep(blendStart, CascadeParams[current].z, distanceToCamera);
-	int next = nextActiveCascade(current);
-	if (blend <= 0.001 || next == current) {
-		return sampleWaterCascadeShadow(current, receiverPosition, normal);
-	}
-	if (blend >= 0.999) {
-		return sampleWaterCascadeShadow(next, receiverPosition, normal);
-	}
-	return mix(
-		sampleWaterCascadeShadow(current, receiverPosition, normal),
-		sampleWaterCascadeShadow(next, receiverPosition, normal),
-		blend);
-}
+#moj_import <sulkan:directional_shadow.glsl>
 #endif
 
 float waterColorLikelihood(vec3 sceneColor, vec3 capturedColor) {
@@ -486,11 +378,10 @@ void main() {
 	vec3 directShadow = vec3(1.0);
 #ifdef SULKAN_WATER_SHADOWS
 	vec3 shadowReceiverPos = worldRelativePos + normalWorld * max(waveHeight, 0.0);
-	float shadowFacing = smoothstep(0.02, 0.18, dot(normalWorld, normalize(LightDirection.xyz)));
-	float waterShadowStrength = ShadowParams.x * 0.48 * saturate(SunDirAndVisibility.w) * shadowFacing;
-	directShadow = mix(vec3(1.0), sampleWaterShadow(shadowReceiverPos, normalWorld), waterShadowStrength);
+	float visibility = sulkanCastShadowVisibility(shadowReceiverPos, normalWorld);
+	directShadow = vec3(mix(1.0, mix(ShadowParams.z, 1.0, visibility), ShadowParams.x));
 #endif
-	vec3 shadowedBase = mix(color.rgb, reflection, reflectionMix) * mix(vec3(1.0), directShadow, 0.72);
+	vec3 shadowedBase = mix(color.rgb, reflection, reflectionMix) * directShadow;
 	vec3 waterColor = shadowedBase + vec3(1.0, 0.82, 0.55) * specular * 0.18 * mix(0.72, 1.0, max(max(directShadow.r, directShadow.g), directShadow.b));
 	float waterMask = smoothstep(0.12, 0.82, waterCandidate);
 	fragColor = vec4(mix(color.rgb, waterColor, waterMask * 0.74), color.a);

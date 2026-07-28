@@ -25,12 +25,10 @@ public final class WaterSceneCapture {
 		}
 
 		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-		try {
-			encoder.copyTextureToTexture(source.getColorTexture(), capturedSceneTarget.getColorTexture(), 0, 0, 0, 0, 0, source.width, source.height);
-			encoder.copyTextureToTexture(source.getDepthTexture(), capturedSceneTarget.getDepthTexture(), 0, 0, 0, 0, 0, source.width, source.height);
-		} finally {
-			encoder.submit();
-		}
+		encoder.copyTextureToTexture(source.getColorTexture(), capturedSceneTarget.getColorTexture(), 0, 0, 0, 0, 0, source.width, source.height);
+		encoder.copyTextureToTexture(source.getDepthTexture(), capturedSceneTarget.getDepthTexture(), 0, 0, 0, 0, 0, source.width, source.height);
+		// Command encoders share the device backend. The post chain submits once
+		// after translucent terrain, keeping this copy ordered without stalling Vulkan.
 	}
 
 	public static GpuTextureView colorTextureView() {

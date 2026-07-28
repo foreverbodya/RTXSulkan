@@ -123,67 +123,58 @@ public abstract class LevelRendererPostMixin {
 
 		ScenePostUniforms.prepare(cameraState, this.levelRenderState, modelViewMatrix, fogColor, mainTarget, deltaTracker);
 		PostChain postChain = PostChain.get();
-		RenderTarget source = postChain.begin(mainTarget);
-		int remainingPasses = passCount;
+		var encoder = RenderSystem.getDevice().createCommandEncoder();
+		try {
+			RenderTarget source = postChain.begin(encoder, mainTarget);
+			int remainingPasses = passCount;
 
-		if (state.aoEnabled()) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			if (FullscreenPostRenderer.applyAmbientOcclusion(source, output)) {
-				source = output;
+			if (state.aoEnabled()) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (FullscreenPostRenderer.applyAmbientOcclusion(encoder, source, output)) {
+					source = output;
+				}
+				remainingPasses--;
 			}
-			remainingPasses--;
-		}
-		if (state.waterEnabled()) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			if (FullscreenPostRenderer.applyWaterComposite(source, output)) {
-				source = output;
+			if (state.waterEnabled()) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (FullscreenPostRenderer.applyWaterComposite(encoder, source, output)) {
+					source = output;
+				}
+				remainingPasses--;
 			}
-			remainingPasses--;
-		}
-		if (renderVolumetricClouds) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			var encoder = RenderSystem.getDevice().createCommandEncoder();
-			boolean applied;
-			try {
-				applied = cloudRenderer.execute(encoder, source, output, source);
-			} finally {
-				encoder.submit();
+			if (renderVolumetricClouds) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (cloudRenderer.execute(encoder, source, output, source)) {
+					source = output;
+				}
+				remainingPasses--;
 			}
-			if (applied) {
-				source = output;
+			if (renderAtmosphere) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (AtmosphereRenderer.get().execute(encoder, source, output, source)) {
+					source = output;
+				}
+				remainingPasses--;
 			}
-			remainingPasses--;
-		}
-		if (renderAtmosphere) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			var encoder = RenderSystem.getDevice().createCommandEncoder();
-			boolean applied;
-			try {
-				applied = AtmosphereRenderer.get().execute(encoder, source, output, source);
-			} finally {
-				encoder.submit();
+			if (state.bloomEnabled()) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (FullscreenPostRenderer.applyBloom(encoder, source, output)) {
+					source = output;
+				}
+				remainingPasses--;
 			}
-			if (applied) {
-				source = output;
+			if (state.fxaaEnabled()) {
+				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
+				if (FullscreenPostRenderer.applyFxaa(encoder, source, output)) {
+					source = output;
+				}
 			}
-			remainingPasses--;
-		}
-		if (state.bloomEnabled()) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			if (FullscreenPostRenderer.applyBloom(source, output)) {
-				source = output;
-			}
-			remainingPasses--;
-		}
-		if (state.fxaaEnabled()) {
-			RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-			if (FullscreenPostRenderer.applyFxaa(source, output)) {
-				source = output;
-			}
-		}
 
-		if (source != mainTarget) {
-			postChain.copyToMain(source, mainTarget);
+			if (source != mainTarget) {
+				postChain.copyToMain(encoder, source, mainTarget);
+			}
+		} finally {
+			encoder.submit();
 		}
 	}
 

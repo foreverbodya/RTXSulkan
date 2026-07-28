@@ -13,6 +13,7 @@ import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -32,6 +33,7 @@ public final class DirectionalShadowRenderer {
 	private final Vector3f[] frustumCorners = new Vector3f[8];
 	private final float[] cascadeEnds = new float[CASCADE_COUNT];
 	private final float[] cascadeTexelWorldSizes = new float[CASCADE_COUNT];
+	private final float[] cascadeDepthRanges = new float[CASCADE_COUNT];
 	private final int[] targetSizes = new int[CASCADE_COUNT];
 	private final ByteBuffer cascadeUpload = ByteBuffer.allocateDirect(CASCADE_UBO_BYTES).order(ByteOrder.nativeOrder());
 	private final ByteBuffer shadowUpload = ByteBuffer.allocateDirect(SHADOW_DATA_BYTES).order(ByteOrder.nativeOrder());
@@ -44,9 +46,9 @@ public final class DirectionalShadowRenderer {
 	private final Vector3f sunDirection = new Vector3f();
 	private final Vector3f moonDirection = new Vector3f();
 	private final Matrix4f inverseViewRotation = new Matrix4f();
-	private float cameraX;
-	private float cameraY;
-	private float cameraZ;
+	private double cameraX;
+	private double cameraY;
+	private double cameraZ;
 
 	private DirectionalShadowRenderer() {
 		for (int i = 0; i < CASCADE_COUNT; i++) {
@@ -112,9 +114,9 @@ public final class DirectionalShadowRenderer {
 			this.inverseViewRotation.identity();
 		}
 		if (levelRenderState.cameraRenderState.pos != null) {
-			this.cameraX = (float) levelRenderState.cameraRenderState.pos.x;
-			this.cameraY = (float) levelRenderState.cameraRenderState.pos.y;
-			this.cameraZ = (float) levelRenderState.cameraRenderState.pos.z;
+			this.cameraX = levelRenderState.cameraRenderState.pos.x;
+			this.cameraY = levelRenderState.cameraRenderState.pos.y;
+			this.cameraZ = levelRenderState.cameraRenderState.pos.z;
 		} else {
 			this.cameraX = 0.0f;
 			this.cameraY = 0.0f;
@@ -128,17 +130,22 @@ public final class DirectionalShadowRenderer {
 			float end = i < this.activeCascadeCount ? splits[i] : 0.0f;
 			this.cascadeEnds[i] = end;
 			if (i < this.activeCascadeCount) {
-				float start = i == 0 ? 1.0f : splits[i - 1] * 0.78f;
+				float start = i == 0 ? 0.5f : splits[i - 1] * 0.82f;
 				this.fitCascadeMatrix(i, inverseProjection, start, end, this.cascadeMatrices[i]);
 			} else {
 				this.cascadeMatrices[i].identity();
 				this.cascadeTexelWorldSizes[i] = 0.0f;
+				this.cascadeDepthRanges[i] = 0.0f;
 			}
 		}
 	}
 
 	public int activeCascadeCount() {
 		return this.activeCascadeCount;
+	}
+
+	public Matrix4fc cascadeMatrix(int cascade) {
+		return this.cascadeMatrices[cascade];
 	}
 
 	public float shadowDistance() {
@@ -164,9 +171,9 @@ public final class DirectionalShadowRenderer {
 			for (int y = 0; y <= 16; y += 16) {
 				for (int z = 0; z <= 16; z += 16) {
 					Vector4f clip = matrix.transform(new Vector4f(
-							originX + x - this.cameraX,
-							originY + y - this.cameraY,
-							originZ + z - this.cameraZ,
+							(float) (originX + x - this.cameraX),
+							(float) (originY + y - this.cameraY),
+							(float) (originZ + z - this.cameraZ),
 							1.0f));
 					if (Math.abs(clip.w) < 1.0e-5f) {
 						continue;
@@ -215,11 +222,10 @@ public final class DirectionalShadowRenderer {
 			this.shadowUpload.position((i + 1) * 64);
 		}
 		for (int i = 0; i < CASCADE_COUNT; i++) {
-			float active = i < this.activeCascadeCount ? 1.0f : 0.0f;
-			putVec4(this.cascadeTexelWorldSizes[i], i == 0 ? 0.0f : this.cascadeEnds[i - 1], this.cascadeEnds[i], active, this.shadowUpload);
+			float depthRange = i < this.activeCascadeCount ? this.cascadeDepthRanges[i] : 0.0f;
+			putVec4(this.cascadeTexelWorldSizes[i], i == 0 ? 0.0f : this.cascadeEnds[i - 1], this.cascadeEnds[i], depthRange, this.shadowUpload);
 		}
-		float normalOffsetScale = receiverNormalOffsetScale(this.lightDirection.y);
-		putVec4(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z, normalOffsetScale, this.shadowUpload);
+		putVec4(this.lightDirection.x, this.lightDirection.y, this.lightDirection.z, 0.0f, this.shadowUpload);
 		putVec4(0.92f, 0.0f, 0.30f, 1.0f, this.shadowUpload);
 		this.inverseViewRotation.get(this.shadowUpload);
 		this.shadowUpload.rewind();
@@ -228,6 +234,18 @@ public final class DirectionalShadowRenderer {
 
 	public GpuBufferSlice shadowDataSlice() {
 		return this.shadowDataSlice;
+	}
+
+	public boolean resourcesReady() {
+		if (this.shadowDataSlice == null) {
+			return false;
+		}
+		for (RenderTarget target : this.targets) {
+			if (target == null || target.getDepthTextureView() == null || target.getColorTextureView() == null) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void clearCascade(CommandEncoder encoder, int cascade) {
@@ -254,77 +272,62 @@ public final class DirectionalShadowRenderer {
 		this.destroyTargets();
 		for (int i = 0; i < CASCADE_COUNT; i++) {
 			this.targetSizes[i] = sizes[i];
-			RenderTargetDescriptor descriptor = new RenderTargetDescriptor(sizes[i], sizes[i], true, CLEAR, GpuFormat.RGBA8_UNORM);
+			RenderTargetDescriptor descriptor = new RenderTargetDescriptor(sizes[i], sizes[i], true, CLEAR, GpuFormat.R8_UNORM);
 			this.targets[i] = descriptor.allocate();
 			descriptor.prepare(this.targets[i]);
 		}
 	}
 
 	private void fitCascadeMatrix(int cascade, Matrix4f inverseProjection, float start, float end, Matrix4f destination) {
-		this.buildFrustumSlice(inverseProjection, Math.max(0.25f, start), Math.max(start + 1.0f, end));
+		this.buildFrustumSlice(inverseProjection, start, end);
+		Vector3f center = new Vector3f();
+		for (Vector3f corner : this.frustumCorners) {
+			center.add(corner);
+		}
+		center.div(this.frustumCorners.length);
+
+		float radius = 0.0f;
+		for (Vector3f corner : this.frustumCorners) {
+			radius = Math.max(radius, center.distance(corner));
+		}
+		radius += Math.max(2.0f, (end - start) * 0.03f);
+		radius = (float) Math.ceil(radius * 16.0f) / 16.0f;
 
 		Vector3f up = Math.abs(this.lightDirection.y) > 0.88f ? new Vector3f(0.0f, 0.0f, 1.0f) : new Vector3f(0.0f, 1.0f, 0.0f);
 		Vector3f lightRight = new Vector3f(up).cross(this.lightDirection).normalize();
 		Vector3f lightUp = new Vector3f(this.lightDirection).cross(lightRight).normalize();
 
-		float minX = Float.POSITIVE_INFINITY;
-		float minY = Float.POSITIVE_INFINITY;
-		float minZ = Float.POSITIVE_INFINITY;
-		float maxX = Float.NEGATIVE_INFINITY;
-		float maxY = Float.NEGATIVE_INFINITY;
-		float maxZ = Float.NEGATIVE_INFINITY;
-		for (Vector3f corner : this.frustumCorners) {
-			float lightX = lightRight.dot(corner);
-			float lightY = lightUp.dot(corner);
-			float lightZ = this.lightDirection.dot(corner);
-			minX = Math.min(minX, lightX);
-			minY = Math.min(minY, lightY);
-			minZ = Math.min(minZ, lightZ);
-			maxX = Math.max(maxX, lightX);
-			maxY = Math.max(maxY, lightY);
-			maxZ = Math.max(maxZ, lightZ);
-		}
-
-		float padding = Math.max(8.0f, (end - start) * 0.08f);
-		float halfExtent = Math.max((maxX - minX) * 0.5f, (maxY - minY) * 0.5f) + padding;
-		float centerX = (minX + maxX) * 0.5f;
-		float centerY = (minY + maxY) * 0.5f;
-		float centerZ = (minZ + maxZ) * 0.5f;
-		float texelSize = (halfExtent * 2.0f) / Math.max(1, this.targetSizes[cascade]);
+		float centerX = lightRight.dot(center);
+		float centerY = lightUp.dot(center);
+		float texelSize = (radius * 2.0f) / Math.max(1, this.targetSizes[cascade]);
 		this.cascadeTexelWorldSizes[cascade] = texelSize;
-		if (texelSize > 0.0f) {
-			centerX = Math.round(centerX / texelSize) * texelSize;
-			centerY = Math.round(centerY / texelSize) * texelSize;
-		}
+		centerX = Math.round(centerX / texelSize) * texelSize;
+		centerY = Math.round(centerY / texelSize) * texelSize;
 
-		float depthPadding = Math.max(80.0f, end * 0.75f);
-		float shadowDepth = Math.max(64.0f, (maxZ - minZ) + depthPadding * 2.0f);
-		Vector3f stableCenter = new Vector3f()
-				.add(lightRight.x * centerX, lightRight.y * centerX, lightRight.z * centerX)
-				.add(lightUp.x * centerY, lightUp.y * centerY, lightUp.z * centerY)
-				.add(this.lightDirection.x * centerZ, this.lightDirection.y * centerZ, this.lightDirection.z * centerZ);
+		float depthPadding = Math.max(32.0f, Math.min(128.0f, end * 0.35f));
+		float shadowDepth = radius * 2.0f + depthPadding * 2.0f;
+		this.cascadeDepthRanges[cascade] = shadowDepth;
+		Vector3f stableCenter = new Vector3f(center)
+				.add(new Vector3f(lightRight).mul(centerX - lightRight.dot(center)))
+				.add(new Vector3f(lightUp).mul(centerY - lightUp.dot(center)));
 		Vector3f lightPos = new Vector3f(stableCenter).add(
-				this.lightDirection.x * shadowDepth * 0.5f,
-				this.lightDirection.y * shadowDepth * 0.5f,
-				this.lightDirection.z * shadowDepth * 0.5f);
+				this.lightDirection.x * (radius + depthPadding),
+				this.lightDirection.y * (radius + depthPadding),
+				this.lightDirection.z * (radius + depthPadding));
 		Matrix4f lightView = new Matrix4f().lookAt(lightPos, stableCenter, lightUp);
 		destination.identity()
-				.ortho(-halfExtent, halfExtent, -halfExtent, halfExtent, 0.1f, shadowDepth, true)
+				.ortho(-radius, radius, -radius, radius, 0.1f, shadowDepth, true)
 				.mul(lightView);
 	}
 
 	private void buildFrustumSlice(Matrix4f inverseProjection, float start, float end) {
 		int index = 0;
-		for (float distance : new float[] { start, end }) {
+		for (float distance : new float[] {start, end}) {
 			for (int y = -1; y <= 1; y += 2) {
 				for (int x = -1; x <= 1; x += 2) {
-					Vector4f view = inverseProjection.transform(new Vector4f((float) x, (float) y, 1.0f, 1.0f));
+					Vector4f view = inverseProjection.transform(new Vector4f(x, y, 1.0f, 1.0f));
 					view.div(view.w);
-					Vector3f ray = new Vector3f(view.x, view.y, view.z);
-					if (ray.lengthSquared() < 0.0001f) {
-						ray.set((float) x, (float) y, -1.0f);
-					}
-					ray.normalize().mul(distance);
+					Vector3f ray = new Vector3f(view.x, view.y, view.z).normalize().mul(distance);
 					this.inverseViewRotation.transformPosition(ray);
 					this.frustumCorners[index++].set(ray);
 				}
@@ -340,6 +343,7 @@ public final class DirectionalShadowRenderer {
 			}
 			this.targetSizes[i] = 0;
 			this.cascadeTexelWorldSizes[i] = 0.0f;
+			this.cascadeDepthRanges[i] = 0.0f;
 		}
 	}
 
@@ -363,11 +367,6 @@ public final class DirectionalShadowRenderer {
 			case ULTRA -> new int[] {4096, 2048, 2048, 1024};
 			case OFF -> new int[] {1024, 1024, 1024, 1024};
 		};
-	}
-
-	private static float receiverNormalOffsetScale(float lightElevation) {
-		float t = Math.max(0.0f, Math.min(1.0f, (lightElevation - 0.08f) / 0.92f));
-		return 2.15f + (0.92f - 2.15f) * t;
 	}
 
 	private static void putVec4(float x, float y, float z, float w, ByteBuffer buffer) {

@@ -13,12 +13,16 @@ import com.sulkan.shaders.render.shadow.DirectionalShadowPipelines;
 import com.sulkan.shaders.render.shadow.DirectionalShadowRenderer;
 import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.Optional;
+import java.util.OptionalDouble;
 
 @Mixin(PreparedRenderType.class)
 public abstract class RenderTypeMixin {
@@ -26,49 +30,81 @@ public abstract class RenderTypeMixin {
 	private static GpuSampler sulkan$shadowSampler;
 	@Unique
 	private boolean sulkan$bindEntityShadowReceivers;
-	@Unique
-	private boolean sulkan$bindEntityShadowCaster;
+
+	@Inject(
+			method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V",
+			at = @At("HEAD"),
+			cancellable = true)
+	private void sulkan$drawEntityShadowCaster(
+			GpuBuffer vertexBuffer,
+			GpuBuffer indexBuffer,
+			IndexType indexType,
+			int baseVertex,
+			int firstIndex,
+			int indexCount,
+			CallbackInfo ci) {
+		if (ShaderRuntime.resourceReloading()
+				|| !ShaderRuntime.pipelineState().shadowsEnabled()
+				|| !DirectionalShadowRenderer.isRenderingShadowMap()) {
+			return;
+		}
+
+		PreparedRenderType prepared = (PreparedRenderType) (Object) this;
+		RenderPipeline caster = DirectionalShadowPipelines.entityDepthPipeline(prepared.pipeline());
+		if (caster == null) {
+			// The dedicated shadow frame contains entity model submissions only. Any
+			// unsupported auxiliary layer must not leak its normal pipeline into R8.
+			ci.cancel();
+			return;
+		}
+
+		DirectionalShadowRenderer shadows = DirectionalShadowRenderer.get();
+		RenderTarget target = shadows.target(DirectionalShadowRenderer.activeCascade());
+		if (target == null || target.getColorTextureView() == null || target.getDepthTextureView() == null) {
+			ci.cancel();
+			return;
+		}
+
+		try (RenderPass pass = RenderSystem.getDevice()
+				.createCommandEncoder()
+				.createRenderPass(
+						() -> "Sulkan entity shadow caster",
+						target.getColorTextureView(),
+						Optional.empty(),
+						target.getDepthTextureView(),
+						OptionalDouble.empty())) {
+			pass.setPipeline(caster);
+			RenderSystem.bindDefaultUniforms(pass);
+			pass.setUniform("DynamicTransforms", prepared.dynamicTransforms());
+			pass.setUniform("SulkanCascade", shadows.cascadeSlice());
+			pass.setVertexBuffer(0, vertexBuffer.slice());
+			for (PreparedRenderType.Texture texture : prepared.textures()) {
+				if ("Sampler0".equals(texture.name())) {
+					pass.bindTexture(texture.name(), texture.textureView(), texture.sampler());
+					break;
+				}
+			}
+			pass.setIndexBuffer(indexBuffer, indexType);
+			pass.drawIndexed(indexCount, 1, firstIndex, baseVertex, 0);
+		}
+		ci.cancel();
+	}
 
 	@Redirect(method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderPass;setPipeline(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V"))
 	private void sulkan$swapEntityReceiverPipeline(RenderPass pass, RenderPipeline pipeline) {
 		this.sulkan$bindEntityShadowReceivers = false;
-		this.sulkan$bindEntityShadowCaster = false;
 		if (ShaderRuntime.resourceReloading() || !ShaderRuntime.pipelineState().shadowsEnabled()) {
 			pass.setPipeline(pipeline);
 			return;
-		}
-		if (DirectionalShadowRenderer.isRenderingShadowMap()) {
-			RenderPipeline caster = DirectionalShadowPipelines.entityDepthPipeline(pipeline);
-			if (caster != null) {
-				pass.setPipeline(caster);
-				this.sulkan$bindEntityShadowCaster = true;
-				return;
-			}
 		}
 		RenderPipeline receiver = sulkan$receiverPipeline(pipeline);
 		pass.setPipeline(receiver);
 		this.sulkan$bindEntityShadowReceivers = receiver != pipeline;
 	}
 
-	@Redirect(method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/rendertype/OutputTarget;getRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"))
-	private RenderTarget sulkan$entityShadowOutputTarget(OutputTarget outputTarget) {
-		if (!ShaderRuntime.resourceReloading() && DirectionalShadowRenderer.isRenderingShadowMap()) {
-			RenderTarget target = DirectionalShadowRenderer.get().target(DirectionalShadowRenderer.activeCascade());
-			if (target != null) {
-				return target;
-			}
-		}
-		return outputTarget.getRenderTarget();
-	}
-
 	@Redirect(method = "drawFromBuffer(Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/buffers/GpuBuffer;Lcom/mojang/blaze3d/IndexType;III)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderPass;bindTexture(Ljava/lang/String;Lcom/mojang/blaze3d/textures/GpuTextureView;Lcom/mojang/blaze3d/textures/GpuSampler;)V", ordinal = 0))
 	private void sulkan$bindEntityShadowMaps(RenderPass pass, String name, GpuTextureView view, GpuSampler sampler) {
 		pass.bindTexture(name, view, sampler);
-		if (this.sulkan$bindEntityShadowCaster) {
-			this.sulkan$bindEntityShadowCaster = false;
-			pass.setUniform("SulkanCascade", DirectionalShadowRenderer.get().cascadeSlice());
-			return;
-		}
 		if (!this.sulkan$bindEntityShadowReceivers) {
 			return;
 		}
@@ -79,9 +115,6 @@ public abstract class RenderTypeMixin {
 			RenderTarget target = shadows.target(cascade);
 			if (target != null && target.getDepthTextureView() != null) {
 				pass.bindTexture("SulkanShadowMap" + cascade, target.getDepthTextureView(), sulkan$shadowSampler());
-			}
-			if (target != null && target.getColorTextureView() != null) {
-				pass.bindTexture("SulkanShadowColorMap" + cascade, target.getColorTextureView(), sulkan$shadowSampler());
 			}
 		}
 	}

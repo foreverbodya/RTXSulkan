@@ -19,6 +19,7 @@ import java.util.Objects;
 public final class ShadersScreen extends ShaderScreenBase {
 	private static final Component TITLE = Component.literal("Shaders");
 	private static final Component SUBTITLE = Component.literal("Select a shader pack from the list. Built-in is the rewritten Sulkan profile bundled with the mod.");
+	private static final Component COMPACT_SUBTITLE = Component.literal("Select a shader pack.");
 	private static final int MAX_CONTENT_WIDTH = 980;
 	private static final int PANEL_GAP = 14;
 	private static final int BUTTON_HEIGHT = 20;
@@ -66,35 +67,34 @@ public final class ShadersScreen extends ShaderScreenBase {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor guiGraphicsExtractor, int mouseX, int mouseY, float partialTick) {
-		int margin = this.width < 520 ? 10 : 18;
-		int contentWidth = Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH);
-		int contentX = (this.width - contentWidth) / 2;
-		int contentY = margin + 8;
-		int contentHeight = this.height - margin - contentY;
-		int sideWidth = contentWidth < 760 ? contentWidth : Math.min(260, Math.max(220, contentWidth / 3));
-		int listWidth = contentWidth < 760 ? contentWidth : contentWidth - sideWidth - PANEL_GAP;
-		int listHeight = contentWidth < 760 ? Math.max(180, contentHeight - 188) : contentHeight;
-		int sideX = contentWidth < 760 ? contentX : contentX + listWidth + PANEL_GAP;
-		int sideY = contentWidth < 760 ? contentY + listHeight + PANEL_GAP : contentY;
-		int sideHeight = contentWidth < 760 ? Math.min(174, this.height - margin - sideY) : contentHeight;
+		Layout layout = this.layout();
+		this.fillPanel(guiGraphicsExtractor, layout.listX, layout.listY, layout.listWidth, layout.listHeight);
+		if (!layout.compact) {
+			this.fillPanel(guiGraphicsExtractor, layout.sideX, layout.sideY, layout.sideWidth, layout.sideHeight);
+		}
+		guiGraphicsExtractor.text(this.font, TITLE, layout.listX + 16, layout.listY + 14, TEXT_PRIMARY, true);
+		guiGraphicsExtractor.textWithWordWrap(
+				this.font,
+				layout.compact ? COMPACT_SUBTITLE : SUBTITLE,
+				layout.listX + 16,
+				layout.listY + 30,
+				layout.listWidth - 32,
+				TEXT_SECONDARY);
 
-		this.fillPanel(guiGraphicsExtractor, contentX, contentY, listWidth, listHeight);
-		this.fillPanel(guiGraphicsExtractor, sideX, sideY, sideWidth, sideHeight);
-		guiGraphicsExtractor.text(this.font, TITLE, contentX + 16, contentY + 14, TEXT_PRIMARY, true);
-		guiGraphicsExtractor.textWithWordWrap(this.font, SUBTITLE, contentX + 16, contentY + 30, listWidth - 32, TEXT_SECONDARY);
-
-		int sideInnerX = sideX + 14;
-		int sideInnerWidth = sideWidth - 28;
-		guiGraphicsExtractor.text(this.font, Component.literal("Actions"), sideInnerX, sideY + 14, TEXT_PRIMARY, true);
-		guiGraphicsExtractor.text(this.font, Component.literal("Shadows: " + ShaderRuntime.config().shadowQualityPreset().displayName().getString()), sideInnerX, sideY + 36, TEXT_SECONDARY);
-		guiGraphicsExtractor.text(this.font, Component.literal("AO: " + ShaderRuntime.config().aoQualityPreset().displayName().getString()), sideInnerX, sideY + 48, TEXT_SECONDARY);
-		guiGraphicsExtractor.text(this.font, Component.literal("Water: " + ShaderRuntime.config().waterQualityPreset().displayName().getString()), sideInnerX, sideY + 60, TEXT_SECONDARY);
-		guiGraphicsExtractor.text(this.font, Component.literal("Clouds: " + ShaderRuntime.config().cloudQualityPreset().displayName().getString()), sideInnerX, sideY + 72, TEXT_SECONDARY);
+		if (!layout.compact) {
+			int sideInnerX = layout.sideX + 14;
+			guiGraphicsExtractor.text(this.font, Component.literal("Actions"), sideInnerX, layout.sideY + 14, TEXT_PRIMARY, true);
+			guiGraphicsExtractor.text(this.font, Component.literal("Shadows: " + ShaderRuntime.config().shadowQualityPreset().displayName().getString()), sideInnerX, layout.sideY + 36, TEXT_SECONDARY);
+			guiGraphicsExtractor.text(this.font, Component.literal("AO: " + ShaderRuntime.config().aoQualityPreset().displayName().getString()), sideInnerX, layout.sideY + 48, TEXT_SECONDARY);
+			guiGraphicsExtractor.text(this.font, Component.literal("Water: " + ShaderRuntime.config().waterQualityPreset().displayName().getString()), sideInnerX, layout.sideY + 60, TEXT_SECONDARY);
+			guiGraphicsExtractor.text(this.font, Component.literal("Clouds: " + ShaderRuntime.config().cloudQualityPreset().displayName().getString()), sideInnerX, layout.sideY + 72, TEXT_SECONDARY);
+		}
 
 		int statusColor = this.statusError ? STATUS_ERROR : STATUS_SUCCESS;
-		guiGraphicsExtractor.textWithWordWrap(this.font, this.status, contentX + 16, contentY + listHeight - 34, listWidth - 32, statusColor);
-		if (!this.unsupportedPacks.isEmpty()) {
-			guiGraphicsExtractor.text(this.font, Component.literal("Unsupported entries ignored: " + this.unsupportedPacks.size()), contentX + 16, contentY + listHeight - 48, STATUS_ERROR);
+		int statusY = layout.compact ? this.compactStatusY(layout) : layout.listY + layout.listHeight - 34;
+		guiGraphicsExtractor.textWithWordWrap(this.font, this.status, layout.listX + 16, statusY, layout.listWidth - 32, statusColor);
+		if (!layout.compact && !this.unsupportedPacks.isEmpty()) {
+			guiGraphicsExtractor.text(this.font, Component.literal("Unsupported entries ignored: " + this.unsupportedPacks.size()), layout.listX + 16, layout.listY + layout.listHeight - 48, STATUS_ERROR);
 		}
 		super.extractRenderState(guiGraphicsExtractor, mouseX, mouseY, partialTick);
 	}
@@ -115,25 +115,20 @@ public final class ShadersScreen extends ShaderScreenBase {
 		if (this.packList == null) {
 			return;
 		}
-		int margin = this.width < 520 ? 10 : 18;
-		int contentWidth = Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH);
-		int contentX = (this.width - contentWidth) / 2;
-		int contentY = margin + 8;
-		int contentHeight = this.height - margin - contentY;
-		boolean stacked = contentWidth < 760;
-		int sideWidth = stacked ? contentWidth : Math.min(260, Math.max(220, contentWidth / 3));
-		int listWidth = stacked ? contentWidth : contentWidth - sideWidth - PANEL_GAP;
-		int listHeight = stacked ? Math.max(180, contentHeight - 188) : contentHeight;
-		int sideX = stacked ? contentX : contentX + listWidth + PANEL_GAP;
-		int sideY = stacked ? contentY + listHeight + PANEL_GAP : contentY;
-		int sideHeight = stacked ? Math.min(174, this.height - margin - sideY) : contentHeight;
-		int listY = contentY + 58;
-		int listBottom = contentY + listHeight - 56;
-		this.packList.updateSizeAndPosition(listWidth - 24, Math.max(96, listBottom - listY), contentX + 12, listY);
+		Layout layout = this.layout();
+		this.updateButtonLabels(layout.compact);
+		if (layout.compact) {
+			this.repositionCompact(layout);
+			return;
+		}
 
-		int buttonX = sideX + 14;
-		int buttonWidth = sideWidth - 28;
-		int y = sideY + 92;
+		int listTop = layout.listY + 58;
+		int listBottom = layout.listY + layout.listHeight - 56;
+		this.packList.updateSizeAndPosition(layout.listWidth - 24, Math.max(24, listBottom - listTop), layout.listX + 12, listTop);
+
+		int buttonX = layout.sideX + 14;
+		int buttonWidth = layout.sideWidth - 28;
+		int y = layout.sideY + 92;
 		this.toggleButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
 		y += BUTTON_HEIGHT + BUTTON_GAP;
 		this.reloadButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, y);
@@ -143,7 +138,84 @@ public final class ShadersScreen extends ShaderScreenBase {
 		int halfWidth = (buttonWidth - BUTTON_GAP) / 2;
 		this.openFolderButton.setRectangle(halfWidth, BUTTON_HEIGHT, buttonX, y);
 		this.refreshButton.setRectangle(halfWidth, BUTTON_HEIGHT, buttonX + halfWidth + BUTTON_GAP, y);
-		this.doneButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, sideY + sideHeight - 30);
+		this.doneButton.setRectangle(buttonWidth, BUTTON_HEIGHT, buttonX, layout.sideY + layout.sideHeight - 30);
+	}
+
+	private void repositionCompact(Layout layout) {
+		int innerX = layout.listX + 12;
+		int innerWidth = Math.max(1, layout.listWidth - 24);
+		int columns = innerWidth >= 300 ? 3 : 2;
+		int rows = (6 + columns - 1) / columns;
+		int gap = 5;
+		int actionsHeight = rows * BUTTON_HEIGHT + (rows - 1) * gap;
+		int actionsY = layout.listY + layout.listHeight - 10 - actionsHeight;
+		int statusY = actionsY - 18;
+		int listTop = layout.listY + 48;
+		int listBottom = statusY - 4;
+		this.packList.updateSizeAndPosition(innerWidth, Math.max(24, listBottom - listTop), innerX, listTop);
+
+		Button[] buttons = {
+				this.toggleButton,
+				this.reloadButton,
+				this.settingsButton,
+				this.openFolderButton,
+				this.refreshButton,
+				this.doneButton
+		};
+		int buttonWidth = Math.max(1, (innerWidth - (columns - 1) * gap) / columns);
+		for (int i = 0; i < buttons.length; i++) {
+			int column = i % columns;
+			int row = i / columns;
+			buttons[i].setRectangle(
+					buttonWidth,
+					BUTTON_HEIGHT,
+					innerX + column * (buttonWidth + gap),
+					actionsY + row * (BUTTON_HEIGHT + gap));
+		}
+	}
+
+	private int compactStatusY(Layout layout) {
+		int innerWidth = Math.max(1, layout.listWidth - 24);
+		int columns = innerWidth >= 300 ? 3 : 2;
+		int rows = (6 + columns - 1) / columns;
+		int actionsHeight = rows * BUTTON_HEIGHT + (rows - 1) * 5;
+		return layout.listY + layout.listHeight - 10 - actionsHeight - 18;
+	}
+
+	private Layout layout() {
+		int margin = this.width < 520 || this.height < 320 ? 6 : 18;
+		int contentWidth = Math.max(1, Math.min(this.width - margin * 2, MAX_CONTENT_WIDTH));
+		int contentHeight = Math.max(1, this.height - margin * 2);
+		int contentX = (this.width - contentWidth) / 2;
+		int contentY = margin;
+		boolean compact = contentWidth < 760 || contentHeight < 260;
+		if (compact) {
+			return new Layout(contentX, contentY, contentWidth, contentHeight, contentX, contentY, contentWidth, contentHeight, true);
+		}
+		int sideWidth = Math.min(260, Math.max(220, contentWidth / 3));
+		int listWidth = contentWidth - sideWidth - PANEL_GAP;
+		return new Layout(
+				contentX,
+				contentY,
+				listWidth,
+				contentHeight,
+				contentX + listWidth + PANEL_GAP,
+				contentY,
+				sideWidth,
+				contentHeight,
+				false);
+	}
+
+	private record Layout(
+			int listX,
+			int listY,
+			int listWidth,
+			int listHeight,
+			int sideX,
+			int sideY,
+			int sideWidth,
+			int sideHeight,
+			boolean compact) {
 	}
 
 	private void refreshState() {
@@ -190,7 +262,7 @@ public final class ShadersScreen extends ShaderScreenBase {
 
 	private void toggleShaders() {
 		this.shadersEnabled = !this.shadersEnabled;
-		this.toggleButton.setMessage(this.toggleLabel());
+		this.updateButtonLabels(this.layout().compact);
 		this.applySelection(false, Component.literal(this.shadersEnabled ? "Enabling shaders..." : "Disabling shaders..."));
 	}
 
@@ -248,7 +320,7 @@ public final class ShadersScreen extends ShaderScreenBase {
 		this.refreshButton.active = active;
 		this.openFolderButton.active = true;
 		this.doneButton.active = true;
-		this.toggleButton.setMessage(this.toggleLabel());
+		this.updateButtonLabels(this.layout().compact);
 	}
 
 	private void resetStatus() {
@@ -260,6 +332,14 @@ public final class ShadersScreen extends ShaderScreenBase {
 
 	private Component toggleLabel() {
 		return Component.literal(this.shadersEnabled ? "Disable shaders" : "Enable shaders");
+	}
+
+	private void updateButtonLabels(boolean compact) {
+		this.toggleButton.setMessage(compact
+				? Component.literal(this.shadersEnabled ? "Disable" : "Enable")
+				: this.toggleLabel());
+		this.reloadButton.setMessage(Component.literal(compact ? "Reload" : "Reload shaders"));
+		this.openFolderButton.setMessage(Component.literal(compact ? "Folder" : "Open folder"));
 	}
 
 	private String packLabelText(String packId) {

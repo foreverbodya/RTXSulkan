@@ -1,8 +1,6 @@
 package com.sulkan.shaders.runtime;
 
 import com.mojang.logging.LogUtils;
-import com.sulkan.core.render.TerrainRegionManager;
-import com.sulkan.core.render.TerrainSectionInstanceData;
 import com.sulkan.shaders.config.ShaderConfig;
 import com.sulkan.shaders.effect.ShaderEffectRegistry;
 import com.sulkan.shaders.pack.ShaderPackRepository;
@@ -14,6 +12,7 @@ import com.sulkan.shaders.render.atmosphere.AtmosphereRenderer;
 import com.sulkan.shaders.render.cloud.VolumetricCloudRenderer;
 import com.sulkan.shaders.render.shadow.DirectionalShadowPipelines;
 import com.sulkan.shaders.render.shadow.DirectionalShadowRenderer;
+import com.sulkan.shaders.render.shadow.SodiumTerrainShadowPipelines;
 import com.sulkan.shaders.render.water.WaterSceneCapture;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
@@ -121,6 +120,7 @@ public final class ShaderRuntime {
 		ShaderPipelines.close();
 		DirectionalShadowPipelines.close();
 		DirectionalShadowRenderer.close();
+		SodiumTerrainShadowPipelines.close();
 		FullscreenPostRenderer.close();
 		ScenePostUniforms.close();
 		AtmosphereRenderer.close();
@@ -149,6 +149,7 @@ public final class ShaderRuntime {
 		} else {
 			DirectionalShadowRenderer.close();
 			DirectionalShadowPipelines.close();
+			SodiumTerrainShadowPipelines.close();
 		}
 		if (!pipelineState.waterEnabled()) {
 			WaterSceneCapture.close();
@@ -159,6 +160,7 @@ public final class ShaderRuntime {
 		ShaderPipelines.close();
 		DirectionalShadowPipelines.close();
 		DirectionalShadowRenderer.close();
+		SodiumTerrainShadowPipelines.close();
 		FullscreenPostRenderer.close();
 		ScenePostUniforms.close();
 		AtmosphereRenderer.close();
@@ -168,8 +170,6 @@ public final class ShaderRuntime {
 	}
 
 	private static void invalidateTerrainRenderer(Minecraft minecraft) {
-		TerrainSectionInstanceData.clear();
-		TerrainRegionManager.clear();
 		if (minecraft.level != null) {
 			minecraft.levelRenderer.invalidateCompiledGeometry(
 					minecraft.level,

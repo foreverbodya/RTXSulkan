@@ -42,7 +42,7 @@ layout(location = 7) out vec3 receiverPos;
 layout(location = 8) out float skyLight;
 layout(location = 9) out vec2 texCoord2;
 #ifndef NO_OVERLAY
-layout(location = 10) out ivec2 overlayUv;
+layout(location = 10) flat out ivec2 overlayUv;
 #endif
 layout(location = 11) out vec3 receiverNormal;
 

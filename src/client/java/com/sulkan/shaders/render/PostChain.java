@@ -2,7 +2,6 @@ package com.sulkan.shaders.render;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 public final class PostChain {
 	private static final PostChain INSTANCE = new PostChain();
@@ -19,11 +18,11 @@ public final class PostChain {
 		return INSTANCE;
 	}
 
-	public RenderTarget begin(RenderTarget mainTarget) {
+	public RenderTarget begin(CommandEncoder encoder, RenderTarget mainTarget) {
 		int targetWidth = Math.max(1, mainTarget.width);
 		int targetHeight = Math.max(1, mainTarget.height);
 		this.ensureTargets(targetWidth, targetHeight);
-		this.copy(mainTarget, this.targetA, targetWidth, targetHeight);
+		this.copy(encoder, mainTarget, this.targetA, targetWidth, targetHeight);
 		return this.targetA;
 	}
 
@@ -34,11 +33,11 @@ public final class PostChain {
 		return currentSource == this.targetA ? this.targetB : this.targetA;
 	}
 
-	public void copyToMain(RenderTarget source, RenderTarget mainTarget) {
+	public void copyToMain(CommandEncoder encoder, RenderTarget source, RenderTarget mainTarget) {
 		if (source == mainTarget) {
 			return;
 		}
-		this.copy(source, mainTarget, Math.max(1, mainTarget.width), Math.max(1, mainTarget.height));
+		this.copy(encoder, source, mainTarget, Math.max(1, mainTarget.width), Math.max(1, mainTarget.height));
 	}
 
 	public void close() {
@@ -67,15 +66,10 @@ public final class PostChain {
 		ShaderRenderTargets.color(width, height).prepare(this.targetB);
 	}
 
-	private void copy(RenderTarget source, RenderTarget target, int width, int height) {
-		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-		try {
-			encoder.copyTextureToTexture(source.getColorTexture(), target.getColorTexture(), 0, 0, 0, 0, 0, width, height);
-			if (source.getDepthTexture() != null && target.getDepthTexture() != null) {
-				encoder.copyTextureToTexture(source.getDepthTexture(), target.getDepthTexture(), 0, 0, 0, 0, 0, width, height);
-			}
-		} finally {
-			encoder.submit();
+	private void copy(CommandEncoder encoder, RenderTarget source, RenderTarget target, int width, int height) {
+		encoder.copyTextureToTexture(source.getColorTexture(), target.getColorTexture(), 0, 0, 0, 0, 0, width, height);
+		if (source.getDepthTexture() != null && target.getDepthTexture() != null) {
+			encoder.copyTextureToTexture(source.getDepthTexture(), target.getDepthTexture(), 0, 0, 0, 0, 0, width, height);
 		}
 	}
 }

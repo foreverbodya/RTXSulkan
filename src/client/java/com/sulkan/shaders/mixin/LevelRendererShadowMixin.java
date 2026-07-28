@@ -10,8 +10,12 @@ import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.sulkan.shaders.render.shadow.DirectionalShadowSubmitFilter;
 import com.sulkan.shaders.render.shadow.DirectionalShadowRenderer;
-import com.sulkan.shaders.render.shadow.ShadowTerrainSectionBuilder;
+import com.sulkan.shaders.render.shadow.SodiumShadowTerrainRenderer;
+import com.sulkan.shaders.mixin.sodium.SodiumWorldRendererAccessor;
 import com.sulkan.shaders.runtime.ShaderRuntime;
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
+import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
+import net.caffeinemc.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -22,7 +26,6 @@ import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -34,6 +37,7 @@ import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.sprite.AtlasManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.joml.Matrix4fc;
+import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -127,43 +131,68 @@ public abstract class LevelRendererShadowMixin {
 		pass.executes(() -> {
 			DirectionalShadowRenderer shadows = DirectionalShadowRenderer.get();
 			shadows.prepare(levelRenderState);
+			SodiumWorldRenderer sodiumRenderer = SodiumWorldRenderer.instanceNullable();
+			FeatureRenderDispatcher.PreparedFrame shadowEntityFrame = this.sulkan$hasShadowEntitySubmits
+					? this.sulkan$shadowFeatureDispatcher().prepareFrame(this.sulkan$shadowSubmitStorage)
+					: null;
 			GpuSampler sampler = this.chunkLayerSampler != null
 					? this.chunkLayerSampler
 					: RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-			for (int cascade = 0; cascade < shadows.activeCascadeCount(); cascade++) {
-				ChunkSectionsToRender shadowSections = ShadowTerrainSectionBuilder.build(
-						Minecraft.getInstance(),
-						((LevelRenderer) (Object) this).viewArea(),
-						((LevelRenderer) (Object) this).sectionRenderDispatcher(),
-						shadows,
-						cascade);
-				var encoder = RenderSystem.getDevice().createCommandEncoder();
-				try {
-					shadows.clearCascade(encoder, cascade);
-					shadows.uploadCascade(encoder, cascade);
-				} finally {
-					encoder.submit();
-				}
-				DirectionalShadowRenderer.beginCascade(cascade);
-				try {
-					if (shadowSections != null) {
-						shadowSections.renderGroup(ChunkSectionLayerGroup.OPAQUE, sampler);
-						shadowSections.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, sampler);
-					}
-					if (this.sulkan$hasShadowEntitySubmits) {
-						this.sulkan$renderShadowEntitySubmits();
-					}
-				} finally {
-					DirectionalShadowRenderer.endCascade();
-				}
-			}
 			var encoder = RenderSystem.getDevice().createCommandEncoder();
 			try {
+				try {
+					for (int cascade = 0; cascade < shadows.activeCascadeCount(); cascade++) {
+						shadows.clearCascade(encoder, cascade);
+						shadows.uploadCascade(encoder, cascade);
+						DirectionalShadowRenderer.beginCascade(cascade);
+						try {
+							if (sodiumRenderer != null && levelRenderState.cameraRenderState != null) {
+								this.sulkan$renderSodiumTerrainShadow(sodiumRenderer, shadows, cascade, sampler);
+							}
+							if (shadowEntityFrame != null) {
+								this.sulkan$renderShadowEntityFrame(shadowEntityFrame);
+							}
+						} finally {
+							DirectionalShadowRenderer.endCascade();
+						}
+					}
+				} finally {
+					if (shadowEntityFrame != null) {
+						shadowEntityFrame.close();
+						this.sulkan$shadowRenderBuffers.endFrame();
+					}
+				}
+				if (sodiumRenderer != null) {
+					((SodiumWorldRendererAccessor) sodiumRenderer).sulkan$uniformBufferManager().prepareFrame();
+				}
 				shadows.uploadShadowData(encoder);
 			} finally {
 				encoder.submit();
 			}
 		});
+	}
+
+	@Unique
+	private void sulkan$renderSodiumTerrainShadow(
+			SodiumWorldRenderer renderer,
+			DirectionalShadowRenderer shadows,
+			int cascade,
+			GpuSampler sampler) {
+		var cameraPos = this.levelRenderState.cameraRenderState.pos;
+		if (cameraPos == null) {
+			return;
+		}
+
+		((SodiumWorldRendererAccessor) renderer).sulkan$uniformBufferManager().prepareFrame();
+		ChunkRenderMatrices matrices = new ChunkRenderMatrices(
+				new Matrix4f(shadows.cascadeMatrix(cascade)),
+				new Matrix4f());
+		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
+				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.SOLID, sampler);
+		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
+				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.CUTOUT, sampler);
+		SodiumShadowTerrainRenderer.render(renderer, shadows, cascade, matrices,
+				cameraPos.x, cameraPos.y, cameraPos.z, DefaultTerrainRenderPasses.TRANSLUCENT, sampler);
 	}
 
 	@Inject(method = "close", at = @At("HEAD"))
@@ -179,13 +208,11 @@ public abstract class LevelRendererShadowMixin {
 	}
 
 	@Unique
-	private void sulkan$renderShadowEntitySubmits() {
-		FeatureRenderDispatcher dispatcher = this.sulkan$shadowFeatureDispatcher();
-		try {
-			dispatcher.renderAllFeatures(this.sulkan$shadowSubmitStorage);
-		} finally {
-			this.sulkan$shadowRenderBuffers.endFrame();
-		}
+	private void sulkan$renderShadowEntityFrame(FeatureRenderDispatcher.PreparedFrame frame) {
+		frame.executeSolid();
+		frame.executeTranslucent();
+		frame.executeTranslucentAfterTerrain();
+		frame.executeAlwaysOnTop();
 	}
 
 	@Unique

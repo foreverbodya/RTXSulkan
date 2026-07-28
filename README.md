@@ -1,11 +1,18 @@
 # Sulkan
 
-Sulkan is a client-side Fabric mod that provides Vulkan backend optimizations and optional shader loading for Minecraft.
+Sulkan is a client-side Fabric shader mod for Minecraft's Vulkan renderer. It uses Sodium as its rendering and optimization foundation.
 
 ## Features
 
-* Vulkan backend optimizations and telemetry.
-* Optional shader loading support.
+* Shader loading support for the Vulkan renderer.
+* Sodium-powered rendering optimizations.
+
+## Requirements
+
+* Minecraft 26.2
+* Fabric Loader 0.18.4 or newer
+* Fabric API 0.155.0 or newer for Minecraft 26.2
+* Sodium 0.9.1 or newer for Minecraft 26.2
 
 ## Links
 
@@ -18,7 +25,7 @@ To build the project, run:
 ```bash
 ./gradlew build
 ```
-The build produces a single distributable Sulkan JAR file containing both components under `build/libs/`.
+The build produces the distributable Sulkan JAR under `build/libs/`. Sodium remains a separate required mod and is not bundled into the JAR.
 
 ## License
 

@@ -21,10 +21,20 @@ loom {
 	}
 }
 
+repositories {
+	maven {
+		name = "CaffeineMC"
+		url = "https://maven.caffeinemc.net/releases"
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:${project.fabric_lifecycle_events_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation("net.caffeinemc:sodium-fabric:${project.sodium_version}") {
+		exclude group: "net.fabricmc", module: "fabric-loader"
+	}
 }
 
 processResources {

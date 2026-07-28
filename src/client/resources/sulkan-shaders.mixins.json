@@ -3,8 +3,6 @@
 	"package": "com.sulkan.shaders.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"ChunkSectionLayerMixin",
-		"ChunkSectionsToRenderMixin",
 		"CloudRendererMixin",
 		"LevelRendererPostMixin",
 		"LevelRendererShadowMixin",
@@ -13,8 +11,13 @@
 		"RenderTypeMixin",
 		"SkyRendererMixin",
 		"SubmitNodeStorageMixin",
-		"ViewAreaAccessor",
-		"VulkanDeviceShaderCompilerMixin"
+		"VulkanDeviceShaderCompilerMixin",
+		"sodium.DefaultChunkRendererMixin",
+		"sodium.RenderSectionManagerAccessor",
+		"sodium.ShaderChunkRendererMixin",
+		"sodium.SodiumWorldRendererAccessor",
+		"sodium.SodiumWorldRendererMixin",
+		"sodium.TerrainRenderPassMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
