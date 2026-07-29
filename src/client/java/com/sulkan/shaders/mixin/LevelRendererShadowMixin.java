@@ -68,7 +68,9 @@ public abstract class LevelRendererShadowMixin {
 	private AtlasManager atlasManager;
 
 	@Unique
-	private final SubmitNodeStorage sulkan$shadowSubmitStorage = new SubmitNodeStorage();
+	private final SubmitNodeStorage sulkan$nearShadowSubmitStorage = new SubmitNodeStorage();
+	@Unique
+	private final SubmitNodeStorage sulkan$farShadowSubmitStorage = new SubmitNodeStorage();
 	@Unique
 	private DirectionalShadowSubmitFilter sulkan$shadowSubmitFilter;
 	@Unique
@@ -76,7 +78,9 @@ public abstract class LevelRendererShadowMixin {
 	@Unique
 	private FeatureRenderDispatcher sulkan$shadowFeatureDispatcher;
 	@Unique
-	private boolean sulkan$hasShadowEntitySubmits;
+	private boolean sulkan$hasNearShadowEntitySubmits;
+	@Unique
+	private boolean sulkan$hasFarShadowEntitySubmits;
 
 	@Invoker("submitEntities")
 	protected abstract void sulkan$submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector collector);
@@ -94,19 +98,26 @@ public abstract class LevelRendererShadowMixin {
 			Vector4f fogColor,
 			boolean renderOutline,
 			CallbackInfo ci) {
-		this.sulkan$shadowSubmitStorage.getSubmitsPerOrder().clear();
-		this.sulkan$hasShadowEntitySubmits = false;
+		this.sulkan$nearShadowSubmitStorage.getSubmitsPerOrder().clear();
+		this.sulkan$farShadowSubmitStorage.getSubmitsPerOrder().clear();
+		this.sulkan$hasNearShadowEntitySubmits = false;
+		this.sulkan$hasFarShadowEntitySubmits = false;
 		if (ShaderRuntime.resourceReloading() || !ShaderRuntime.pipelineState().shadowsEnabled()) {
 			return;
 		}
 		DirectionalShadowRenderer shadows = DirectionalShadowRenderer.get();
-		this.sulkan$shadowSubmitFilter = new DirectionalShadowSubmitFilter(this.sulkan$shadowSubmitStorage, Math.max(64.0f, shadows.shadowDistance()));
+		this.sulkan$shadowSubmitFilter = new DirectionalShadowSubmitFilter(
+				this.sulkan$nearShadowSubmitStorage,
+				this.sulkan$farShadowSubmitStorage,
+				Math.max(24.0f, shadows.entityCascadeEnd(0)),
+				Math.max(64.0f, shadows.entityShadowDistance()));
 		boolean hadEntityOutlines = this.levelRenderState.shouldShowEntityOutlines;
 		this.levelRenderState.shouldShowEntityOutlines = false;
 		try {
 			this.sulkan$submitEntities(new PoseStack(), this.levelRenderState, this.sulkan$shadowSubmitFilter);
 			this.sulkan$submitFirstPersonPlayerShadow(deltaTracker, cameraRenderState);
-			this.sulkan$hasShadowEntitySubmits = this.sulkan$hasShadowSubmits();
+			this.sulkan$hasNearShadowEntitySubmits = this.sulkan$hasShadowSubmits(this.sulkan$nearShadowSubmitStorage);
+			this.sulkan$hasFarShadowEntitySubmits = this.sulkan$hasShadowSubmits(this.sulkan$farShadowSubmitStorage);
 		} finally {
 			this.levelRenderState.shouldShowEntityOutlines = hadEntityOutlines;
 		}
@@ -131,16 +142,12 @@ public abstract class LevelRendererShadowMixin {
 			DirectionalShadowRenderer shadows = DirectionalShadowRenderer.get();
 			shadows.prepare(levelRenderState);
 			SodiumWorldRenderer sodiumRenderer = SodiumWorldRenderer.instanceNullable();
-			FeatureRenderDispatcher.PreparedFrame shadowEntityFrame = this.sulkan$hasShadowEntitySubmits
-					? this.sulkan$shadowFeatureDispatcher().prepareFrame(this.sulkan$shadowSubmitStorage)
-					: null;
 			GpuSampler sampler = this.chunkLayerSampler != null
 					? this.chunkLayerSampler
 					: RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
 			var encoder = RenderSystem.getDevice().createCommandEncoder();
 			try {
-				try {
-					for (int cascade = 0; cascade < shadows.activeCascadeCount(); cascade++) {
+				for (int cascade = 0; cascade < shadows.activeCascadeCount(); cascade++) {
 						boolean terrainUpdate = shadows.shouldUpdateCascade(cascade);
 						boolean entityUpdate = shadows.shouldUpdateEntityCascade(cascade);
 						if (!terrainUpdate && !entityUpdate) {
@@ -162,20 +169,20 @@ public abstract class LevelRendererShadowMixin {
 							shadows.clearEntityCascade(encoder, cascade);
 							DirectionalShadowRenderer.beginEntityCascade(cascade);
 							try {
-							if (shadowEntityFrame != null) {
-								this.sulkan$renderShadowEntityFrame(shadowEntityFrame);
-							}
+								SubmitNodeStorage storage = cascade == 0
+										? this.sulkan$nearShadowSubmitStorage
+										: this.sulkan$farShadowSubmitStorage;
+								boolean hasSubmits = cascade == 0
+										? this.sulkan$hasNearShadowEntitySubmits
+										: this.sulkan$hasFarShadowEntitySubmits;
+								if (hasSubmits) {
+									this.sulkan$prepareAndRenderShadowEntities(storage);
+								}
 							} finally {
 								DirectionalShadowRenderer.endCascade();
 							}
 						}
 					}
-				} finally {
-					if (shadowEntityFrame != null) {
-						shadowEntityFrame.close();
-						this.sulkan$shadowRenderBuffers.endFrame();
-					}
-				}
 				if (sodiumRenderer != null) {
 					((SodiumWorldRendererAccessor) sodiumRenderer).sulkan$uniformBufferManager().prepareFrame();
 				}
@@ -226,6 +233,17 @@ public abstract class LevelRendererShadowMixin {
 	}
 
 	@Unique
+	private void sulkan$prepareAndRenderShadowEntities(SubmitNodeStorage storage) {
+		FeatureRenderDispatcher.PreparedFrame frame = this.sulkan$shadowFeatureDispatcher().prepareFrame(storage);
+		try {
+			this.sulkan$renderShadowEntityFrame(frame);
+		} finally {
+			frame.close();
+			this.sulkan$shadowRenderBuffers.endFrame();
+		}
+	}
+
+	@Unique
 	private FeatureRenderDispatcher sulkan$shadowFeatureDispatcher() {
 		if (this.sulkan$shadowFeatureDispatcher == null) {
 			this.sulkan$shadowRenderBuffers = new RenderBuffers(Runtime.getRuntime().availableProcessors());
@@ -258,8 +276,8 @@ public abstract class LevelRendererShadowMixin {
 	}
 
 	@Unique
-	private boolean sulkan$hasShadowSubmits() {
-		for (SubmitNodeCollection submitNodeCollection : this.sulkan$shadowSubmitStorage.getSubmitsPerOrder().values()) {
+	private boolean sulkan$hasShadowSubmits(SubmitNodeStorage storage) {
+		for (SubmitNodeCollection submitNodeCollection : storage.getSubmitsPerOrder().values()) {
 			for (FeatureRenderPhase<?> phase : submitNodeCollection.allPhases()) {
 				if (!phase.isEmpty()) {
 					return true;

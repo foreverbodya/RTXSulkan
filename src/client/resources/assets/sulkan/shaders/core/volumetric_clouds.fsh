@@ -18,6 +18,7 @@ layout(std140, binding = 0) uniform CloudParams {
 };
 
 uniform sampler2D CloudNoiseSampler;
+uniform sampler2D SceneDepthSampler;
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
@@ -82,6 +83,10 @@ vec2 getWindOffset(float windScale, float phase) {
 float sampleCumulusDensity(vec3 worldPos, vec4 layerMain, vec4 layerShape) {
     vec2 baseUv = worldPos.xz * layerShape.x;
     vec4 macroNoise = sampleCloudNoiseBlended(baseUv * 0.18 + getWindOffset(layerShape.w * 0.18, 14.6));
+    float macroPotential = dot(macroNoise.rga, vec3(0.34, 0.24, 0.42));
+    if (macroPotential < layerMain.w - 0.34) {
+        return 0.0;
+    }
     vec2 macroWarp = (macroNoise.rg * 2.0 - 1.0) * mix(0.60, 1.30, QualityAndFlags.z);
     vec2 warpedUv = baseUv + macroWarp;
     vec4 broadNoise = sampleCloudNoiseBlended(warpedUv * 0.55 + getWindOffset(layerShape.w * 0.34, 1.9));
@@ -114,6 +119,10 @@ float sampleCumulusDensity(vec3 worldPos, vec4 layerMain, vec4 layerShape) {
 float sampleWispDensity(vec3 worldPos, vec4 layerMain, vec4 layerShape) {
     vec2 baseUv = worldPos.xz * layerShape.x;
     vec4 macroNoise = sampleCloudNoiseBlended(baseUv * 0.14 + getWindOffset(layerShape.w * 0.16, 9.4));
+    float macroPotential = dot(macroNoise.rga, vec3(0.30, 0.22, 0.48));
+    if (macroPotential < layerMain.w - 0.38) {
+        return 0.0;
+    }
     vec2 warpedUv = baseUv + (macroNoise.ra * 2.0 - 1.0) * 0.55;
     vec2 stretchedUv = vec2(warpedUv.x * 2.2, warpedUv.y * 0.72);
     vec4 streakNoise = sampleCloudNoise(stretchedUv + vec2(0.0, worldPos.y * 0.0010) + getWindOffset(layerShape.w * 0.30, 17.4));
@@ -223,6 +232,12 @@ vec4 marchLayer(vec3 cameraPos, vec3 rayDir, vec4 layerMain, vec4 layerShape, bo
 }
 
 void main() {
+    float sceneDepth = texture(SceneDepthSampler, texCoord).r;
+    if (sceneDepth > 0.0001 && sceneDepth < 0.9999) {
+        fragColor = vec4(0.0);
+        return;
+    }
+
     vec3 cameraPos = CameraPosAndTime.xyz;
     vec3 rayDir = getWorldRay(texCoord);
     vec3 sunDir = normalize(SunDirAndVisibility.xyz);

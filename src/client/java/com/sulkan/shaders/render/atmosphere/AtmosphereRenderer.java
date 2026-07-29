@@ -10,6 +10,7 @@ import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.sulkan.shaders.config.ShaderQualityPreset;
+import com.sulkan.shaders.render.ShaderRenderTargets;
 import com.sulkan.shaders.render.sky.CustomCelestials;
 import com.sulkan.shaders.runtime.ShaderPipelines;
 import com.sulkan.shaders.runtime.ShaderRuntime;
@@ -47,6 +48,9 @@ public final class AtmosphereRenderer {
 	private GpuBufferSlice paramsSlice;
 	private GpuSampler linearSampler;
 	private GpuSampler depthSampler;
+	private RenderTarget shaftTarget;
+	private int shaftWidth = -1;
+	private int shaftHeight = -1;
 	private boolean preparedThisFrame;
 	private int screenWidth = 1;
 	private int screenHeight = 1;
@@ -139,7 +143,20 @@ public final class AtmosphereRenderer {
 		}
 
 		this.ensureGpuResources();
+		this.ensureShaftTarget();
 		this.upload(encoder);
+		try (RenderPass pass = encoder.createRenderPass(
+				() -> "Sulkan Atmosphere Shafts",
+				this.shaftTarget.getColorTextureView(),
+				Optional.empty(),
+				null,
+				OptionalDouble.empty())) {
+			pass.setPipeline(ShaderPipelines.ATMOSPHERE_SHAFTS);
+			RenderSystem.bindDefaultUniforms(pass);
+			pass.bindTexture("SceneDepthSampler", depthTarget.getDepthTextureView(), this.depthSampler);
+			pass.setUniform("AtmosphereParams", this.paramsSlice);
+			pass.draw(3, 1, 0, 0);
+		}
 		try (RenderPass pass = encoder.createRenderPass(
 				() -> "Sulkan Atmosphere Composite",
 				outputTarget.getColorTextureView(),
@@ -150,6 +167,7 @@ public final class AtmosphereRenderer {
 			RenderSystem.bindDefaultUniforms(pass);
 			pass.bindTexture("SceneColorSampler", sourceColorTarget.getColorTextureView(), this.depthSampler);
 			pass.bindTexture("SceneDepthSampler", depthTarget.getDepthTextureView(), this.depthSampler);
+			pass.bindTexture("AtmosphereShaftSampler", this.shaftTarget.getColorTextureView(), this.linearSampler);
 			pass.setUniform("AtmosphereParams", this.paramsSlice);
 			pass.draw(3, 1, 0, 0);
 		}
@@ -164,7 +182,32 @@ public final class AtmosphereRenderer {
 				&& outputTarget.getColorTexture() != null
 				&& depthTarget != null
 				&& depthTarget.getDepthTexture() != null
+				&& ShaderPipelines.ATMOSPHERE_SHAFTS != null
 				&& ShaderPipelines.ATMOSPHERE_COMPOSITE != null;
+	}
+
+	private void ensureShaftTarget() {
+		int divisor = ShaderRuntime.config().atmosphereQualityPreset() == ShaderQualityPreset.LOW ? 4 : 2;
+		int width = Math.max(1, this.screenWidth / divisor);
+		int height = Math.max(1, this.screenHeight / divisor);
+		if (this.shaftTarget != null && this.shaftWidth == width && this.shaftHeight == height) {
+			return;
+		}
+		this.destroyShaftTarget();
+		var descriptor = ShaderRenderTargets.colorOnly(width, height);
+		this.shaftTarget = descriptor.allocate();
+		descriptor.prepare(this.shaftTarget);
+		this.shaftWidth = width;
+		this.shaftHeight = height;
+	}
+
+	private void destroyShaftTarget() {
+		if (this.shaftTarget != null) {
+			this.shaftTarget.destroyBuffers();
+			this.shaftTarget = null;
+		}
+		this.shaftWidth = -1;
+		this.shaftHeight = -1;
 	}
 
 	private void upload(CommandEncoder encoder) {
@@ -260,6 +303,7 @@ public final class AtmosphereRenderer {
 		if (instance.depthSampler != null) {
 			instance.depthSampler.close();
 		}
+		instance.destroyShaftTarget();
 		instance = null;
 	}
 }

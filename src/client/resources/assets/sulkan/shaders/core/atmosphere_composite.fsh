@@ -5,6 +5,7 @@ layout(location = 0) out vec4 fragColor;
 
 uniform sampler2D SceneColorSampler;
 uniform sampler2D SceneDepthSampler;
+uniform sampler2D AtmosphereShaftSampler;
 
 layout(std140) uniform AtmosphereParams {
     mat4 ProjectionMat;
@@ -145,7 +146,7 @@ void main() {
         vec3 fogged = mix(sceneColor, fogTarget, fogAmount);
         fogged = mix(fogged, max(fogged, sceneColor), sunSceneMask * 0.88);
 
-    float rays = getGodRays(sunScreen, sunFront, sunVisibility, twilightBoost);
+    float rays = texture(AtmosphereShaftSampler, texCoord).r;
     float surfaceShaftFade = sky ? 1.0 : smoothstep(18.0, 140.0, distanceToCamera);
     vec3 shaftColor = mix(sunColor, fogColor, 0.18);
     fogged += shaftColor * rays * shaftIntensity * (1.14 + twilightBoost * 2.36) * surfaceShaftFade;

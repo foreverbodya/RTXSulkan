@@ -12,6 +12,14 @@ public final class ShaderRenderTargets {
 	}
 
 	public static RenderTargetDescriptor color(int width, int height) {
+		return colorDepth(width, height);
+	}
+
+	public static RenderTargetDescriptor colorOnly(int width, int height) {
+		return new RenderTargetDescriptor(width, height, false, CLEAR, GpuFormat.RGBA8_UNORM);
+	}
+
+	public static RenderTargetDescriptor colorDepth(int width, int height) {
 		return new RenderTargetDescriptor(width, height, true, CLEAR, GpuFormat.RGBA8_UNORM);
 	}
 }

@@ -52,9 +52,8 @@ void main() {
 #ifdef ALPHA_CUTOUT
 	if (color.a < float(ALPHA_CUTOUT)) discard;
 #endif
-	float visibility = sulkanDirectionalVisibility(v_ReceiverPos, normal);
-	float strength = ShadowParams.x * v_SkyLight;
-	visibility = mix(visibility, 1.0, smoothstep(0.25, 0.75, v_BlockLight));
+	float strength = ShadowParams.x * v_SkyLight * (1.0 - smoothstep(0.25, 0.75, v_BlockLight));
+	float visibility = strength > 0.001 ? sulkanDirectionalVisibility(v_ReceiverPos, normal) : 1.0;
 	color.rgb *= mix(1.0, visibility, strength);
 	fragColor = _linearFog(color, v_FragDistance, u_FogColor, u_EnvironmentFog, u_RenderFog, v_FadeFactor);
 }

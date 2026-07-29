@@ -10,11 +10,13 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.sulkan.shaders.mixin.RenderPipelinesAccessor;
 import com.sulkan.shaders.runtime.ShaderResourceIds;
+import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.minecraft.client.renderer.BindGroupLayouts;
 
 import java.util.Optional;
 
 public final class DirectionalShadowPipelines {
+	private static int receiverQualityTier = -1;
 	public static RenderPipeline ENTITY_DEPTH_SOLID;
 	public static RenderPipeline ENTITY_DEPTH_CUTOUT;
 	public static RenderPipeline ENTITY_DEPTH_TRANSLUCENT;
@@ -26,9 +28,12 @@ public final class DirectionalShadowPipelines {
 	}
 
 	public static void ensureInitialized() {
-		if (ENTITY_DEPTH_SOLID != null) {
+		int qualityTier = ShaderRuntime.config().shadowQualityPreset().tier();
+		if (ENTITY_DEPTH_SOLID != null && receiverQualityTier == qualityTier) {
 			return;
 		}
+		close();
+		receiverQualityTier = qualityTier;
 
 		DepthStencilState depthWrite = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 0.0f, 0.0f);
 		ColorTargetState shadowColor = new ColorTargetState(Optional.empty(), GpuFormat.R8_UNORM, ColorTargetState.WRITE_RED);
@@ -52,16 +57,22 @@ public final class DirectionalShadowPipelines {
 				.withCull(false)
 				.withBindGroupLayout(casterLayout())
 				.build();
-		ENTITY_RECEIVER_SOLID = entity("pipeline/shadow/entity_receiver_solid", "entity_shadow_receiver")
+		ENTITY_RECEIVER_SOLID = entity("pipeline/shadow/entity_receiver_solid_q" + qualityTier, "entity_shadow_receiver")
+				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
+				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
 				.withBindGroupLayout(receiverLayout())
 				.build();
-		ENTITY_RECEIVER_CUTOUT = entity("pipeline/shadow/entity_receiver_cutout", "entity_shadow_receiver")
+		ENTITY_RECEIVER_CUTOUT = entity("pipeline/shadow/entity_receiver_cutout_q" + qualityTier, "entity_shadow_receiver")
 				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
+				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
+				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
 				.withBindGroupLayout(receiverLayout())
 				.build();
-		ENTITY_RECEIVER_TRANSLUCENT = entity("pipeline/shadow/entity_receiver_translucent", "entity_shadow_receiver")
+		ENTITY_RECEIVER_TRANSLUCENT = entity("pipeline/shadow/entity_receiver_translucent_q" + qualityTier, "entity_shadow_receiver")
 				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
 				.withShaderDefine("PER_FACE_LIGHTING")
+				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
+				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
 				.withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
 				.withCull(false)
 				.withBindGroupLayout(receiverLayout())
@@ -75,6 +86,16 @@ public final class DirectionalShadowPipelines {
 		ENTITY_RECEIVER_SOLID = null;
 		ENTITY_RECEIVER_CUTOUT = null;
 		ENTITY_RECEIVER_TRANSLUCENT = null;
+		receiverQualityTier = -1;
+	}
+
+	private static int activeCascadeCount() {
+		return switch (ShaderRuntime.config().shadowQualityPreset()) {
+			case LOW -> 1;
+			case MEDIUM -> 3;
+			case HIGH, ULTRA -> 4;
+			case OFF -> 0;
+		};
 	}
 
 	public static RenderPipeline entityDepthPipeline(RenderPipeline pipeline) {

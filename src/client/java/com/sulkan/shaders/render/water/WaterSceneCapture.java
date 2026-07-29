@@ -10,8 +10,13 @@ public final class WaterSceneCapture {
 	private static RenderTarget capturedSceneTarget;
 	private static int capturedWidth = -1;
 	private static int capturedHeight = -1;
+	private static boolean capturedThisFrame;
 
 	private WaterSceneCapture() {
+	}
+
+	public static void beginFrame() {
+		capturedThisFrame = false;
 	}
 
 	public static void captureFrom(RenderTarget source) {
@@ -27,8 +32,8 @@ public final class WaterSceneCapture {
 		CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
 		encoder.copyTextureToTexture(source.getColorTexture(), capturedSceneTarget.getColorTexture(), 0, 0, 0, 0, 0, source.width, source.height);
 		encoder.copyTextureToTexture(source.getDepthTexture(), capturedSceneTarget.getDepthTexture(), 0, 0, 0, 0, 0, source.width, source.height);
-		// Command encoders share the device backend. The post chain submits once
-		// after translucent terrain, keeping this copy ordered without stalling Vulkan.
+		encoder.submit();
+		capturedThisFrame = true;
 	}
 
 	public static GpuTextureView colorTextureView() {
@@ -45,13 +50,17 @@ public final class WaterSceneCapture {
 				&& capturedSceneTarget.getDepthTextureView() != null;
 	}
 
+	public static boolean hasCaptureThisFrame() {
+		return capturedThisFrame && hasCapture();
+	}
+
 	private static void ensureTarget(int width, int height) {
 		if (capturedSceneTarget != null && capturedWidth == width && capturedHeight == height) {
 			return;
 		}
 
 		destroyTarget();
-		var descriptor = ShaderRenderTargets.color(width, height);
+		var descriptor = ShaderRenderTargets.colorDepth(width, height);
 		capturedSceneTarget = descriptor.allocate();
 		descriptor.prepare(capturedSceneTarget);
 		capturedWidth = width;
@@ -68,6 +77,7 @@ public final class WaterSceneCapture {
 	}
 
 	public static void close() {
+		capturedThisFrame = false;
 		destroyTarget();
 	}
 }

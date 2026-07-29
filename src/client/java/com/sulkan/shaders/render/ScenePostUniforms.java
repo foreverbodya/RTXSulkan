@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public final class ScenePostUniforms {
-	private static final int PARAM_BYTES = 64 + 64 + 16 * 4 + 64 + 16;
+	private static final int PARAM_BYTES = 64 + 64 + 16 * 4 + 64 + 16 + 16 * 4;
 	private static final float ORBIT_YAW_RADIANS = (float) Math.toRadians(-45.0F);
 	private static final float ORBIT_YAW_SIN = (float) Math.sin(ORBIT_YAW_RADIANS);
 	private static final float ORBIT_YAW_COS = (float) Math.cos(ORBIT_YAW_RADIANS);
@@ -35,8 +35,12 @@ public final class ScenePostUniforms {
 	private static final Matrix4f inverseViewRotation = new Matrix4f();
 	private static final Vector3f sunDirection = new Vector3f(0.0F, 1.0F, 0.0F);
 	private static final Vector3f sunDirectionView = new Vector3f(0.0F, 1.0F, 0.0F);
+	private static final Vector3f reflectedSunDirectionView = new Vector3f(0.0F, 1.0F, 0.0F);
 	private static final Vector3f upDirectionView = new Vector3f(0.0F, 1.0F, 0.0F);
 	private static final Vector3f fogColor = new Vector3f(0.58F, 0.68F, 0.86F);
+	private static final Vector3f vanillaSkyColor = new Vector3f(0.58F, 0.68F, 0.86F);
+	private static final Vector4f vanillaFogColor = new Vector4f(0.58F, 0.68F, 0.86F, 1.0F);
+	private static final Vector4f sunriseAndSunsetColor = new Vector4f();
 	private static final ByteBuffer uploadBuffer = ByteBuffer.allocateDirect(PARAM_BYTES).order(ByteOrder.nativeOrder());
 
 	private static GpuBuffer paramsBuffer;
@@ -51,6 +55,7 @@ public final class ScenePostUniforms {
 	private static float cameraY;
 	private static float cameraZ;
 	private static float cameraUnderwater;
+	private static float vanillaSkyFogEnd = 512.0F;
 
 	private ScenePostUniforms() {
 	}
@@ -101,10 +106,24 @@ public final class ScenePostUniforms {
 		SkyRenderState sky = levelRenderState == null ? null : levelRenderState.skyRenderState;
 		if (sky != null) {
 			setCelestialDirection(sky.sunAngle, sunDirection);
+			setVanillaCelestialDirection(sky.sunAngle, reflectedSunDirectionView);
+			modelView.transformDirection(reflectedSunDirectionView).normalize();
 			unpackRgb(sky.skyColor, fogColor);
+			unpackRgb(sky.skyColor, vanillaSkyColor);
+			unpackArgb(sky.sunriseAndSunsetColor, sunriseAndSunsetColor);
 		} else {
 			sunDirection.set(0.0F, 1.0F, 0.0F);
+			reflectedSunDirectionView.set(0.0F, 1.0F, 0.0F);
 			fogColor.set(0.58F, 0.68F, 0.86F);
+			vanillaSkyColor.set(0.58F, 0.68F, 0.86F);
+			sunriseAndSunsetColor.zero();
+		}
+		if (cameraState != null && cameraState.fogData != null) {
+			vanillaFogColor.set(cameraState.fogData.color);
+			vanillaSkyFogEnd = Math.max(cameraState.fogData.skyEnd, 1.0F);
+		} else if (fallbackFogColor != null) {
+			vanillaFogColor.set(fallbackFogColor);
+			vanillaSkyFogEnd = 512.0F;
 		}
 
 		if (fallbackFogColor != null) {
@@ -123,7 +142,6 @@ public final class ScenePostUniforms {
 			timeSeconds = 0.0F;
 			cameraUnderwater = 0.0F;
 		}
-
 		sunVisibility = clamp01((sunDirection.y + 0.08F) / 0.24F) * (1.0F - rainFactor * 0.68F);
 		modelView.transformDirection(sunDirection, sunDirectionView).normalize();
 		modelView.transformDirection(WORLD_UP, upDirectionView).normalize();
@@ -144,6 +162,10 @@ public final class ScenePostUniforms {
 		inverseViewRotation.get(uploadBuffer);
 		uploadBuffer.position(256);
 		putVec4(cameraX, cameraY, cameraZ, cameraUnderwater);
+		putVec4(reflectedSunDirectionView.x, reflectedSunDirectionView.y, reflectedSunDirectionView.z, 0.0F);
+		putVec4(vanillaSkyColor.x, vanillaSkyColor.y, vanillaSkyColor.z, vanillaSkyFogEnd);
+		putVec4(vanillaFogColor.x, vanillaFogColor.y, vanillaFogColor.z, vanillaFogColor.w);
+		putVec4(sunriseAndSunsetColor.x, sunriseAndSunsetColor.y, sunriseAndSunsetColor.z, sunriseAndSunsetColor.w);
 		uploadBuffer.rewind();
 		encoder.writeToBuffer(paramsSlice, uploadBuffer);
 		return paramsSlice;
@@ -173,11 +195,23 @@ public final class ScenePostUniforms {
 		out.set(horizontal * ORBIT_YAW_SIN, (float) Math.cos(angle), horizontal * ORBIT_YAW_COS);
 	}
 
+	private static void setVanillaCelestialDirection(float angle, Vector3f out) {
+		out.set(-(float) Math.sin(angle), (float) Math.cos(angle), 0.0F);
+	}
+
 	private static void unpackRgb(int packedRgb, Vector3f out) {
 		out.set(
 				((packedRgb >> 16) & 255) / 255.0F,
 				((packedRgb >> 8) & 255) / 255.0F,
 				(packedRgb & 255) / 255.0F);
+	}
+
+	private static void unpackArgb(int packedArgb, Vector4f out) {
+		out.set(
+				((packedArgb >> 16) & 255) / 255.0F,
+				((packedArgb >> 8) & 255) / 255.0F,
+				(packedArgb & 255) / 255.0F,
+				((packedArgb >>> 24) & 255) / 255.0F);
 	}
 
 	private static void putVec4(float x, float y, float z, float w) {

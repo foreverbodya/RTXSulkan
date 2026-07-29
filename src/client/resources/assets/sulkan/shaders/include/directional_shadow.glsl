@@ -1,12 +1,19 @@
 // Shared cascaded-shadow sampling. The including shader declares the four
 // SulkanShadowMap samplers and the SulkanShadowData uniform block.
 
+#ifndef SULKAN_SHADOW_CASCADE_COUNT
+#define SULKAN_SHADOW_CASCADE_COUNT 4
+#endif
+#ifndef SULKAN_SHADOW_FILTER_TIER
+#define SULKAN_SHADOW_FILTER_TIER 3
+#endif
+
 bool sulkanCascadeActive(int cascade) {
 	return CascadeParams[cascade].w > 0.5;
 }
 
 int sulkanLastCascade() {
-	for (int cascade = 3; cascade >= 0; --cascade) {
+	for (int cascade = SULKAN_SHADOW_CASCADE_COUNT - 1; cascade >= 0; --cascade) {
 		if (sulkanCascadeActive(cascade)) return cascade;
 	}
 	return 0;
@@ -14,7 +21,7 @@ int sulkanLastCascade() {
 
 int sulkanSelectCascade(float cameraDistance) {
 	int last = sulkanLastCascade();
-	for (int cascade = 0; cascade < 4; ++cascade) {
+	for (int cascade = 0; cascade < SULKAN_SHADOW_CASCADE_COUNT; ++cascade) {
 		if (sulkanCascadeActive(cascade) && cameraDistance <= CascadeParams[cascade].z) return cascade;
 	}
 	return last;
@@ -55,22 +62,26 @@ float sulkanEntityBilinearVisibility(int cascade, vec2 uv, float compareDepth) {
 }
 
 float sulkanEntityShadowVisibility(int cascade, vec2 uv, float compareDepth) {
-	if (ShadowParams.w < 6.0) {
+#if SULKAN_SHADOW_FILTER_TIER <= 1
 		return sulkanEntityBilinearVisibility(cascade, uv, compareDepth);
-	}
+#else
 
 	vec2 texel = sulkanEntityShadowTexel(cascade);
-	float radius = ShadowParams.w < 12.0 ? 0.55 : 0.85;
+	float radius = SULKAN_SHADOW_FILTER_TIER < 4 ? 0.55 : 0.85;
 	vec2 offset = texel * radius;
 	float corners = sulkanEntityBilinearVisibility(cascade, uv + vec2(-offset.x, -offset.y), compareDepth);
 	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2( offset.x, -offset.y), compareDepth);
 	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2(-offset.x,  offset.y), compareDepth);
 	corners += sulkanEntityBilinearVisibility(cascade, uv + vec2( offset.x,  offset.y), compareDepth);
 	corners *= 0.25;
-	if (ShadowParams.w < 12.0) return corners;
+#if SULKAN_SHADOW_FILTER_TIER < 4
+	return corners;
+#else
 
 	float center = sulkanEntityBilinearVisibility(cascade, uv, compareDepth);
 	return mix(center, corners, 0.65);
+#endif
+#endif
 }
 
 vec2 sulkanShadowTexel(int cascade) {
@@ -91,22 +102,26 @@ float sulkanShadowBilinearVisibility(int cascade, vec2 uv, float compareDepth) {
 }
 
 float sulkanCloseTerrainVisibility(int cascade, vec2 uv, float compareDepth) {
-	if (ShadowParams.w < 6.0) {
+#if SULKAN_SHADOW_FILTER_TIER <= 1
 		return sulkanShadowBilinearVisibility(cascade, uv, compareDepth);
-	}
+#else
 
 	vec2 texel = sulkanShadowTexel(cascade);
-	float radius = ShadowParams.w < 12.0 ? 0.55 : 0.85;
+	float radius = SULKAN_SHADOW_FILTER_TIER < 4 ? 0.55 : 0.85;
 	vec2 offset = texel * radius;
 	float corners = sulkanShadowBilinearVisibility(cascade, uv + vec2(-offset.x, -offset.y), compareDepth);
 	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2( offset.x, -offset.y), compareDepth);
 	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2(-offset.x,  offset.y), compareDepth);
 	corners += sulkanShadowBilinearVisibility(cascade, uv + vec2( offset.x,  offset.y), compareDepth);
 	corners *= 0.25;
-	if (ShadowParams.w < 12.0) return corners;
+#if SULKAN_SHADOW_FILTER_TIER < 4
+	return corners;
+#else
 
 	float center = sulkanShadowBilinearVisibility(cascade, uv, compareDepth);
 	return mix(center, corners, 0.65);
+#endif
+#endif
 }
 
 vec3 sulkanShadowCoord(int cascade, vec3 position) {
@@ -115,7 +130,7 @@ vec3 sulkanShadowCoord(int cascade, vec3 position) {
 }
 
 float sulkanShadowBias(int cascade, vec3 normal) {
-	vec3 lightDirection = normalize(LightDirection.xyz);
+	vec3 lightDirection = LightDirection.xyz;
 	float facing = max(dot(normal, lightDirection), 0.0);
 	float texelWorldSize = max(CascadeParams[cascade].x, 0.0001);
 	float worldBias = 0.012 + texelWorldSize * mix(0.40, 1.0, 1.0 - facing);
@@ -136,15 +151,20 @@ float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal) {
 	float visible;
 	if (cascade == 0) {
 		visible = sulkanCloseTerrainVisibility(cascade, coord.xy, compareDepth);
-	} else if (ShadowParams.w < 1.5) {
+#if SULKAN_SHADOW_FILTER_TIER <= 1
+	} else {
 		visible = step(compareDepth, sulkanShadowDepth(cascade, coord.xy));
-	} else if (ShadowParams.w < 6.0) {
+	}
+#elif SULKAN_SHADOW_FILTER_TIER == 2
+	} else {
 		visible = 0.0;
 		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2(-0.5, -0.5) * texel));
 		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2( 0.5, -0.5) * texel));
 		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2(-0.5,  0.5) * texel));
 		visible += step(compareDepth, sulkanShadowDepth(cascade, coord.xy + vec2( 0.5,  0.5) * texel));
 		visible *= 0.25;
+	}
+#else
 	} else {
 		visible = 0.0;
 		for (int y = -1; y <= 1; ++y) {
@@ -155,6 +175,7 @@ float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal) {
 		}
 		visible /= 9.0;
 	}
+#endif
 	float entityVisible = cascade < 2
 		? sulkanEntityShadowVisibility(cascade, coord.xy, compareDepth)
 		: 1.0;
@@ -165,6 +186,7 @@ float sulkanCastShadowVisibility(vec3 position, vec3 normal) {
 	float cameraDistance = length(position);
 	int current = sulkanSelectCascade(cameraDistance);
 	int last = sulkanLastCascade();
+	if (cameraDistance >= CascadeParams[last].z) return 1.0;
 	float currentVisibility = sulkanCascadeVisibility(current, position, normal);
 
 	if (current == last) {
@@ -180,8 +202,9 @@ float sulkanCastShadowVisibility(vec3 position, vec3 normal) {
 }
 
 float sulkanDirectionalVisibility(vec3 position, vec3 normal) {
-	vec3 lightDirection = normalize(LightDirection.xyz);
-	float faceLit = smoothstep(0.0, 0.08, dot(normal, lightDirection));
+	float normalLight = dot(normal, LightDirection.xyz);
+	if (normalLight <= 0.0) return ShadowParams.z;
+	float faceLit = smoothstep(0.0, 0.08, normalLight);
 	float faceVisibility = mix(ShadowParams.z, 1.0, faceLit);
 	float castVisibility = mix(ShadowParams.z, 1.0, sulkanCastShadowVisibility(position, normal));
 	return min(faceVisibility, castVisibility);

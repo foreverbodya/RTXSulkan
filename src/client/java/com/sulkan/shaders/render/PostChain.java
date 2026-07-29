@@ -60,10 +60,11 @@ public final class PostChain {
 		this.close();
 		this.width = width;
 		this.height = height;
-		this.targetA = ShaderRenderTargets.color(width, height).allocate();
-		ShaderRenderTargets.color(width, height).prepare(this.targetA);
-		this.targetB = ShaderRenderTargets.color(width, height).allocate();
-		ShaderRenderTargets.color(width, height).prepare(this.targetB);
+		var descriptor = ShaderRenderTargets.colorOnly(width, height);
+		this.targetA = descriptor.allocate();
+		descriptor.prepare(this.targetA);
+		this.targetB = descriptor.allocate();
+		descriptor.prepare(this.targetB);
 	}
 
 	private void copy(CommandEncoder encoder, RenderTarget source, RenderTarget target, int width, int height) {

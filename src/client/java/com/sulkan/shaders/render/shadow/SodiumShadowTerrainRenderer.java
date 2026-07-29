@@ -17,11 +17,12 @@ import net.caffeinemc.mods.sodium.client.util.FogParameters;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.BitSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.ListIterator;
+import java.util.Map;
 
 /** Builds and caches light-space terrain lists independently from Sodium's camera list. */
 public final class SodiumShadowTerrainRenderer {
@@ -77,6 +78,10 @@ public final class SodiumShadowTerrainRenderer {
 		terrainRevision++;
 	}
 
+	public static long terrainRevision() {
+		return terrainRevision;
+	}
+
 	public static void close() {
 		for (int cascade = 0; cascade < CACHED_PLANS.length; cascade++) {
 			clearPlanBatches(CACHED_PLANS[cascade], cascade);
@@ -107,10 +112,19 @@ public final class SodiumShadowTerrainRenderer {
 			return cached;
 		}
 
-		List<ChunkRenderList> lists = buildRenderLists(regions, shadows, cascade);
+		boolean spatiallyReusable = cached != null && cached.spatiallyMatches(
+				cameraX,
+				cameraY,
+				cameraZ,
+				lightDirection,
+				cameraForward,
+				shadows.cascadeEnd(cascade),
+				PLAN_MOVEMENT_LIMITS[cascade]);
+		PlanContents contents = buildRenderLists(regions, shadows, cascade, cached, spatiallyReusable);
 		CascadePlan next = new CascadePlan(
-				List.copyOf(lists),
-				new ShadowRenderLists(List.copyOf(lists)),
+				contents.lists,
+				new ShadowRenderLists(contents.lists),
+				contents.regions,
 				terrainRevision,
 				cameraX,
 				cameraY,
@@ -146,47 +160,74 @@ public final class SodiumShadowTerrainRenderer {
 				sectionTimeInfo);
 	}
 
-	private static List<ChunkRenderList> buildRenderLists(
+	private static PlanContents buildRenderLists(
 			Iterable<RenderRegion> regions,
 			DirectionalShadowRenderer shadows,
-			int cascade) {
+			int cascade,
+			CascadePlan previous,
+			boolean spatiallyReusable) {
 		List<ChunkRenderList> result = new ArrayList<>();
+		Map<RenderRegion, RegionPlan> nextRegions = new IdentityHashMap<>();
 		for (RenderRegion region : regions) {
-			ChunkRenderList list = new ChunkRenderList(region);
-			list.reset(0);
-			for (int index = 0; index < RenderRegion.REGION_SIZE; index++) {
-				int flags = region.getSectionFlags(index);
-				if ((flags & RenderSectionFlags.MASK_HAS_BLOCK_GEOMETRY) == 0) {
-					continue;
-				}
-				int sectionX = region.getChunkX() + LocalSectionIndex.unpackX(index);
-				int sectionY = region.getChunkY() + LocalSectionIndex.unpackY(index);
-				int sectionZ = region.getChunkZ() + LocalSectionIndex.unpackZ(index);
-				if (shadows.sectionIntersectsCascade(cascade, sectionX << 4, sectionY << 4, sectionZ << 4)) {
-					list.add(index);
-				}
+			long revision = ((ShadowRegionState) region).sulkan$shadowRevision();
+			RegionPlan priorRegion = previous == null ? null : previous.regions.get(region);
+			RegionPlan nextRegion;
+			if (spatiallyReusable && priorRegion != null && priorRegion.revision == revision) {
+				nextRegion = priorRegion;
+			} else {
+				nextRegion = buildRegionPlan(region, shadows, cascade, revision);
 			}
-			if (list.getSectionsWithGeometryCount() > 0) {
-				result.add(list);
+			nextRegions.put(region, nextRegion);
+			if (!nextRegion.sections.isEmpty()) {
+				result.add(nextRegion.list);
 			}
 		}
-		return result;
+		return new PlanContents(List.copyOf(result), nextRegions);
+	}
+
+	private static RegionPlan buildRegionPlan(RenderRegion region, DirectionalShadowRenderer shadows, int cascade, long revision) {
+		ChunkRenderList list = new ChunkRenderList(region);
+		BitSet sections = new BitSet(RenderRegion.REGION_SIZE);
+		list.reset(0);
+		for (int index = 0; index < RenderRegion.REGION_SIZE; index++) {
+			int flags = region.getSectionFlags(index);
+			if ((flags & RenderSectionFlags.MASK_HAS_BLOCK_GEOMETRY) == 0) {
+				continue;
+			}
+			int sectionX = region.getChunkX() + LocalSectionIndex.unpackX(index);
+			int sectionY = region.getChunkY() + LocalSectionIndex.unpackY(index);
+			int sectionZ = region.getChunkZ() + LocalSectionIndex.unpackZ(index);
+			if (shadows.sectionIntersectsCascade(cascade, sectionX << 4, sectionY << 4, sectionZ << 4)) {
+				list.add(index);
+				sections.set(index);
+			}
+		}
+		return new RegionPlan(list, sections, revision);
 	}
 
 	private static void clearChangedPlanBatches(CascadePlan previous, CascadePlan next, int cascade) {
-		Set<RenderRegion> regions = new LinkedHashSet<>();
-		if (previous != null) {
-			for (ChunkRenderList list : previous.lists) {
-				regions.add(list.getRegion());
+		if (previous == null) {
+			return;
+		}
+		for (Map.Entry<RenderRegion, RegionPlan> entry : previous.regions.entrySet()) {
+			RegionPlan replacement = next.regions.get(entry.getKey());
+			RegionPlan prior = entry.getValue();
+			if (replacement == null
+					|| prior.revision != replacement.revision
+					|| !prior.sections.equals(replacement.sections)) {
+				clearRegionBatches(entry.getKey(), cascade);
 			}
 		}
-		for (ChunkRenderList list : next.lists) {
-			regions.add(list.getRegion());
+		for (Map.Entry<RenderRegion, RegionPlan> entry : next.regions.entrySet()) {
+			if (!previous.regions.containsKey(entry.getKey()) && !entry.getValue().sections.isEmpty()) {
+				clearRegionBatches(entry.getKey(), cascade);
+			}
 		}
-		for (RenderRegion region : regions) {
-			region.clearCachedBatchFor(SodiumShadowTerrainPasses.solid(cascade));
-			region.clearCachedBatchFor(SodiumShadowTerrainPasses.cutout(cascade));
-		}
+	}
+
+	private static void clearRegionBatches(RenderRegion region, int cascade) {
+		region.clearCachedBatchFor(SodiumShadowTerrainPasses.solid(cascade));
+		region.clearCachedBatchFor(SodiumShadowTerrainPasses.cutout(cascade));
 	}
 
 	private static void clearPlanBatches(CascadePlan plan, int cascade) {
@@ -203,6 +244,7 @@ public final class SodiumShadowTerrainRenderer {
 	private record CascadePlan(
 			List<ChunkRenderList> lists,
 			ShadowRenderLists renderLists,
+			Map<RenderRegion, RegionPlan> regions,
 			long revision,
 			double cameraX,
 			double cameraY,
@@ -219,15 +261,33 @@ public final class SodiumShadowTerrainRenderer {
 				Vector3f currentCameraForward,
 				float currentCascadeEnd,
 				double movementLimit) {
+			return this.revision == currentRevision && this.spatiallyMatches(
+					currentCameraX, currentCameraY, currentCameraZ,
+					currentLightDirection, currentCameraForward, currentCascadeEnd, movementLimit);
+		}
+
+		private boolean spatiallyMatches(
+				double currentCameraX,
+				double currentCameraY,
+				double currentCameraZ,
+				Vector3f currentLightDirection,
+				Vector3f currentCameraForward,
+				float currentCascadeEnd,
+				double movementLimit) {
 			double dx = currentCameraX - this.cameraX;
 			double dy = currentCameraY - this.cameraY;
 			double dz = currentCameraZ - this.cameraZ;
-			return this.revision == currentRevision
-					&& dx * dx + dy * dy + dz * dz <= movementLimit * movementLimit
+			return dx * dx + dy * dy + dz * dz <= movementLimit * movementLimit
 					&& this.lightDirection.dot(currentLightDirection) >= PLAN_DIRECTION_DOT
 					&& this.cameraForward.dot(currentCameraForward) >= PLAN_DIRECTION_DOT
 					&& Math.abs(this.cascadeEnd - currentCascadeEnd) < 0.5f;
 		}
+	}
+
+	private record RegionPlan(ChunkRenderList list, BitSet sections, long revision) {
+	}
+
+	private record PlanContents(List<ChunkRenderList> lists, Map<RenderRegion, RegionPlan> regions) {
 	}
 
 	private record ShadowRenderLists(List<ChunkRenderList> lists) implements ChunkRenderListIterable {
@@ -236,9 +296,18 @@ public final class SodiumShadowTerrainRenderer {
 			if (!reverse) {
 				return this.lists.iterator();
 			}
-			List<ChunkRenderList> reversed = new ArrayList<>(this.lists);
-			Collections.reverse(reversed);
-			return reversed.iterator();
+			ListIterator<ChunkRenderList> iterator = this.lists.listIterator(this.lists.size());
+			return new Iterator<>() {
+				@Override
+				public boolean hasNext() {
+					return iterator.hasPrevious();
+				}
+
+				@Override
+				public ChunkRenderList next() {
+					return iterator.previous();
+				}
+			};
 		}
 	}
 }

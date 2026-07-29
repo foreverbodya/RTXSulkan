@@ -156,6 +156,16 @@ public final class ShaderRuntime {
 		}
 		if (!pipelineState.waterEnabled()) {
 			WaterSceneCapture.close();
+			FullscreenPostRenderer.releaseWaterTarget();
+		}
+		if (!pipelineState.aoEnabled()) {
+			FullscreenPostRenderer.releaseAmbientOcclusionTarget();
+		}
+		if (!pipelineState.atmosphereEnabled()) {
+			AtmosphereRenderer.close();
+		}
+		if (!pipelineState.cloudsEnabled()) {
+			VolumetricCloudRenderer.close();
 		}
 	}
 

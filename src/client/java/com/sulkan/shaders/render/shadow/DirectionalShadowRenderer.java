@@ -23,9 +23,9 @@ import java.nio.ByteOrder;
 public final class DirectionalShadowRenderer {
 	private static final int CASCADE_COUNT = 4;
 	private static final int ENTITY_CASCADE_COUNT = 2;
-	private static final int[] CASCADE_UPDATE_INTERVALS = {2, 6, 16, 32};
+	private static final int[] CASCADE_UPDATE_INTERVALS = {3, 8, 16, 32};
 	private static final int[] ENTITY_UPDATE_INTERVALS = {1, 2, 4, 8};
-	private static final double[] CASCADE_MOVEMENT_LIMITS = {0.0, 4.0, 12.0, 24.0};
+	private static final double[] CASCADE_MOVEMENT_LIMITS = {1.5, 4.0, 12.0, 24.0};
 	private static final int CASCADE_UBO_BYTES = 64 + 16 + 64;
 	private static final int SHADOW_DATA_BYTES = 64 * CASCADE_COUNT + 16 * CASCADE_COUNT + 16 + 16 + 64;
 	private static final Vector4f CLEAR = new Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -53,6 +53,7 @@ public final class DirectionalShadowRenderer {
 	private final double[] renderedCameraY = new double[CASCADE_COUNT];
 	private final double[] renderedCameraZ = new double[CASCADE_COUNT];
 	private final long[] renderedFrameSerial = new long[CASCADE_COUNT];
+	private final long[] renderedTerrainRevision = new long[CASCADE_COUNT];
 	private final long[] renderedEntityFrameSerial = new long[CASCADE_COUNT];
 	private final ByteBuffer cascadeUpload = ByteBuffer.allocateDirect(CASCADE_UBO_BYTES).order(ByteOrder.nativeOrder());
 	private final ByteBuffer shadowUpload = ByteBuffer.allocateDirect(SHADOW_DATA_BYTES).order(ByteOrder.nativeOrder());
@@ -182,6 +183,7 @@ public final class DirectionalShadowRenderer {
 					this.renderedCameraY[i] = this.cameraY;
 					this.renderedCameraZ[i] = this.cameraZ;
 					this.renderedFrameSerial[i] = this.frameSerial;
+					this.renderedTerrainRevision[i] = SodiumShadowTerrainRenderer.terrainRevision();
 					this.renderedLightDirections[i].set(this.lightDirection);
 					this.renderedCameraForwards[i].set(this.cameraForward);
 					this.cascadeInitialized[i] = true;
@@ -247,6 +249,19 @@ public final class DirectionalShadowRenderer {
 		return this.activeCascadeCount <= 0 ? 0.0f : this.cascadeEnds[this.activeCascadeCount - 1];
 	}
 
+	public float entityShadowDistance() {
+		if (this.activeCascadeCount <= 0) {
+			return 0.0f;
+		}
+		return this.cascadeEnds[Math.min(ENTITY_CASCADE_COUNT, this.activeCascadeCount) - 1];
+	}
+
+	public float entityCascadeEnd(int cascade) {
+		return cascade >= 0 && cascade < Math.min(ENTITY_CASCADE_COUNT, this.activeCascadeCount)
+				? this.cascadeEnds[cascade]
+				: 0.0f;
+	}
+
 	public RenderTarget target(int cascade) {
 		return cascade >= 0 && cascade < CASCADE_COUNT ? this.targets[cascade] : null;
 	}
@@ -273,18 +288,20 @@ public final class DirectionalShadowRenderer {
 		for (int x = 0; x <= 16; x += 16) {
 			for (int y = 0; y <= 16; y += 16) {
 				for (int z = 0; z <= 16; z += 16) {
-					Vector4f clip = matrix.transform(new Vector4f(
-							(float) (originX + x - this.cameraX),
-							(float) (originY + y - this.cameraY),
-							(float) (originZ + z - this.cameraZ),
-							1.0f));
-					if (Math.abs(clip.w) < 1.0e-5f) {
+					float relativeX = (float) (originX + x - this.cameraX);
+					float relativeY = (float) (originY + y - this.cameraY);
+					float relativeZ = (float) (originZ + z - this.cameraZ);
+					float clipX = matrix.m00() * relativeX + matrix.m10() * relativeY + matrix.m20() * relativeZ + matrix.m30();
+					float clipY = matrix.m01() * relativeX + matrix.m11() * relativeY + matrix.m21() * relativeZ + matrix.m31();
+					float clipZ = matrix.m02() * relativeX + matrix.m12() * relativeY + matrix.m22() * relativeZ + matrix.m32();
+					float clipW = matrix.m03() * relativeX + matrix.m13() * relativeY + matrix.m23() * relativeZ + matrix.m33();
+					if (Math.abs(clipW) < 1.0e-5f) {
 						continue;
 					}
-					float invW = 1.0f / clip.w;
-					float ndcX = clip.x * invW;
-					float ndcY = clip.y * invW;
-					float ndcZ = clip.z * invW;
+					float invW = 1.0f / clipW;
+					float ndcX = clipX * invW;
+					float ndcY = clipY * invW;
+					float ndcZ = clipZ * invW;
 					minX = Math.min(minX, ndcX);
 					minY = Math.min(minY, ndcY);
 					minZ = Math.min(minZ, ndcZ);
@@ -413,7 +430,9 @@ public final class DirectionalShadowRenderer {
 	}
 
 	private boolean shouldUpdateCascade(int cascade, boolean force) {
-		if (force || !this.cascadeInitialized[cascade] || cascade == 0) {
+		if (force
+				|| !this.cascadeInitialized[cascade]
+				|| this.renderedTerrainRevision[cascade] != SodiumShadowTerrainRenderer.terrainRevision()) {
 			return true;
 		}
 		int interval = CASCADE_UPDATE_INTERVALS[cascade];
@@ -458,15 +477,22 @@ public final class DirectionalShadowRenderer {
 		centerY = Math.round(centerY / texelSize) * texelSize;
 
 		float depthPadding = Math.max(32.0f, Math.min(128.0f, end * 0.35f));
-		float shadowDepth = radius * 2.0f + depthPadding * 2.0f;
+		// The first cascades contain nearby receivers, but their casters can be much
+		// farther away along the direction to the sun. Extrude only the light-facing
+		// side of those volumes across the loaded shadow range so long mountain and
+		// structure shadows remain present when a near cascade becomes authoritative.
+		float lightwardPadding = cascade < 2 ? Math.max(depthPadding, this.lastCoverage) : depthPadding;
+		float lightwardReach = radius + lightwardPadding;
+		float oppositeReach = radius + depthPadding;
+		float shadowDepth = lightwardReach + oppositeReach;
 		this.cascadeDepthRanges[cascade] = shadowDepth;
 		Vector3f stableCenter = new Vector3f(center)
 				.add(new Vector3f(lightRight).mul(centerX - lightRight.dot(center)))
 				.add(new Vector3f(lightUp).mul(centerY - lightUp.dot(center)));
 		Vector3f lightPos = new Vector3f(stableCenter).add(
-				this.lightDirection.x * (radius + depthPadding),
-				this.lightDirection.y * (radius + depthPadding),
-				this.lightDirection.z * (radius + depthPadding));
+				this.lightDirection.x * lightwardReach,
+				this.lightDirection.y * lightwardReach,
+				this.lightDirection.z * lightwardReach);
 		Matrix4f lightView = new Matrix4f().lookAt(lightPos, stableCenter, lightUp);
 		destination.identity()
 				.ortho(-radius, radius, -radius, radius, 0.1f, shadowDepth, true)

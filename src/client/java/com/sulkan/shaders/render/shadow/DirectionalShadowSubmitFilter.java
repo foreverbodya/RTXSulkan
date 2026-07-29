@@ -28,23 +28,41 @@ import java.util.List;
 
 public final class DirectionalShadowSubmitFilter implements SubmitNodeCollector {
 	private static final double ENTITY_DISTANCE_PADDING = 24.0;
-	private final SubmitNodeStorage storage;
-	private final OrderedSubmitNodeCollector delegate;
-	private final double maxDistance;
+	private final SubmitNodeStorage nearStorage;
+	private final SubmitNodeStorage farStorage;
+	private final OrderedSubmitNodeCollector nearDelegate;
+	private final OrderedSubmitNodeCollector farDelegate;
+	private final double nearDistance;
+	private final double farDistance;
 
-	public DirectionalShadowSubmitFilter(SubmitNodeStorage storage, double maxDistance) {
-		this(storage, storage, maxDistance);
+	public DirectionalShadowSubmitFilter(SubmitNodeStorage nearStorage, SubmitNodeStorage farStorage, double nearDistance, double farDistance) {
+		this(nearStorage, farStorage, nearStorage, farStorage, nearDistance, farDistance);
 	}
 
-	private DirectionalShadowSubmitFilter(SubmitNodeStorage storage, OrderedSubmitNodeCollector delegate, double maxDistance) {
-		this.storage = storage;
-		this.delegate = delegate;
-		this.maxDistance = maxDistance;
+	private DirectionalShadowSubmitFilter(
+			SubmitNodeStorage nearStorage,
+			SubmitNodeStorage farStorage,
+			OrderedSubmitNodeCollector nearDelegate,
+			OrderedSubmitNodeCollector farDelegate,
+			double nearDistance,
+			double farDistance) {
+		this.nearStorage = nearStorage;
+		this.farStorage = farStorage;
+		this.nearDelegate = nearDelegate;
+		this.farDelegate = farDelegate;
+		this.nearDistance = nearDistance;
+		this.farDistance = farDistance;
 	}
 
 	@Override
 	public OrderedSubmitNodeCollector order(int order) {
-		return new DirectionalShadowSubmitFilter(this.storage, this.storage.order(order), this.maxDistance);
+		return new DirectionalShadowSubmitFilter(
+				this.nearStorage,
+				this.farStorage,
+				this.nearStorage.order(order),
+				this.farStorage.order(order),
+				this.nearDistance,
+				this.farDistance);
 	}
 
 	@Override
@@ -69,8 +87,14 @@ public final class DirectionalShadowSubmitFilter implements SubmitNodeCollector 
 
 	@Override
 	public <S> void submitModel(Model<? super S> model, S state, PoseStack poseStack, RenderType renderType, int light, int overlay, int outlineColor, TextureAtlasSprite textureAtlasSprite, int packedOverlay, ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
-		if (this.accepts(state, renderType)) {
-			this.delegate.submitModel(model, state, poseStack, renderType, light, overlay, outlineColor, textureAtlasSprite, packedOverlay, crumblingOverlay);
+		if (DirectionalShadowPipelines.entityDepthPipeline(renderType.pipeline()) == null) {
+			return;
+		}
+		if (this.acceptsDistance(state, this.nearDistance)) {
+			this.nearDelegate.submitModel(model, state, poseStack, renderType, light, overlay, outlineColor, textureAtlasSprite, packedOverlay, crumblingOverlay);
+		}
+		if (this.acceptsDistance(state, this.farDistance)) {
+			this.farDelegate.submitModel(model, state, poseStack, renderType, light, overlay, outlineColor, textureAtlasSprite, packedOverlay, crumblingOverlay);
 		}
 	}
 
@@ -97,7 +121,8 @@ public final class DirectionalShadowSubmitFilter implements SubmitNodeCollector 
 	@Override
 	public void submitCustomGeometry(PoseStack poseStack, RenderType renderType, SubmitNodeCollector.CustomGeometryRenderer renderer) {
 		if (DirectionalShadowPipelines.entityDepthPipeline(renderType.pipeline()) != null) {
-			this.delegate.submitCustomGeometry(poseStack, renderType, renderer);
+			this.nearDelegate.submitCustomGeometry(poseStack, renderType, renderer);
+			this.farDelegate.submitCustomGeometry(poseStack, renderType, renderer);
 		}
 	}
 
@@ -109,15 +134,12 @@ public final class DirectionalShadowSubmitFilter implements SubmitNodeCollector 
 	public void submitGizmoPrimitives(DrawableGizmoPrimitives.Group group, CameraRenderState cameraRenderState, boolean fullBright) {
 	}
 
-	private boolean accepts(Object state, RenderType renderType) {
-		if (DirectionalShadowPipelines.entityDepthPipeline(renderType.pipeline()) == null) {
-			return false;
-		}
+	private boolean acceptsDistance(Object state, double maxDistance) {
 		if (!(state instanceof EntityRenderState entityState)) {
 			return true;
 		}
 		double sizePadding = Math.max(entityState.boundingBoxWidth, entityState.boundingBoxHeight) * 4.0;
-		double limit = this.maxDistance + ENTITY_DISTANCE_PADDING + sizePadding;
+		double limit = maxDistance + ENTITY_DISTANCE_PADDING + sizePadding;
 		return entityState.distanceToCameraSq <= limit * limit;
 	}
 }

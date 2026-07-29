@@ -200,6 +200,7 @@ public final class VolumetricCloudRenderer {
 			pass.setPipeline(ShaderPipelines.VOLUMETRIC_CLOUDS);
 			RenderSystem.bindDefaultUniforms(pass);
 			pass.bindTexture("CloudNoiseSampler", this.cloudNoiseTextureView, this.noiseSampler);
+			pass.bindTexture("SceneDepthSampler", depthTarget.getDepthTextureView(), this.depthSampler);
 			pass.setUniform("CloudParams", this.paramsSlice);
 			pass.draw(3, 1, 0, 0);
 		}
@@ -384,7 +385,7 @@ public final class VolumetricCloudRenderer {
 			return;
 		}
 		this.destroyTraceTarget();
-		var descriptor = ShaderRenderTargets.color(width, height);
+		var descriptor = ShaderRenderTargets.colorOnly(width, height);
 		this.cloudTraceTarget = descriptor.allocate();
 		descriptor.prepare(this.cloudTraceTarget);
 		this.traceWidth = width;

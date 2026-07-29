@@ -9,6 +9,7 @@ import com.sulkan.shaders.render.PostChain;
 import com.sulkan.shaders.render.ScenePostUniforms;
 import com.sulkan.shaders.render.atmosphere.AtmosphereRenderer;
 import com.sulkan.shaders.render.cloud.VolumetricCloudRenderer;
+import com.sulkan.shaders.render.water.WaterSceneCapture;
 import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -56,6 +57,7 @@ public abstract class LevelRendererPostMixin {
 		if (ShaderRuntime.resourceReloading()) {
 			return;
 		}
+		WaterSceneCapture.beginFrame();
 		if (ShaderRuntime.pipelineState().cloudsEnabled()) {
 			VolumetricCloudRenderer.get().beginFrame(
 					cameraState,
@@ -94,7 +96,7 @@ public abstract class LevelRendererPostMixin {
 		if (state.aoEnabled()) {
 			passCount++;
 		}
-		if (state.waterEnabled()) {
+		if (state.waterEnabled() && WaterSceneCapture.hasCaptureThisFrame()) {
 			passCount++;
 		}
 		VolumetricCloudRenderer cloudRenderer = VolumetricCloudRenderer.get();
@@ -128,16 +130,16 @@ public abstract class LevelRendererPostMixin {
 			RenderTarget source = postChain.begin(encoder, mainTarget);
 			int remainingPasses = passCount;
 
-			if (state.aoEnabled()) {
+			if (state.waterEnabled() && WaterSceneCapture.hasCaptureThisFrame()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyAmbientOcclusion(encoder, source, output, mainTarget)) {
+				if (FullscreenPostRenderer.applyWaterComposite(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;
 			}
-			if (state.waterEnabled()) {
+			if (state.aoEnabled()) {
 				RenderTarget output = postChain.output(source, mainTarget, remainingPasses);
-				if (FullscreenPostRenderer.applyWaterComposite(encoder, source, output, mainTarget)) {
+				if (FullscreenPostRenderer.applyAmbientOcclusion(encoder, source, output, mainTarget)) {
 					source = output;
 				}
 				remainingPasses--;

@@ -9,12 +9,15 @@ public final class ShaderPipelines {
 	public static RenderPipeline PASSTHROUGH;
 	public static RenderPipeline FXAA;
 	public static RenderPipeline AO_APPLY;
+	public static RenderPipeline AO_COMPOSITE;
 	public static RenderPipeline BLOOM_PREFILTER;
 	public static RenderPipeline WATER_COMPOSITE;
+	public static RenderPipeline WATER_TRACE;
 	public static RenderPipeline CLOUDS_COMPOSITE;
 	public static RenderPipeline VOLUMETRIC_CLOUDS;
 	public static RenderPipeline VOLUMETRIC_CLOUDS_COMPOSITE;
 	public static RenderPipeline ATMOSPHERE_COMPOSITE;
+	public static RenderPipeline ATMOSPHERE_SHAFTS;
 
 	private ShaderPipelines() {
 	}
@@ -27,12 +30,15 @@ public final class ShaderPipelines {
 
 		PASSTHROUGH = pipeline("pipeline/passthrough", "passthrough", "SceneColorSampler");
 		FXAA = state.fxaaEnabled() ? pipeline("pipeline/fxaa", "fxaa", "SceneColorSampler") : null;
-		AO_APPLY = state.aoEnabled() ? pipeline("pipeline/ao", "ao_apply", "SceneColorSampler") : null;
+		AO_APPLY = state.aoEnabled() ? aoTracePipeline() : null;
+		AO_COMPOSITE = state.aoEnabled() ? aoCompositePipeline() : null;
 		BLOOM_PREFILTER = state.bloomEnabled() ? pipeline("pipeline/bloom_prefilter", "bloom_prefilter", "SceneColorSampler") : null;
-		WATER_COMPOSITE = state.waterEnabled() ? waterPipeline(state.shadowsEnabled()) : null;
+		WATER_TRACE = state.waterEnabled() ? waterTracePipeline() : null;
+		WATER_COMPOSITE = state.waterEnabled() ? waterCompositePipeline() : null;
 		CLOUDS_COMPOSITE = null;
 		VOLUMETRIC_CLOUDS = state.cloudsEnabled() ? volumetricCloudTracePipeline() : null;
 		VOLUMETRIC_CLOUDS_COMPOSITE = state.cloudsEnabled() ? volumetricCloudCompositePipeline() : null;
+		ATMOSPHERE_SHAFTS = state.atmosphereEnabled() ? atmosphereShaftPipeline() : null;
 		ATMOSPHERE_COMPOSITE = state.atmosphereEnabled() ? atmospherePipeline() : null;
 	}
 
@@ -40,12 +46,15 @@ public final class ShaderPipelines {
 		PASSTHROUGH = null;
 		FXAA = null;
 		AO_APPLY = null;
+		AO_COMPOSITE = null;
 		BLOOM_PREFILTER = null;
 		WATER_COMPOSITE = null;
+		WATER_TRACE = null;
 		CLOUDS_COMPOSITE = null;
 		VOLUMETRIC_CLOUDS = null;
 		VOLUMETRIC_CLOUDS_COMPOSITE = null;
 		ATMOSPHERE_COMPOSITE = null;
+		ATMOSPHERE_SHAFTS = null;
 	}
 
 	private static RenderPipeline pipeline(String location, String fragmentShader, String samplerName) {
@@ -68,37 +77,66 @@ public final class ShaderPipelines {
 				.withFragmentShader(ShaderResourceIds.coreShader("volumetric_clouds"))
 				.withBindGroupLayout(BindGroupLayout.builder()
 						.withSampler("CloudNoiseSampler")
+						.withSampler("SceneDepthSampler")
 						.withUniform("CloudParams", UniformType.UNIFORM_BUFFER)
 						.build())
 				.build();
 	}
 
-	private static RenderPipeline waterPipeline(boolean shadowsEnabled) {
-		RenderPipeline.Builder builder = RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
-				.withLocation(ShaderResourceIds.id("pipeline/water"))
+	private static RenderPipeline waterTracePipeline() {
+		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
+				.withLocation(ShaderResourceIds.id("pipeline/water_trace"))
 				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
-				.withFragmentShader(ShaderResourceIds.coreShader("water_composite"));
-		BindGroupLayout.Builder layout = BindGroupLayout.builder()
-				.withSampler("SceneColorSampler")
-				.withSampler("SceneDepthSampler")
-				.withSampler("WaterSceneColorSampler")
-				.withSampler("WaterSceneDepthSampler");
-		if (shadowsEnabled) {
-			builder.withShaderDefine("SULKAN_WATER_SHADOWS");
-			layout.withSampler("SulkanShadowMap0")
-					.withSampler("SulkanShadowMap1")
-					.withSampler("SulkanShadowMap2")
-					.withSampler("SulkanShadowMap3")
-					.withSampler("SulkanEntityShadowMap0")
-					.withSampler("SulkanEntityShadowMap1")
-					.withSampler("SulkanEntityShadowMap2")
-					.withSampler("SulkanEntityShadowMap3");
-		}
-		layout.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER);
-		if (shadowsEnabled) {
-			layout.withUniform("SulkanShadowData", UniformType.UNIFORM_BUFFER);
-		}
-		return builder.withBindGroupLayout(layout.build()).build();
+				.withFragmentShader(ShaderResourceIds.coreShader("water_trace"))
+				.withBindGroupLayout(BindGroupLayout.builder()
+						.withSampler("SceneColorSampler")
+						.withSampler("SceneDepthSampler")
+						.withSampler("WaterSceneColorSampler")
+						.withSampler("WaterSceneDepthSampler")
+						.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER)
+						.build())
+				.build();
+	}
+
+	private static RenderPipeline waterCompositePipeline() {
+		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
+				.withLocation(ShaderResourceIds.id("pipeline/water_composite"))
+				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
+				.withFragmentShader(ShaderResourceIds.coreShader("water_composite"))
+				.withBindGroupLayout(BindGroupLayout.builder()
+						.withSampler("SceneColorSampler")
+						.withSampler("SceneDepthSampler")
+						.withSampler("WaterSceneColorSampler")
+						.withSampler("WaterSceneDepthSampler")
+						.withSampler("WaterTraceSampler")
+						.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER)
+						.build())
+				.build();
+	}
+
+	private static RenderPipeline aoTracePipeline() {
+		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
+				.withLocation(ShaderResourceIds.id("pipeline/ao_trace"))
+				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
+				.withFragmentShader(ShaderResourceIds.coreShader("ao_apply"))
+				.withBindGroupLayout(BindGroupLayout.builder()
+						.withSampler("SceneDepthSampler")
+						.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER)
+						.build())
+				.build();
+	}
+
+	private static RenderPipeline aoCompositePipeline() {
+		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
+				.withLocation(ShaderResourceIds.id("pipeline/ao_composite"))
+				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
+				.withFragmentShader(ShaderResourceIds.coreShader("ao_composite"))
+				.withBindGroupLayout(BindGroupLayout.builder()
+						.withSampler("SceneColorSampler")
+						.withSampler("SceneDepthSampler")
+						.withSampler("AoSampler")
+						.build())
+				.build();
 	}
 
 	private static RenderPipeline volumetricCloudCompositePipeline() {
@@ -121,6 +159,19 @@ public final class ShaderPipelines {
 				.withFragmentShader(ShaderResourceIds.coreShader("atmosphere_composite"))
 				.withBindGroupLayout(BindGroupLayout.builder()
 						.withSampler("SceneColorSampler")
+						.withSampler("SceneDepthSampler")
+						.withSampler("AtmosphereShaftSampler")
+						.withUniform("AtmosphereParams", UniformType.UNIFORM_BUFFER)
+						.build())
+				.build();
+	}
+
+	private static RenderPipeline atmosphereShaftPipeline() {
+		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
+				.withLocation(ShaderResourceIds.id("pipeline/atmosphere_shafts"))
+				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
+				.withFragmentShader(ShaderResourceIds.coreShader("atmosphere_shafts"))
+				.withBindGroupLayout(BindGroupLayout.builder()
 						.withSampler("SceneDepthSampler")
 						.withUniform("AtmosphereParams", UniformType.UNIFORM_BUFFER)
 						.build())

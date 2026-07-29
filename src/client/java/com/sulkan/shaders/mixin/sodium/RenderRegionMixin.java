@@ -2,6 +2,7 @@ package com.sulkan.shaders.mixin.sodium;
 
 import com.sulkan.shaders.render.shadow.SodiumShadowTerrainPasses;
 import com.sulkan.shaders.render.shadow.SodiumShadowTerrainRenderer;
+import com.sulkan.shaders.render.shadow.ShadowRegionState;
 import net.caffeinemc.mods.sodium.client.gpu.device.batch.MultiDrawBatch;
 import net.caffeinemc.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import net.caffeinemc.mods.sodium.client.render.chunk.data.BuiltSectionInfo;
@@ -19,9 +20,11 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 @Mixin(value = RenderRegion.class, remap = false)
-public abstract class RenderRegionMixin {
+public abstract class RenderRegionMixin implements ShadowRegionState {
 	@Unique
 	private final Map<TerrainRenderPass, MultiDrawBatch> sulkan$shadowBatches = new IdentityHashMap<>();
+	@Unique
+	private long sulkan$shadowRevision;
 
 	@Inject(method = "getStorage", at = @At("HEAD"), cancellable = true)
 	private void sulkan$shareSourceMeshStorage(TerrainRenderPass pass, CallbackInfoReturnable<SectionRenderDataStorage> cir) {
@@ -57,12 +60,14 @@ public abstract class RenderRegionMixin {
 	@Inject(method = "setSectionRenderState", at = @At("TAIL"))
 	private void sulkan$markShadowPlansDirty(int sectionIndex, BuiltSectionInfo info, CallbackInfo ci) {
 		this.sulkan$clearShadowBatches();
+		this.sulkan$shadowRevision++;
 		SodiumShadowTerrainRenderer.markTerrainDirty();
 	}
 
 	@Inject(method = "clearSectionRenderState", at = @At("TAIL"))
 	private void sulkan$markClearedShadowPlansDirty(int sectionIndex, CallbackInfo ci) {
 		this.sulkan$clearShadowBatches();
+		this.sulkan$shadowRevision++;
 		SodiumShadowTerrainRenderer.markTerrainDirty();
 	}
 
@@ -84,5 +89,10 @@ public abstract class RenderRegionMixin {
 		for (MultiDrawBatch batch : this.sulkan$shadowBatches.values()) {
 			batch.clear();
 		}
+	}
+
+	@Override
+	public long sulkan$shadowRevision() {
+		return this.sulkan$shadowRevision;
 	}
 }

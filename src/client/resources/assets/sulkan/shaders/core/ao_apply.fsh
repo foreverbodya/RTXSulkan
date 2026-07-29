@@ -1,9 +1,8 @@
 #version 460 core
 
-layout(binding = 0) uniform sampler2D SceneColorSampler;
-layout(binding = 1) uniform sampler2D SceneDepthSampler;
+layout(binding = 0) uniform sampler2D SceneDepthSampler;
 
-layout(std140, binding = 2) uniform SulkanSceneParams {
+layout(std140, binding = 1) uniform SulkanSceneParams {
 	mat4 ProjectionMat;
 	mat4 InverseProjectionMat;
 	vec4 SunDirAndVisibility;
@@ -20,11 +19,10 @@ bool isSkyDepth(float depth) {
 }
 
 void main() {
-	vec2 texel = 1.0 / vec2(textureSize(SceneColorSampler, 0));
-	vec3 center = texture(SceneColorSampler, texCoord).rgb;
+	vec2 texel = 1.0 / max(ScreenAndTime.xy, vec2(1.0));
 	float depth = texture(SceneDepthSampler, texCoord).r;
 	if (isSkyDepth(depth)) {
-		fragColor = vec4(center, 1.0);
+		fragColor = vec4(1.0);
 		return;
 	}
 	float occlusion = 0.0;
@@ -39,5 +37,5 @@ void main() {
 		}
 	}
 	occlusion = weightSum > 0.0 ? clamp(occlusion / weightSum * 0.34, 0.0, 0.22) : 0.0;
-	fragColor = vec4(center * (1.0 - occlusion), 1.0);
+	fragColor = vec4(vec3(1.0 - occlusion), 1.0);
 }

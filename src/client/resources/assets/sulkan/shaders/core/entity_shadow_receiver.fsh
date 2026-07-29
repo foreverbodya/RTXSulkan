@@ -65,7 +65,8 @@ void main() {
 	color *= texture(Sampler2, texCoord2);
 #endif
 	vec3 normal = dot(receiverNormal, receiverNormal) > 0.000001 ? normalize(receiverNormal) : vec3(0.0, 1.0, 0.0);
-	float visibility = sulkanDirectionalVisibility(receiverPos, normal);
-	color.rgb *= mix(1.0, visibility, ShadowParams.x * skyLight);
+	float strength = ShadowParams.x * skyLight;
+	float visibility = strength > 0.001 ? sulkanDirectionalVisibility(receiverPos, normal) : 1.0;
+	color.rgb *= mix(1.0, visibility, strength);
 	fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
 }

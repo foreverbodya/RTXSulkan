@@ -11,6 +11,7 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.sulkan.shaders.runtime.ShaderResourceIds;
+import com.sulkan.shaders.runtime.ShaderRuntime;
 import net.caffeinemc.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import net.minecraft.resources.Identifier;
 
@@ -21,6 +22,7 @@ import java.util.Optional;
 public final class SodiumTerrainShadowPipelines {
 	private static final Map<TerrainRenderPass, RenderPipeline> CASTERS = new IdentityHashMap<>();
 	private static final Map<TerrainRenderPass, RenderPipeline> RECEIVERS = new IdentityHashMap<>();
+	private static int receiverQualityTier = -1;
 
 	private SodiumTerrainShadowPipelines() {
 	}
@@ -30,20 +32,27 @@ public final class SodiumTerrainShadowPipelines {
 	}
 
 	public static RenderPipeline receiver(TerrainRenderPass pass, VertexFormat vertexFormat) {
+		int qualityTier = ShaderRuntime.config().shadowQualityPreset().tier();
+		if (receiverQualityTier != qualityTier) {
+			RECEIVERS.clear();
+			receiverQualityTier = qualityTier;
+		}
 		return RECEIVERS.computeIfAbsent(pass, ignored -> build(pass, vertexFormat, false));
 	}
 
 	public static void close() {
 		CASTERS.clear();
 		RECEIVERS.clear();
+		receiverQualityTier = -1;
 	}
 
 	private static RenderPipeline build(TerrainRenderPass pass, VertexFormat vertexFormat, boolean caster) {
 		String layer = pass.isTranslucent() ? "translucent" : pass.supportsFragmentDiscard() ? "cutout" : "solid";
 		String shader = caster ? "sodium_terrain_shadow" : "sodium_terrain_receiver";
+		String qualitySuffix = caster ? "" : "_q" + ShaderRuntime.config().shadowQualityPreset().tier();
 		RenderPipeline.Builder builder = RenderPipeline.builder()
 				.withBindGroupLayout(caster ? sodiumLayout() : receiverLayout())
-				.withLocation(Identifier.fromNamespaceAndPath("sulkan_sodium", "pipeline/shadow/" + shader + "_" + layer))
+				.withLocation(Identifier.fromNamespaceAndPath("sulkan_sodium", "pipeline/shadow/" + shader + "_" + layer + qualitySuffix))
 				.withVertexShader(ShaderResourceIds.coreShader(shader))
 				.withFragmentShader(ShaderResourceIds.coreShader(shader))
 				.withPrimitiveTopology(PrimitiveTopology.QUADS)
@@ -57,7 +66,9 @@ public final class SodiumTerrainShadowPipelines {
 		} else {
 			builder.withDepthStencilState(DepthStencilState.DEFAULT)
 					.withCull(true)
-					.withShaderDefine("USE_FOG");
+					.withShaderDefine("USE_FOG")
+					.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", ShaderRuntime.config().shadowQualityPreset().tier())
+					.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount());
 			if (pass.isTranslucent()) {
 				builder.withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT), GpuFormat.RGBA8_UNORM, 0xFFFFFFFF));
 			} else {
@@ -74,6 +85,15 @@ public final class SodiumTerrainShadowPipelines {
 		}
 
 		return builder.build();
+	}
+
+	private static int activeCascadeCount() {
+		return switch (ShaderRuntime.config().shadowQualityPreset()) {
+			case LOW -> 1;
+			case MEDIUM -> 3;
+			case HIGH, ULTRA -> 4;
+			case OFF -> 0;
+		};
 	}
 
 	private static BindGroupLayout sodiumLayout() {
