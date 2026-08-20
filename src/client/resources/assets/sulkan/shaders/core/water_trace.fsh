@@ -93,21 +93,45 @@ float waterLikelihood(vec3 sceneColor, vec3 capturedColor) {
 		* (1.0 - brightNeutral) * (1.0 - cloudWhite) * (1.0 - warmOrNeutralShift * 0.75));
 }
 
-void calmWaterWave(vec2 worldPosition, float time, out float height, out vec2 slope) {
+void calmWaterWave(
+		vec2 worldPosition,
+		float time,
+		float viewDistance,
+		out float height,
+		out vec2 slope,
+		out float surfaceDetail) {
 	const vec2 direction0 = vec2(0.9231, 0.3846);
 	const vec2 direction1 = vec2(-0.4472, 0.8944);
 	const vec2 direction2 = vec2(0.2425, -0.9701);
+	const vec2 detailDirection0 = vec2(0.7809, 0.6247);
+	const vec2 detailDirection1 = vec2(-0.6247, 0.7809);
+	const vec2 detailDirection2 = vec2(0.3162, -0.9487);
 	const vec3 amplitude = vec3(0.045, 0.022, 0.009);
 	const vec3 frequency = vec3(0.24, 0.41, 0.68);
+	const vec3 detailAmplitude = vec3(0.0032, 0.0018, 0.0010);
+	const vec3 detailFrequency = vec3(2.40, 3.70, 5.20);
 	float phase0 = dot(worldPosition, direction0) * frequency.x + time * 0.18;
 	float phase1 = dot(worldPosition, direction1) * frequency.y - time * 0.14;
 	float phase2 = dot(worldPosition, direction2) * frequency.z + time * 0.10;
+	float detailPhase0 = dot(worldPosition, detailDirection0) * detailFrequency.x + time * 0.32;
+	float detailPhase1 = dot(worldPosition, detailDirection1) * detailFrequency.y - time * 0.27;
+	float detailPhase2 = dot(worldPosition, detailDirection2) * detailFrequency.z + time * 0.21;
+	float detailFade = 1.0 - smoothstep(72.0, 240.0, viewDistance);
 	height = sin(phase0) * amplitude.x
 		+ sin(phase1) * amplitude.y
-		+ sin(phase2) * amplitude.z;
+		+ sin(phase2) * amplitude.z
+		+ detailFade * (sin(detailPhase0) * detailAmplitude.x
+			+ sin(detailPhase1) * detailAmplitude.y
+			+ sin(detailPhase2) * detailAmplitude.z);
 	slope = direction0 * (cos(phase0) * amplitude.x * frequency.x)
 		+ direction1 * (cos(phase1) * amplitude.y * frequency.y)
-		+ direction2 * (cos(phase2) * amplitude.z * frequency.z);
+		+ direction2 * (cos(phase2) * amplitude.z * frequency.z)
+		+ detailFade * (detailDirection0 * (cos(detailPhase0) * detailAmplitude.x * detailFrequency.x)
+			+ detailDirection1 * (cos(detailPhase1) * detailAmplitude.y * detailFrequency.y)
+			+ detailDirection2 * (cos(detailPhase2) * detailAmplitude.z * detailFrequency.z));
+	surfaceDetail = detailFade * (sin(detailPhase0) * 0.50
+		+ sin(detailPhase1) * 0.32
+		+ sin(detailPhase2) * 0.18);
 }
 
 bool traceReflection(vec3 origin, vec3 direction, out vec2 hitUv, out float confidence) {
@@ -217,7 +241,8 @@ void main() {
 	vec3 worldPosition = viewToWorldRelative(viewPosition) + CameraWorldAndFlags.xyz;
 	float waveHeight;
 	vec2 waveSlope;
-	calmWaterWave(worldPosition.xz, ScreenAndTime.z, waveHeight, waveSlope);
+	float surfaceDetail;
+	calmWaterWave(worldPosition.xz, ScreenAndTime.z, length(viewPosition), waveHeight, waveSlope, surfaceDetail);
 	vec3 viewNormal = worldDirToView(normalize(vec3(-waveSlope.x, 1.0, -waveSlope.y)));
 	vec3 reflectionDirection = reflect(normalize(viewPosition), viewNormal);
 	vec3 waveOffset = worldVectorToView(vec3(0.0, waveHeight, 0.0));

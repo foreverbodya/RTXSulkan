@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 
 public final class VolumetricCloudRenderer {
-	private static final int CLOUD_PARAMS_BYTES = 320;
+	private static final int CLOUD_PARAMS_BYTES = 240;
 	private static final int CLOUD_NOISE_SIZE = 256;
 
 	private static VolumetricCloudRenderer instance;
@@ -42,7 +42,6 @@ public final class VolumetricCloudRenderer {
 	private final Matrix4f inverseProjection = new Matrix4f();
 	private final Matrix4f inverseModelView = new Matrix4f();
 	private final Vector3f sunDirection = new Vector3f(0.0f, 1.0f, 0.0f);
-	private final Vector3f moonDirection = new Vector3f(0.0f, -1.0f, 0.0f);
 	private final Vector4f fogColor = new Vector4f(0.65f, 0.78f, 1.0f, 1.0f);
 
 	private GpuBuffer paramsBuffer;
@@ -58,14 +57,12 @@ public final class VolumetricCloudRenderer {
 	private boolean requestedThisFrame;
 	private float preparedFogCloudEnd = 1024.0f;
 	private float preparedSunVisibility = 1.0f;
-	private float preparedMoonVisibility;
 	private float preparedRainFactor;
 	private int screenWidth = 1;
 	private int screenHeight = 1;
 	private int traceWidth = -1;
 	private int traceHeight = -1;
 	private int pendingCloudColor;
-	private CloudStatus pendingCloudStatus = CloudStatus.FAST;
 	private float pendingCloudHeight;
 	private int pendingCloudRange;
 	private Vec3 pendingCameraPos;
@@ -131,16 +128,12 @@ public final class VolumetricCloudRenderer {
 		}
 
 		this.sunDirection.set(0.0f, 1.0f, 0.0f);
-		this.moonDirection.set(0.0f, -1.0f, 0.0f);
 		this.preparedSunVisibility = 1.0f;
-		this.preparedMoonVisibility = 0.0f;
 		this.preparedRainFactor = 0.0f;
 		if (levelRenderState != null && levelRenderState.skyRenderState != null) {
 			CustomCelestials.setCelestialDirection(levelRenderState.skyRenderState.sunAngle, this.sunDirection);
-			CustomCelestials.setCelestialDirection(levelRenderState.skyRenderState.moonAngle, this.moonDirection);
 			float sunElevation = this.sunDirection.y;
 			this.preparedSunVisibility = clamp01((sunElevation + 0.08f) / 0.24f);
-			this.preparedMoonVisibility = clamp01((-sunElevation + 0.04f) / 0.22f);
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
@@ -165,7 +158,6 @@ public final class VolumetricCloudRenderer {
 		}
 
 		this.pendingCloudColor = cloudColor;
-		this.pendingCloudStatus = cloudStatus;
 		this.pendingCloudHeight = cloudHeight;
 		this.pendingCloudRange = cloudRange;
 		this.pendingCameraPos = cameraPos;
@@ -245,28 +237,21 @@ public final class VolumetricCloudRenderer {
 		}
 
 		float maxSteps = switch (quality) {
-			case LOW -> 10.0f;
-			case MEDIUM -> 14.0f;
-			case HIGH -> 20.0f;
-			case ULTRA -> 28.0f;
-			case OFF -> 0.0f;
-		};
-		float stepLength = switch (quality) {
-			case LOW -> 88.0f;
-			case MEDIUM -> 72.0f;
-			case HIGH -> 56.0f;
-			case ULTRA -> 42.0f;
+			case LOW -> 8.0f;
+			case MEDIUM -> 11.0f;
+			case HIGH -> 15.0f;
+			case ULTRA -> 20.0f;
 			case OFF -> 0.0f;
 		};
 		float detailMix = switch (quality) {
-			case LOW -> 0.22f;
-			case MEDIUM -> 0.34f;
-			case HIGH -> 0.46f;
-			case ULTRA -> 0.58f;
+			case LOW -> 0.0f;
+			case MEDIUM -> 0.25f;
+			case HIGH -> 0.60f;
+			case ULTRA -> 1.0f;
 			case OFF -> 0.0f;
 		};
 		float maxDistance = Math.max(256.0f, Math.min(this.preparedFogCloudEnd * 1.08f, this.pendingCloudRange * 16.0f));
-		float cloudTime = (this.pendingGameTime + this.pendingPartialTick) * 0.0022f;
+		float cloudTime = (this.pendingGameTime + this.pendingPartialTick) * 0.0015f;
 		float cloudR = ((this.pendingCloudColor >> 16) & 0xFF) / 255.0f;
 		float cloudG = ((this.pendingCloudColor >> 8) & 0xFF) / 255.0f;
 		float cloudB = (this.pendingCloudColor & 0xFF) / 255.0f;
@@ -276,38 +261,9 @@ public final class VolumetricCloudRenderer {
 			cloudB = Math.max(cloudB, 0.86f);
 		}
 
-		float rainCoverageBoost = this.preparedRainFactor * 0.03f;
-		float lowLayerAltitude = this.pendingCloudHeight - 14.0f;
-		float lowLayerThickness = switch (quality) {
-			case LOW -> 22.0f;
-			case MEDIUM -> 28.0f;
-			case HIGH -> 34.0f;
-			case ULTRA -> 38.0f;
-			case OFF -> 0.0f;
-		} + this.preparedRainFactor * 8.0f;
-		float highLayerAltitude = this.pendingCloudHeight + 96.0f;
-		float highLayerThickness = switch (quality) {
-			case LOW -> 10.0f;
-			case MEDIUM -> 12.0f;
-			case HIGH -> 14.0f;
-			case ULTRA -> 16.0f;
-			case OFF -> 0.0f;
-		};
-		float lowLayerCoverage = switch (quality) {
-			case LOW -> 0.76f;
-			case MEDIUM -> 0.72f;
-			case HIGH -> 0.68f;
-			case ULTRA -> 0.64f;
-			case OFF -> 1.0f;
-		} - rainCoverageBoost;
-		float highLayerCoverage = switch (quality) {
-			case LOW -> 0.87f;
-			case MEDIUM -> 0.83f;
-			case HIGH -> 0.79f;
-			case ULTRA -> 0.75f;
-			case OFF -> 1.0f;
-		} - this.preparedRainFactor * 0.015f;
-		float fancyFlag = this.pendingCloudStatus == CloudStatus.FANCY ? 1.0f : 0.0f;
+		float layerHalfThickness = 26.0f + this.preparedRainFactor * 6.0f;
+		float coverage = 0.58f - this.preparedRainFactor * 0.045f;
+		float density = 0.78f + this.preparedRainFactor * 0.12f;
 
 		this.uploadBuffer.clear();
 		this.inverseProjection.get(this.uploadBuffer);
@@ -317,15 +273,10 @@ public final class VolumetricCloudRenderer {
 		putVec4((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, cloudTime);
 		putVec4(cloudR, cloudG, cloudB, this.preparedRainFactor);
 		putVec4(this.sunDirection.x, this.sunDirection.y, this.sunDirection.z, this.preparedSunVisibility);
-		putVec4(this.moonDirection.x, this.moonDirection.y, this.moonDirection.z, this.preparedMoonVisibility);
 		putVec4(this.fogColor.x, this.fogColor.y, this.fogColor.z, this.preparedFogCloudEnd);
 		putVec4((float) this.screenWidth, (float) this.screenHeight, (float) this.traceWidth, (float) this.traceHeight);
-		putVec4(maxSteps, stepLength, detailMix, fancyFlag);
-		putVec4(lowLayerAltitude, lowLayerThickness, maxDistance, lowLayerCoverage);
-		putVec4(0.00076f, 4.0f + detailMix * 2.4f, 0.82f, 0.28f);
-		putVec4(highLayerAltitude, highLayerThickness, maxDistance * 1.12f, highLayerCoverage);
-		putVec4(0.00102f, 5.2f + detailMix * 2.8f, 0.54f, 0.42f);
-		putVec4(0.22f, 0.58f, 0.0f, 0.0f);
+		putVec4(maxSteps, detailMix, density, maxDistance);
+		putVec4(this.pendingCloudHeight, layerHalfThickness, coverage, 0.035f);
 		this.uploadBuffer.rewind();
 		encoder.writeToBuffer(this.paramsSlice, this.uploadBuffer);
 	}
@@ -411,9 +362,8 @@ public final class VolumetricCloudRenderer {
 
 	private static int traceDivisor() {
 		return switch (ShaderRuntime.config().cloudQualityPreset()) {
-			case LOW -> 4;
-			case MEDIUM, HIGH -> 2;
-			case ULTRA, OFF -> 1;
+			case LOW, MEDIUM -> 4;
+			case HIGH, ULTRA, OFF -> 2;
 		};
 	}
 

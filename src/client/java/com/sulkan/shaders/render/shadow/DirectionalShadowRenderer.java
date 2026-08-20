@@ -23,6 +23,9 @@ import java.nio.ByteOrder;
 public final class DirectionalShadowRenderer {
 	private static final int CASCADE_COUNT = 4;
 	private static final int ENTITY_CASCADE_COUNT = 2;
+	private static final float CELESTIAL_FADE_START = 0.02f;
+	private static final float CELESTIAL_FADE_END = 0.20f;
+	private static final float SHADOW_STRENGTH = 0.92f;
 	private static final int[] CASCADE_UPDATE_INTERVALS = {3, 8, 16, 32};
 	private static final int[] ENTITY_UPDATE_INTERVALS = {1, 2, 4, 8};
 	private static final double[] CASCADE_MOVEMENT_LIMITS = {1.5, 4.0, 12.0, 24.0};
@@ -68,6 +71,7 @@ public final class DirectionalShadowRenderer {
 	private final Vector3f cameraForward = new Vector3f(0.0f, 0.0f, -1.0f);
 	private final Matrix4f inverseViewRotation = new Matrix4f();
 	private long frameSerial;
+	private float celestialShadowFade = 1.0f;
 	private float lastCoverage = -1.0f;
 	private int lastActiveCascadeCount = -1;
 	private double cameraX;
@@ -136,6 +140,10 @@ public final class DirectionalShadowRenderer {
 		if (levelRenderState.skyRenderState != null) {
 			CustomCelestials.setCelestialDirection(levelRenderState.skyRenderState.sunAngle, this.sunDirection);
 			CustomCelestials.setCelestialDirection(levelRenderState.skyRenderState.moonAngle, this.moonDirection);
+			this.celestialShadowFade = smoothstep(
+					CELESTIAL_FADE_START,
+					CELESTIAL_FADE_END,
+					Math.abs(this.sunDirection.y - this.moonDirection.y));
 			this.lightDirection.set(this.sunDirection.y >= this.moonDirection.y ? this.sunDirection : this.moonDirection);
 			if (this.lightDirection.y < 0.08f) {
 				this.lightDirection.y = 0.08f;
@@ -143,6 +151,7 @@ public final class DirectionalShadowRenderer {
 			this.lightDirection.normalize();
 		} else {
 			this.lightDirection.set(-0.35f, 0.82f, -0.44f).normalize();
+			this.celestialShadowFade = 1.0f;
 		}
 		if (levelRenderState.cameraRenderState.viewRotationMatrix != null) {
 			this.inverseViewRotation.set(levelRenderState.cameraRenderState.viewRotationMatrix).invert();
@@ -353,7 +362,7 @@ public final class DirectionalShadowRenderer {
 			case ULTRA -> 16.0f;
 			case OFF -> 1.0f;
 		};
-		putVec4(0.92f, 0.0f, 0.30f, filterSamples, this.shadowUpload);
+		putVec4(SHADOW_STRENGTH * this.celestialShadowFade, 0.0f, 0.30f, filterSamples, this.shadowUpload);
 		this.inverseViewRotation.get(this.shadowUpload);
 		this.shadowUpload.rewind();
 		encoder.writeToBuffer(this.shadowDataSlice, this.shadowUpload);
@@ -561,6 +570,11 @@ public final class DirectionalShadowRenderer {
 			case ULTRA -> cascade == 0 ? 6144 : 2048;
 			case OFF -> 512;
 		};
+	}
+
+	private static float smoothstep(float edge0, float edge1, float value) {
+		float t = Math.max(0.0f, Math.min(1.0f, (value - edge0) / (edge1 - edge0)));
+		return t * t * (3.0f - 2.0f * t);
 	}
 
 	private static void putVec4(float x, float y, float z, float w, ByteBuffer buffer) {

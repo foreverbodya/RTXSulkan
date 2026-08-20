@@ -16,59 +16,81 @@ layout(std140, binding = 1) uniform AtmosphereParams {
 layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
+const int MAX_SHAFT_SAMPLES = 8;
+
 bool isSkyDepth(float depth) {
 	return depth < 0.0001 || depth > 0.9999;
 }
 
-float screenMask(vec2 uv) {
-	vec2 lo = smoothstep(vec2(-0.18), vec2(0.04), uv);
-	vec2 hi = 1.0 - smoothstep(vec2(0.96), vec2(1.18), uv);
-	return lo.x * lo.y * hi.x * hi.y;
+bool validUv(vec2 uv) {
+	return all(greaterThanEqual(uv, vec2(0.0))) && all(lessThanEqual(uv, vec2(1.0)));
 }
 
-float sampleSkyVisibility(vec2 uv, vec2 texelSize) {
-	float visibility = isSkyDepth(texture(SceneDepthSampler, uv).r) ? 1.0 : 0.0;
-	if (ScreenAndSamples.z <= 10.5) {
-		return visibility;
-	}
-	visibility += isSkyDepth(texture(SceneDepthSampler, uv + vec2(texelSize.x, 0.0)).r) ? 0.35 : 0.0;
-	visibility += isSkyDepth(texture(SceneDepthSampler, uv - vec2(texelSize.x, 0.0)).r) ? 0.35 : 0.0;
-	visibility += isSkyDepth(texture(SceneDepthSampler, uv + vec2(0.0, texelSize.y)).r) ? 0.35 : 0.0;
-	visibility += isSkyDepth(texture(SceneDepthSampler, uv - vec2(0.0, texelSize.y)).r) ? 0.35 : 0.0;
-	return clamp(visibility, 0.0, 1.0);
+float interleavedGradientNoise(vec2 pixel) {
+	return fract(52.9829189 * fract(dot(pixel, vec2(0.06711056, 0.00583715))));
+}
+
+float sunApertureVisibility(vec2 sunUv) {
+	vec2 texel = 1.0 / max(ScreenAndSamples.xy, vec2(1.0));
+	vec2 offset = texel * 7.0;
+	float visibility = isSkyDepth(texture(SceneDepthSampler, sunUv).r) ? 1.0 : 0.0;
+	visibility += isSkyDepth(texture(SceneDepthSampler, sunUv + vec2(offset.x, 0.0)).r) ? 1.0 : 0.0;
+	visibility += isSkyDepth(texture(SceneDepthSampler, sunUv - vec2(offset.x, 0.0)).r) ? 1.0 : 0.0;
+	visibility += isSkyDepth(texture(SceneDepthSampler, sunUv + vec2(0.0, offset.y)).r) ? 1.0 : 0.0;
+	visibility += isSkyDepth(texture(SceneDepthSampler, sunUv - vec2(0.0, offset.y)).r) ? 1.0 : 0.0;
+	return visibility * 0.2;
 }
 
 void main() {
-	vec3 sunDir = normalize(SunDirAndVisibility.xyz);
-	vec3 upDir = normalize(UpDirAndRain.xyz);
+	fragColor = vec4(0.0);
+	vec3 sunDirection = normalize(SunDirAndVisibility.xyz);
+	vec3 upDirection = normalize(UpDirAndRain.xyz);
 	float rain = clamp(UpDirAndRain.w, 0.0, 1.0);
-	float sunVisibility = clamp(SunDirAndVisibility.w, 0.0, 1.0) * (1.0 - rain * 0.68);
-	float sunElevation = dot(sunDir, upDir);
-	float twilightBoost = (1.0 - smoothstep(0.02, 0.22, sunElevation)) * sunVisibility;
-	vec4 sunClip = ProjectionMat * vec4(sunDir * 96.0, 1.0);
-	vec2 sunScreen = sunClip.xy / max(sunClip.w, 0.0001) * 0.5 + 0.5;
-	float sunFront = step(0.0, sunClip.w);
-	int sampleCount = max(int(ScreenAndSamples.z + 0.5), 1);
-	vec2 stepVec = (sunScreen - texCoord) / float(sampleCount);
-	vec2 sampleUv = texCoord;
-	vec2 texelSize = 1.0 / max(ScreenAndSamples.xy, vec2(1.0));
-	float decay = 1.0;
-	float illumination = 0.0;
-	float weightSum = 0.0;
-	float decayRate = mix(0.94, 0.972, twilightBoost);
-	for (int i = 0; i < 16; ++i) {
-		if (i >= sampleCount) break;
-		sampleUv += stepVec;
-		if (any(lessThan(sampleUv, vec2(0.0))) || any(greaterThan(sampleUv, vec2(1.0)))) break;
-		float sky = sampleSkyVisibility(sampleUv, texelSize);
-		illumination += sky * decay;
-		weightSum += decay;
-		decay *= decayRate;
+	float sunVisibility = clamp(SunDirAndVisibility.w, 0.0, 1.0) * (1.0 - rain * 0.82);
+	if (sunVisibility <= 0.001 || dot(sunDirection, upDirection) <= 0.01) {
+		return;
 	}
-	float averageIllumination = illumination / float(sampleCount);
-	float normalizedIllumination = illumination / max(weightSum, 0.0001);
-	float rays = mix(averageIllumination, normalizedIllumination, twilightBoost * 0.82);
-	float radialFalloff = exp(-length(texCoord - sunScreen) * mix(2.85, 1.18, twilightBoost));
-	rays *= radialFalloff * screenMask(sunScreen) * sunFront * sunVisibility;
-	fragColor = vec4(vec3(rays), 1.0);
+
+	vec4 sunClip = ProjectionMat * vec4(sunDirection, 0.0);
+	if (sunClip.w <= 0.0001) {
+		return;
+	}
+	vec2 sunUv = sunClip.xy / sunClip.w * 0.5 + 0.5;
+	if (!validUv(sunUv)) {
+		return;
+	}
+
+	int sampleCount = clamp(int(ScreenAndSamples.z + 0.5), 1, MAX_SHAFT_SAMPLES);
+	vec2 rayStep = (sunUv - texCoord) / float(sampleCount);
+	float jitter = interleavedGradientNoise(gl_FragCoord.xy);
+	vec2 sampleUv = texCoord + rayStep * jitter;
+	float illumination = 0.0;
+	float weight = 1.0;
+	float weightSum = 0.0;
+	for (int sampleIndex = 0; sampleIndex < MAX_SHAFT_SAMPLES; ++sampleIndex) {
+		if (sampleIndex >= sampleCount) {
+			break;
+		}
+		sampleUv += rayStep;
+		if (!validUv(sampleUv)) {
+			break;
+		}
+		illumination += (isSkyDepth(texture(SceneDepthSampler, sampleUv).r) ? 1.0 : 0.0) * weight;
+		weightSum += weight;
+		weight *= 0.90;
+	}
+
+	float visibility = illumination / max(weightSum, 0.0001);
+	float radialDistance = length((texCoord - sunUv) * vec2(ScreenAndSamples.x / max(ScreenAndSamples.y, 1.0), 1.0));
+	float radialFade = exp(-radialDistance * 3.6);
+	float rays = smoothstep(0.08, 0.92, visibility) * radialFade * sunVisibility;
+
+	float bloom = 0.0;
+	if (radialDistance < 0.22) {
+		float aperture = smoothstep(0.02, 0.62, sunApertureVisibility(sunUv));
+		float core = exp(-radialDistance * radialDistance * 760.0);
+		float halo = exp(-radialDistance * radialDistance * 82.0);
+		bloom = (core * 0.92 + halo * 0.38) * aperture * sunVisibility;
+	}
+	fragColor = vec4(rays, bloom, 0.0, 1.0);
 }

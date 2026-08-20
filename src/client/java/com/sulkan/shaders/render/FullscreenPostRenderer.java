@@ -51,8 +51,7 @@ public final class FullscreenPostRenderer {
 		ensureSampler();
 		int divisor = switch (ShaderRuntime.config().aoQualityPreset()) {
 			case LOW -> 4;
-			case MEDIUM, HIGH -> 2;
-			case ULTRA, OFF -> 1;
+			case MEDIUM, HIGH, ULTRA, OFF -> 2;
 		};
 		ensureAoTarget(Math.max(1, depthSource.width / divisor), Math.max(1, depthSource.height / divisor));
 		GpuBufferSlice sceneParams = ScenePostUniforms.upload(encoder);
@@ -78,7 +77,8 @@ public final class FullscreenPostRenderer {
 			RenderSystem.bindDefaultUniforms(pass);
 			pass.bindTexture("SceneColorSampler", source.getColorTextureView(), nearestSampler);
 			pass.bindTexture("SceneDepthSampler", depthSource.getDepthTextureView(), nearestSampler);
-			pass.bindTexture("AoSampler", aoTarget.getColorTextureView(), linearSampler);
+			pass.bindTexture("AoSampler", aoTarget.getColorTextureView(), nearestSampler);
+			pass.setUniform("SulkanSceneParams", sceneParams);
 			pass.draw(3, 1, 0, 0);
 		}
 		return true;
@@ -89,13 +89,6 @@ public final class FullscreenPostRenderer {
 			return false;
 		}
 		return apply(encoder, "Sulkan Atmosphere", ShaderPipelines.ATMOSPHERE_COMPOSITE, source, output, depthSource);
-	}
-
-	public static boolean applyClouds(CommandEncoder encoder, RenderTarget source, RenderTarget output, RenderTarget depthSource) {
-		if (ShaderPipelines.CLOUDS_COMPOSITE == null) {
-			return false;
-		}
-		return apply(encoder, "Sulkan Clouds", ShaderPipelines.CLOUDS_COMPOSITE, source, output, depthSource);
 	}
 
 	public static boolean applyWaterComposite(CommandEncoder encoder, RenderTarget source, RenderTarget output, RenderTarget depthSource) {

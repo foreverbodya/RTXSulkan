@@ -60,7 +60,10 @@ public final class SodiumTerrainShadowPipelines {
 				.withShaderDefine("USE_VERTEX_COMPRESSION");
 
 		if (caster) {
-			builder.withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 1.5f, 1.0f))
+			// Keep caster geometry at its true light-space depth. Contact-safe bias is
+			// applied once on the receiver; a second raster bias creates visible
+			// peter-panning where a shadow should meet its caster.
+			builder.withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 0.0f, 0.0f))
 					.withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.R8_UNORM, ColorTargetState.WRITE_RED))
 					.withCull(false);
 		} else {

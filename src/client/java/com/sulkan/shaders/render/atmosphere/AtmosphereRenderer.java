@@ -187,7 +187,10 @@ public final class AtmosphereRenderer {
 	}
 
 	private void ensureShaftTarget() {
-		int divisor = ShaderRuntime.config().atmosphereQualityPreset() == ShaderQualityPreset.LOW ? 4 : 2;
+		int divisor = switch (ShaderRuntime.config().atmosphereQualityPreset()) {
+			case LOW, MEDIUM -> 4;
+			case HIGH, ULTRA, OFF -> 2;
+		};
 		int width = Math.max(1, this.screenWidth / divisor);
 		int height = Math.max(1, this.screenHeight / divisor);
 		if (this.shaftTarget != null && this.shaftWidth == width && this.shaftHeight == height) {
@@ -250,30 +253,26 @@ public final class AtmosphereRenderer {
 	private static int sampleCount(ShaderQualityPreset quality) {
 		return switch (quality) {
 			case OFF -> 0;
-			case LOW -> 4;
-			case MEDIUM -> 6;
-			case HIGH -> 10;
-			case ULTRA -> 16;
+			case LOW -> 3;
+			case MEDIUM -> 4;
+			case HIGH -> 6;
+			case ULTRA -> 8;
 		};
 	}
 
 	private static float fogIntensity(ShaderQualityPreset quality) {
 		return switch (quality) {
 			case OFF -> 0.0f;
-			case LOW -> 0.65f;
-			case MEDIUM -> 0.85f;
-			case HIGH -> 1.05f;
-			case ULTRA -> 1.20f;
+			case LOW, MEDIUM, HIGH, ULTRA -> 1.0f;
 		};
 	}
 
 	private static float shaftIntensity(ShaderQualityPreset quality) {
 		return switch (quality) {
 			case OFF -> 0.0f;
-			case LOW -> 0.18f;
-			case MEDIUM -> 0.34f;
-			case HIGH -> 0.52f;
-			case ULTRA -> 0.68f;
+			case LOW -> 0.08f;
+			case MEDIUM -> 0.10f;
+			case HIGH, ULTRA -> 0.12f;
 		};
 	}
 

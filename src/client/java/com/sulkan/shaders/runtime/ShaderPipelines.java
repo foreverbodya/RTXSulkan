@@ -13,7 +13,6 @@ public final class ShaderPipelines {
 	public static RenderPipeline BLOOM_PREFILTER;
 	public static RenderPipeline WATER_COMPOSITE;
 	public static RenderPipeline WATER_TRACE;
-	public static RenderPipeline CLOUDS_COMPOSITE;
 	public static RenderPipeline VOLUMETRIC_CLOUDS;
 	public static RenderPipeline VOLUMETRIC_CLOUDS_COMPOSITE;
 	public static RenderPipeline ATMOSPHERE_COMPOSITE;
@@ -35,7 +34,6 @@ public final class ShaderPipelines {
 		BLOOM_PREFILTER = state.bloomEnabled() ? pipeline("pipeline/bloom_prefilter", "bloom_prefilter", "SceneColorSampler") : null;
 		WATER_TRACE = state.waterEnabled() ? waterTracePipeline() : null;
 		WATER_COMPOSITE = state.waterEnabled() ? waterCompositePipeline() : null;
-		CLOUDS_COMPOSITE = null;
 		VOLUMETRIC_CLOUDS = state.cloudsEnabled() ? volumetricCloudTracePipeline() : null;
 		VOLUMETRIC_CLOUDS_COMPOSITE = state.cloudsEnabled() ? volumetricCloudCompositePipeline() : null;
 		ATMOSPHERE_SHAFTS = state.atmosphereEnabled() ? atmosphereShaftPipeline() : null;
@@ -50,7 +48,6 @@ public final class ShaderPipelines {
 		BLOOM_PREFILTER = null;
 		WATER_COMPOSITE = null;
 		WATER_TRACE = null;
-		CLOUDS_COMPOSITE = null;
 		VOLUMETRIC_CLOUDS = null;
 		VOLUMETRIC_CLOUDS_COMPOSITE = null;
 		ATMOSPHERE_COMPOSITE = null;
@@ -116,9 +113,10 @@ public final class ShaderPipelines {
 
 	private static RenderPipeline aoTracePipeline() {
 		return RenderPipeline.builder(RenderPipelines.POST_PROCESSING_SNIPPET)
-				.withLocation(ShaderResourceIds.id("pipeline/ao_trace"))
+				.withLocation(ShaderResourceIds.id("pipeline/ao_trace_q" + ShaderRuntime.config().aoQualityPreset().tier()))
 				.withVertexShader(ShaderResourceIds.coreShader("fullscreen"))
 				.withFragmentShader(ShaderResourceIds.coreShader("ao_apply"))
+				.withShaderDefine("SULKAN_AO_QUALITY", ShaderRuntime.config().aoQualityPreset().tier())
 				.withBindGroupLayout(BindGroupLayout.builder()
 						.withSampler("SceneDepthSampler")
 						.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER)
@@ -135,6 +133,7 @@ public final class ShaderPipelines {
 						.withSampler("SceneColorSampler")
 						.withSampler("SceneDepthSampler")
 						.withSampler("AoSampler")
+						.withUniform("SulkanSceneParams", UniformType.UNIFORM_BUFFER)
 						.build())
 				.build();
 	}

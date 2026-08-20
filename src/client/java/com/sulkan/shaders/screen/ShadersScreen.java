@@ -17,8 +17,10 @@ import java.util.List;
 import java.util.Objects;
 
 public final class ShadersScreen extends ShaderScreenBase {
+	private static final String BUILTIN_PACK_NAME = "Sulkan Realistic";
+	private static final Component BUILTIN_PACK_DESCRIPTION = Component.literal("Sulkan's built-in shader with realistic lighting and effects.");
 	private static final Component TITLE = Component.literal("Shaders");
-	private static final Component SUBTITLE = Component.literal("Select a shader pack from the list. Built-in is the rewritten Sulkan profile bundled with the mod.");
+	private static final Component SUBTITLE = Component.literal("Select a shader pack from the list. Sulkan Realistic is bundled with the mod.");
 	private static final Component COMPACT_SUBTITLE = Component.literal("Select a shader pack.");
 	private static final int MAX_CONTENT_WIDTH = 980;
 	private static final int PANEL_GAP = 14;
@@ -234,7 +236,7 @@ public final class ShadersScreen extends ShaderScreenBase {
 	private void refreshPackEntries() {
 		List<PackEntry> entries = new ArrayList<>();
 		PackEntry selectedEntry = null;
-		PackEntry builtinEntry = new PackEntry(ShaderConfig.BUILTIN_PACK_ID, Component.literal("Built-in Sulkan"), Component.literal("Built-in profile"));
+		PackEntry builtinEntry = new PackEntry(ShaderConfig.BUILTIN_PACK_ID, Component.literal(BUILTIN_PACK_NAME), BUILTIN_PACK_DESCRIPTION);
 		entries.add(builtinEntry);
 		if (Objects.equals(this.selectedPackId, ShaderConfig.BUILTIN_PACK_ID)) {
 			selectedEntry = builtinEntry;
@@ -344,7 +346,7 @@ public final class ShadersScreen extends ShaderScreenBase {
 
 	private String packLabelText(String packId) {
 		if (ShaderConfig.BUILTIN_PACK_ID.equals(packId)) {
-			return "Built-in Sulkan";
+			return BUILTIN_PACK_NAME;
 		}
 		return packId.endsWith(".zip") ? packId.substring(0, packId.length() - 4) : packId;
 	}
