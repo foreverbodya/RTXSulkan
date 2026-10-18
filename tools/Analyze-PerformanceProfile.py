@@ -4,20 +4,21 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import statistics
 from pathlib import Path
 
 
 def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
-    combined = json.loads((evidence / "performance-profile.json").read_text())
+    combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8"))
     # Individual reports are authoritative; the first harness version shared list references
     # in its combined report. Scalar means are unaffected, but do not reuse those lists.
     reports = []
     for entry in combined["reports"]:
         name = entry["phase"]
-        s = json.loads((evidence / f"profile-{name}.json").read_text())
-        g = json.loads((evidence / f"gpu-pass-timings-profile-{name}.json").read_text())
+        s = json.loads((evidence / f"profile-{name}.json").read_text(encoding="utf-8"))
+        g = json.loads((evidence / f"gpu-pass-timings-profile-{name}.json").read_text(encoding="utf-8"))
         row = {
             "phase": name,
             "wallMs": s["wallMs"]["mean"],
@@ -34,40 +35,143 @@ def load_run(root):
             "allocationFailures": s["nativeMemoryEnd"]["allocationFailures"],
             "allocations": s["nativeMemoryEnd"]["allocations"] - s["nativeMemoryStart"]["allocations"],
             "uploadMiB": (s["nativeMemoryEnd"]["uploadBytes"] - s["nativeMemoryStart"]["uploadBytes"]) / 2**20,
+            "readbackMiB": (s["nativeMemoryEnd"]["readbackBytes"] - s["nativeMemoryStart"]["readbackBytes"]) / 2**20,
+            "frames": s["frames"],
+            "gpuTimingPrefixFrames": s.get("gpuTimingPrefixFrames", s["frames"]),
+            "stressOnly": s.get("stressOnly", False),
+            "wallP95Ms": s["wallMs"]["p95"],
+            "candidateSelected": s.get("candidateSelected", False),
+            "sourceRevisionUnchanged": s.get("sourceRevisionUnchanged"),
+            "syncCpuMsPerFrame": (s["rayEnd"]["syncCpuNanoseconds"] - s["rayStart"]["syncCpuNanoseconds"]) / 1e6 / s["frames"],
+            "rayEnd": s["rayEnd"],
+            "workCountersDelta": {k: v-s["workCountersStart"][k] for k,v in s["workCountersEnd"].items()},
+            "configuration": {k:s.get(k) for k in ("renderDistance", "worldTime", "options", "reconstruction", "vsync", "poseCheckedEveryFrame")},
             "passes": g["passes"],
         }
+        memory = [x["vulkanMemory"] for x in s["perFrame"] if x.get("vulkanMemory", {}).get("available")]
+        if memory:
+            row["processHeapEstimatedPeakMiB"] = max(x["deviceLocalEstimatedUsage"] for x in memory) / 2**20
+            row["processHeapEstimatedEndMiB"] = memory[-1]["deviceLocalEstimatedUsage"] / 2**20
+            row["processHeapMinimumBudgetMiB"] = min(x["deviceLocalBudget"] for x in memory) / 2**20
+        row["nativeTimedPeakMiB"] = max(x["nativeAllocationBytes"] for x in s["perFrame"]) / 2**20
         telemetry = next(root.glob("*-gpu.csv"), None)
         if telemetry and "startEpochMs" in s:
             samples = []
+            discarded = 0
             for r in csv.reader(telemetry.open()):
-                when = dt.datetime.strptime(r[0].strip(), "%Y/%m/%d %H:%M:%S.%f").timestamp() * 1000
+                # Stopping the owned sampler can leave a truncated final line. Preserve the
+                # source and report discarded rows; do not synthesize missing telemetry.
+                try:
+                    if len(r)!=9:
+                        raise ValueError("Incomplete telemetry row")
+                    when = dt.datetime.strptime(r[0].strip(), "%Y/%m/%d %H:%M:%S.%f").timestamp() * 1000
+                    float(r[1]); float(r[3])
+                except (ValueError,IndexError):
+                    discarded += 1
+                    continue
                 if s["startEpochMs"] <= when <= s["endEpochMs"]:
                     samples.append(r)
+            row["telemetryDiscardedRowsInRun"] = discarded
             if samples:
                 row["deviceVramSamplePeakMiB"] = max(float(r[3]) for r in samples)
                 row["deviceGpuUtilMeanPercent"] = sum(float(r[1]) for r in samples) / len(samples)
                 row["deviceGpuUtilSamples"] = len(samples)
         reports.append(row)
     return {"root": str(root.resolve()), "reports": reports,
-            "artifact": json.loads((root / "result.json").read_text()),
+            "artifact": json.loads((root / "result.json").read_text(encoding="utf-8")),
             "scope": "GPU world excludes UI/swapchain. CPU is render-thread active CPU, not all process CPU. Native allocation bytes exclude engine/Sodium/NGX. Device VRAM/usage are WDDM device-wide 500ms samples, not isolated process residency or guaranteed instantaneous peaks."}
+
+
+def comparisons(run):
+    """Bracket a candidate with same-scene reference phases; never pair streaming endpoints."""
+    phases = {r["phase"]:r for r in run["reports"]}
+    output = []
+    for phase in ("static", "motion"):
+        keys = (phase, "narrow-"+phase, phase+"-repeat")
+        if not all(k in phases for k in keys):
+            continue
+        a,b,c = [phases[k] for k in keys]
+        geometry = {r[k] for r in (a,b,c) for k in ("geometryStart", "geometryEnd")}
+        mean = lambda field: statistics.mean((a[field], c[field]))
+        before = mean("wallMs")
+        passes = []
+        for name in sorted(a["passes"].keys() | b["passes"].keys() | c["passes"].keys()):
+            if name not in a["passes"] or name not in b["passes"] or name not in c["passes"]:
+                continue
+            # Upload/AS rows contain events, not one sample per frame. Amortize their totals.
+            def milliseconds(r):
+                p = r["passes"][name]
+                if name in ("geometry.upload", "blas.build", "tlas.build"):
+                    return sum(p["milliseconds"]) / r["gpuTimingPrefixFrames"]
+                return p["mean"]
+            baseline = statistics.mean((milliseconds(a), milliseconds(c)))
+            after = milliseconds(b)
+            passes.append({"pass":name,"beforeMs":baseline,"afterMs":after,"savedMs":baseline-after,
+                           "scope":"amortized per frame" if name in ("geometry.upload","blas.build","tlas.build") else "interval mean"})
+        output.append({"phase":phase,"geometryMatched":len(geometry)==1,
+                       "referenceWallMs":before,"candidateWallMs":b["wallMs"],
+                       "referenceDriftPercent":100*(c["wallMs"] / a["wallMs"]-1),
+                       "fpsGainPercent":100*(before/b["wallMs"]-1),
+                       "referenceFps":1000/before,"candidateFps":b["fps"],
+                       "referenceGpuMs":mean("gpuWorldMs"),"candidateGpuMs":b["gpuWorldMs"],
+                       "referenceActiveCpuMs":mean("renderThreadActiveCpuMs"),"candidateActiveCpuMs":b["renderThreadActiveCpuMs"],
+                       "candidate":b,"passes":passes})
+    return output
+
+
+def quality_summary(root):
+    root=Path(root)
+    a=json.loads((root/"evidence/native-frame-comparison.json").read_text(encoding="utf-8"))
+    h=json.loads((root/"evidence/workgroup-verification.json").read_text(encoding="utf-8"))
+    return {"root":str(root.resolve()),"pairs":len(a),"changedPixels":sum(x["changedPixels"] for x in a),
+            "maximumRGBCodeDelta":max(x["maximumRGBCodeDelta"] for x in a),
+            "motionPairs":sum(x["phase"]=="motion" for x in a),
+            "motionPairsWithNonzeroCameraDelta":sum(x["phase"]=="motion" and any(x["cameraDelta"]) for x in a),
+            "hdrSelfComparisons":sum(x["pass"]=="frame.self" for x in h),
+            "hdrSelfIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.self"),
+            "hdrCandidateIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.candidate"),
+            "artifact":json.loads((root/"result.json").read_text(encoding="utf-8"))["artifactSha256"]}
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("runs", nargs="+")
     p.add_argument("--output", required=True)
+    p.add_argument("--quality-runs", nargs="*", default=[])
     args = p.parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     runs = [load_run(r) for r in args.runs]
     (output / "analysis.json").write_text(json.dumps(runs, indent=2))
+    quality = [quality_summary(r) for r in args.quality_runs]
+    (output / "quality.json").write_text(json.dumps(quality, indent=2))
+    comparison = [{"root":r["root"],"comparisons":comparisons(r)} for r in runs]
+    (output / "comparison.json").write_text(json.dumps(comparison, indent=2))
+    with (output / "passes.csv").open("w", newline="") as f:
+        writer=csv.writer(f)
+        writer.writerow(("run","phase","pass","events","intervalMeanMs","intervalP95Ms","amortizedMsPerGpuWindowFrame","gpuWindowFrames","stressOnly"))
+        for run in runs:
+            for r in run["reports"]:
+                for name,p in sorted(r["passes"].items()):
+                    writer.writerow((Path(run["root"]).name,r["phase"],name,p["events"],p.get("mean"),p.get("p95"),sum(p["milliseconds"])/r["gpuTimingPrefixFrames"],r["gpuTimingPrefixFrames"],r["stressOnly"]))
+    pass_lines=["Per-pass A/B/A means in ms. AS/upload rows are amortized event totals. World total is nested; do not sum rows.", ""]
+    for run in comparison:
+        for c in run["comparisons"]:
+            pass_lines += [f'## {Path(run["root"]).name} / {c["phase"]}',"", "| GPU interval | Before ms | After ms | Saved ms |", "| --- | ---: | ---: | ---: |"]
+            pass_lines += [f'| {p["pass"]} | {p["beforeMs"]:.4f} | {p["afterMs"]:.4f} | {p["savedMs"]:.4f} |' for p in sorted(c["passes"],key=lambda p:-p["beforeMs"])]
+            pass_lines.append("")
+    (output / "passes-before-after.md").write_text("\n".join(pass_lines))
     lines = ["| Run / phase | FPS | CPU active ms | GPU world ms | BLAS / TLAS builds | Native live MiB | Stable geometry |",
              "| --- | ---: | ---: | ---: | ---: | ---: | --- |"]
     for run in runs:
         for r in run["reports"]:
             lines.append(f'| {Path(run["root"]).name} / {r["phase"]} | {r["fps"]:.2f} | {r["renderThreadActiveCpuMs"]:.2f} | {r["gpuWorldMs"]:.2f} | {r["blasBuilds"]} / {r["tlasBuilds"]} | {r["nativeLiveMiBEnd"]:.1f} | {r["geometryStable"]} |')
     (output / "summary.md").write_text("\n".join(lines) + "\n")
+    paired=["| Run / path | Geometry matched | FPS before → after | CPU active ms before → after | GPU ms before → after | FPS gain | Reference drift |", "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
+    for run in comparison:
+        for c in run["comparisons"]:
+            paired.append(f'| {Path(run["root"]).name} / {c["phase"]} | {c["geometryMatched"]} | {c["referenceFps"]:.2f} → {c["candidateFps"]:.2f} | {c["referenceActiveCpuMs"]:.2f} → {c["candidateActiveCpuMs"]:.2f} | {c["referenceGpuMs"]:.2f} → {c["candidateGpuMs"]:.2f} | {c["fpsGainPercent"]:+.2f}% | {c["referenceDriftPercent"]:+.2f}% |')
+    (output / "before-after.md").write_text("\n".join(paired)+"\n", encoding="utf-8")
     hashes = {}
     for run in args.runs:
         root = Path(run)
