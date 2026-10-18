@@ -1,4 +1,13 @@
-# Image quality first
+# Image quality preservation during profiling
+
+2026-10-18: the user's current instruction freezes new effects and visual
+improvements. Profiling, measured optimization and stability now take priority.
+Existing image quality is the baseline: preserve rays, resolution and effects;
+compare matching static and moving frames for each proposed optimization.
+Pass-off attribution runs are diagnostic only and never promoted as quality
+preserving speedups. See GOAL.md. The earlier visual work below is history.
+
+## Previous visual stage (deferred)
 
 User direction, 2026-10-16: withdraw the FPS goal. Prioritize a beautiful,
 stable cinematic image. Further DLSS development and optimization follow.

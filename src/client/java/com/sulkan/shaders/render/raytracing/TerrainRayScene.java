@@ -28,7 +28,7 @@ public final class TerrainRayScene {
     }
     public record Statistics(int sections, int meshes, int pendingSections, long storageBytes,
                              long generation, long recordedBuilds,long attributeBytes,long attributeCapacity,
-                             RayPayloadBudget.Snapshot attributePageBudget,long budgetWaits,long retirementOnlyBuilds,long triangles) {}
+                             RayPayloadBudget.Snapshot attributePageBudget,long budgetWaits,long retirementOnlyBuilds,long triangles,long blasBuilds,long tlasBuilds,long blasUpdates,long tlasUpdates,long synchronizations,long syncCpuNanoseconds) {}
 
     private final AccelerationStructureBuilder builder;
     private final RayAttributeArena attributeArena;
@@ -45,7 +45,8 @@ public final class TerrainRayScene {
     private AccelerationStructure top;
     private View view = new View(0, 0, Map.of());
     private int nextId;
-    private long recordedBuilds;
+    private long recordedBuilds,blasBuilds,tlasBuilds,synchronizations,syncCpuNanoseconds;
+    private com.sulkan.shaders.graph.GpuPassTimings timings;
     private long budgetWaits,retirementOnlyBuilds;
     private int pendingAttributeRetirements;
     private boolean clearRequested;
@@ -91,6 +92,12 @@ public final class TerrainRayScene {
         return synchronize(encoder,meshBudget,true);
     }
 
+    public View synchronize(VulkanCommandEncoder encoder,int meshBudget,com.sulkan.shaders.graph.GpuPassTimings timings) {
+        long begin=System.nanoTime();this.timings=timings;
+        try {return synchronize(encoder,meshBudget,true);}
+        finally {this.timings=null;synchronizations++;syncCpuNanoseconds+=System.nanoTime()-begin;}
+    }
+
     private boolean hasRetirablePending() {
         return clearRequested && !sections.isEmpty() || pending.values().stream().anyMatch(change->sections.containsKey(change.owner()));
     }
@@ -131,10 +138,14 @@ public final class TerrainRayScene {
                         if (attributeArena==null && nextId > 0xffffff) throw new IllegalStateException("Ray geometry IDs exhausted; recreate scene");
                         RayAttributeRanges.Allocation attributes=null;
                         if (attributeArena!=null) {
+                            var uploadTiming=timings==null?null:timings.start(encoder,commands,"geometry.upload");
                             var upload=attributeArena.upload(commands,mesh);
+                            if(uploadTiming!=null)uploadTiming.finish(true);
                             uploaded.add(upload); attributes=upload.allocation();
                         }
+                        var blasTiming=timings==null?null:timings.start(encoder,commands,"blas.build");
                         var bottom = attributes==null ? builder.mesh(commands,mesh) : builder.mesh(commands,mesh,attributeArena,attributes);
+                        if(blasTiming!=null)blasTiming.finish(true);
                         created.add(bottom);
                         int id=attributes==null ? nextId++ : attributes.headerWord();
                         values.add(new Geometry(id, change.section(), mesh, bottom,attributes));
@@ -169,7 +180,9 @@ public final class TerrainRayScene {
                 AccelerationStructureBuilder.dependency(commands, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                         VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                         VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR, VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR);
+                var tlasTiming=timings==null?null:timings.start(encoder,commands,"tlas.build");
                 newTop = builder.instances(commands, instances);
+                if(tlasTiming!=null)tlasTiming.finish(true);
                 created.add(newTop);
                 AccelerationStructureBuilder.dependency(commands, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
                         VK10.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK10.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -199,6 +212,7 @@ public final class TerrainRayScene {
             accepted.forEach(pending::remove);
             clearRequested = false;
             recordedBuilds += created.size();
+            blasBuilds+=created.size()-(newTop==null?0:1);if(newTop!=null)tlasBuilds++;
             if(!allowUploads)retirementOnlyBuilds++;
             view = new View(view.generation() + 1, top == null ? 0 : top.handle(), metadata,attributeArena==null ? null : attributeArena.buffer(),requestedOrigin);
             return view;
@@ -229,7 +243,7 @@ public final class TerrainRayScene {
         return new Statistics(sections.size(), view.geometry().size(), pending.size(), bytes,
                 view.generation(), recordedBuilds,attributeArena==null ? 0 : attributeArena.usedBytes(),
                 attributeArena==null ? 0 : attributeArena.capacityBytes(),attributeArena==null ? null : attributeArena.budget(),
-                budgetWaits,retirementOnlyBuilds,view.geometry().values().stream().mapToLong(value->value.mesh().triangleCount()).sum());
+                budgetWaits,retirementOnlyBuilds,view.geometry().values().stream().mapToLong(value->value.mesh().triangleCount()).sum(),blasBuilds,tlasBuilds,0,0,synchronizations,syncCpuNanoseconds);
     }
     public int pendingSections() { return pending.size(); }
 

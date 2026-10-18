@@ -96,8 +96,9 @@ public final class GraphRenderer implements AutoCloseable {
    public void diagnosticBeginGpuTimings(String phase,java.nio.file.Path directory) {
       if(!Boolean.getBoolean("sulkan.qaGpuTimings"))return;
       if(this.gpuTimings!=null && !this.gpuTimings.ready())throw new IllegalStateException("Previous GPU timing phase incomplete");
-      var names=new ArrayList<>(this.schedule.stream().filter(PackGraph.Pass::isCompute).map(PackGraph.Pass::name).toList());
+      var names=new ArrayList<>(this.schedule.stream().map(PackGraph.Pass::name).toList());
       if(this.reconstruction!=null)names.add("native.dlss");
+      names.add("world.total");names.add("composition.present");
       var device=(VulkanDevice)((GraphDeviceAccessor)RenderSystem.getDevice()).sulkan$backend();
       this.gpuTimings=new GpuPassTimings(device,phase,directory,names,Map.of("pack",this.graph.name(),
               "options",this.graph.options(),"inputWidth",this.width,"inputHeight",this.height,
@@ -127,7 +128,9 @@ public final class GraphRenderer implements AutoCloseable {
    private VulkanDevice rayDevice;
    private WorldReconstruction reconstruction;
    public boolean reconstructsWorld() { return this.reconstruction!=null; }
+   private GpuPassTimings.Measurement worldTiming;
    public RenderTarget beginWorldFrame(RenderTarget output) {
+      if(this.gpuTimings!=null)worldTiming=this.gpuTimings.start(((VulkanDevice)((GraphDeviceAccessor)RenderSystem.getDevice()).sulkan$backend()).createCommandEncoder(),"world.total");
       if(this.reconstruction==null) return output;
       this.reconstruction.prepare(output);
       this.reconstruction.beginFrame();
@@ -501,6 +504,18 @@ public final class GraphRenderer implements AutoCloseable {
       }
    }
 
+   private static boolean profileDisabled(String name) {
+      if(!Boolean.getBoolean("sulkan.qaPerformanceProfile"))return false;
+      return switch(System.getProperty("sulkan.qaProfileDisabled","")) {
+         case "clouds" -> name.equals("cloud.view") || name.equals("cloud.environment");
+         case "gi" -> name.equals("indirect.trace") || name.equals("leaf.indirect.trace");
+         case "reflections" -> name.equals("ray.reflection") || name.equals("rough.reflection");
+         case "water" -> name.startsWith("water.") && !name.contains("composite");
+         case "shadows" -> name.equals("ray.direct");
+         case "denoising" -> name.contains("prefilter") || name.contains("spatial") || name.contains("temporal");
+         default -> false;
+      };
+   }
    public void render(RenderTarget main, CameraRenderState camera, Matrix4fc view, Object world) {
       this.render(main,main,camera,view,world);
    }
@@ -544,7 +559,7 @@ public final class GraphRenderer implements AutoCloseable {
          this.rayScene.enqueue(TerrainGeometryCache.drainChanges());
          this.rayScene.sampleEmission(this.graph.options().getOrDefault("EMISSIVE_SAMPLING",0d)>0);
          if(this.graph.cameraRelativeRays()) this.rayScene.followCamera(camera.pos.x,camera.pos.y,camera.pos.z);
-         TerrainRayScene.View rayView = this.rayScene.synchronize(this.rayDevice.createCommandEncoder(), 8);
+         TerrainRayScene.View rayView = this.rayScene.synchronize(this.rayDevice.createCommandEncoder(), 8,this.gpuTimings);
          rayHandle = rayView.handle();
          rayAttributes = rayView.attributeData();
          this.frame.emissionSources(this.rayScene.emissionAddress(),this.rayScene.emissionTriangles());
@@ -557,10 +572,17 @@ public final class GraphRenderer implements AutoCloseable {
 
       for (PackGraph.Pass node : this.schedule) {
          if (node.isCompute()) {
+            if(profileDisabled(node.name())) {
+               var m=this.gpuTimings==null?null:this.gpuTimings.start(this.rayDevice.createCommandEncoder(),node.name());
+               node.writes().forEach(output->encoder.clearColorTexture(this.image(output).texture,new Vector4f(0)));
+               if(m!=null)m.finish(true);continue;
+            }
             if (node.rayScene() && rayHandle == 0) {
                // A loading/empty scene has no valid AS descriptor. Define outputs
                // explicitly until geometry is available; never trace a null handle.
+               var emptyTiming=this.gpuTimings==null?null:this.gpuTimings.start(this.rayDevice.createCommandEncoder(),node.name());
                node.writes().forEach(output -> encoder.clearColorTexture(this.image(output).texture, new Vector4f(0)));
+               if(emptyTiming!=null)emptyTiming.finish(true);
                continue;
             }
             this.computePipelines
@@ -585,6 +607,7 @@ public final class GraphRenderer implements AutoCloseable {
                descriptor.withColorAttachment(outputToMain ? main.getColorTextureView() : this.image(output).attachment, Optional.of(new Vector4f(0.0F)));
             }
 
+            var rasterTiming=this.gpuTimings==null?null:this.gpuTimings.start(this.rayDevice.createCommandEncoder(),node.name());
             RenderPass pass = encoder.createRenderPass(descriptor.build());
 
             try {
@@ -622,10 +645,12 @@ public final class GraphRenderer implements AutoCloseable {
                pass.close();
             }
 
+            if(rasterTiming!=null)rasterTiming.finish(true);
             node.writes().forEach(this::generateMipmaps);
          }
       }
 
+      if(directPresent && this.gpuTimings!=null){var m=this.gpuTimings.start(this.rayDevice.createCommandEncoder(),"composition.present");if(m!=null)m.finish(true);}
       if (!directPresent) {
          if(this.reconstruction!=null) {
             var bindings=this.graph.reconstruction();
@@ -640,6 +665,7 @@ public final class GraphRenderer implements AutoCloseable {
                submitted=true;
             } finally {if(measurement!=null)measurement.finish(submitted);}
          }
+         var presentTiming=this.gpuTimings==null?null:this.gpuTimings.start(this.rayDevice.createCommandEncoder(),"composition.present");
          RenderPass pass = encoder.createRenderPass(() -> "Sulkan present", destination.getColorTextureView(), Optional.empty());
 
          try {
@@ -664,8 +690,10 @@ public final class GraphRenderer implements AutoCloseable {
          if (pass != null) {
             pass.close();
          }
+         if(presentTiming!=null)presentTiming.finish(true);
       }
 
+      if(worldTiming!=null){worldTiming.finish(true);worldTiming=null;}
       this.parity ^= 1;
       if(Boolean.getBoolean("sulkan.qaReadback"))this.diagnosticDisplay=destination.getColorTexture();
       this.frame.commit(camera, view, world);

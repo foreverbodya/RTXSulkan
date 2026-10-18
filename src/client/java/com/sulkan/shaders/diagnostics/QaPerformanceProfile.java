@@ -1,0 +1,116 @@
+package com.sulkan.shaders.diagnostics;
+
+import com.google.gson.GsonBuilder;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.logging.LogUtils;
+import com.sulkan.shaders.graph.NativePackRuntime;
+import com.sulkan.shaders.platform.vulkan.NativeBuffer;
+import com.sulkan.shaders.render.raytracing.TerrainGeometryCache;
+import java.lang.management.ManagementFactory;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import net.minecraft.client.Minecraft;
+
+/** Real-world profiling, with deterministic frame-index camera paths and no timed readbacks. */
+final class QaPerformanceProfile {
+    private static final int FRAMES=128,WARMUP=64;
+    private final Path directory;
+    private final double[] base;
+    private final List<String> plan;
+    private final Map<String,Object> scene;
+    private final List<Object> reports=new ArrayList<>();
+    private final List<Double> wall=new ArrayList<>(),cpu=new ArrayList<>();
+    private final List<Object> perFrame=new ArrayList<>();
+    private final java.lang.management.ThreadMXBean thread=ManagementFactory.getThreadMXBean();
+    private int phaseIndex,frame=-WARMUP;
+    private long previousTime,previousCpu;
+    private Object rayStart,memoryStart,countersStart;
+    private String geometryStart;
+    private boolean measuring;
+    private CompletableFuture<Void> image;
+
+    QaPerformanceProfile(Path directory,double[] pose,Map<String,Object> scene)throws Exception {
+        this.directory=directory;this.base=pose.clone();this.scene=new LinkedHashMap<>(scene);
+        plan=List.of(System.getProperty("sulkan.qaProfilePlan","static,motion,static-repeat,stream,settled").split(","));
+        if(thread.isCurrentThreadCpuTimeSupported() && !thread.isThreadCpuTimeEnabled())thread.setThreadCpuTimeEnabled(true);
+        write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,
+            "path","motion: X +/-4m, Z +/-2m, yaw +/-12deg, one sine cycle/128 rendered frames; stream: +4m X/frame for 512m; time does not select path positions",
+            "timingScope","No GPU readbacks or disk writes during timed frames; CPU thread time is current render-thread active CPU between world-completion callbacks, excludes blocked GPU waits. Wall includes engine/ticks/pose guard. Vulkan allocation counters exclude engine, Sodium and NGX; device-wide VRAM/usage sampled externally."));
+        configure();
+    }
+    private String phase(){return plan.get(phaseIndex);}
+    private void configure(){
+        String group=phase().startsWith("off-")?phase().substring(4):"";
+        System.setProperty("sulkan.qaProfileDisabled",group);
+        LogUtils.getLogger().info("SULKAN_PROFILE_PHASE_CONFIG phase={} disabled={}",phase(),group);
+    }
+    double[] pose() {
+        double[] pose=base.clone();int n=Math.max(0,Math.min(FRAMES-1,frame));
+        if(phase().equals("motion")) {
+            double s=Math.sin(n*2*Math.PI/FRAMES);pose[0]+=4*s;pose[2]+=2*s;pose[3]+=12*s;
+        } else if(phase().equals("stream") || phase().equals("settled"))pose[0]+=phase().equals("stream")?n*4:508;
+        return pose;
+    }
+    boolean observe()throws Exception {
+        if(image!=null) {
+            if(!image.isDone())return false;image.join();image=null;
+            if(++phaseIndex==plan.size()) {
+                write("performance-profile.json",Map.of("scene",scene,"reports",reports,"complete",true,
+                    "scope","Profiling execution only. Pass-off images are not quality-preserving optimizations. No claim of long-travel leak freedom or final renderer acceptance."));
+                LogUtils.getLogger().info("SULKAN_PERFORMANCE_PROFILE_PASS phases={}",reports.size());return true;
+            }
+            frame=-WARMUP;measuring=false;configure();return false;
+        }
+        if(frame<0){frame++;return false;}
+        if(!measuring) {
+            if(!phase().equals("stream") && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
+            geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
+            countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
+            wall.clear();cpu.clear();perFrame.clear();previousTime=previousCpu=0;
+            System.setProperty("sulkan.qaGpuTimingSamples",Integer.toString(FRAMES));
+            NativePackRuntime.diagnosticBeginGpuTimings("profile-"+phase(),directory);
+            measuring=true;return false; // first timestamped frame is the following rendered frame
+        }
+        if(frame<FRAMES) {
+            long now=System.nanoTime(),active=thread.isCurrentThreadCpuTimeSupported()?thread.getCurrentThreadCpuTime():-1;
+            if(previousTime!=0)wall.add((now-previousTime)*1e-6);
+            if(previousCpu>0 && active>=0)cpu.add((active-previousCpu)*1e-6);
+            previousTime=now;previousCpu=active;
+            var rays=NativePackRuntime.diagnosticRayScene();
+            perFrame.add(Map.of("index",frame,"pose",pose(),"pendingSections",rays.pendingSections(),
+                "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",TerrainGeometryCache.statistics().revision(),
+                "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
+            frame++;return false;
+        }
+        if(!NativePackRuntime.diagnosticGpuTimingsReady())return false;
+        var report=new LinkedHashMap<String,Object>(scene);
+        report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
+        report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",NaturalSceneFingerprint.capture());
+        report.put("rayStart",rayStart);report.put("rayEnd",NativePackRuntime.diagnosticRayScene());
+        report.put("workCountersStart",countersStart);report.put("workCountersEnd",com.sulkan.shaders.graph.ProfileCounters.snapshot());
+        report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",NativeBuffer.statistics());
+        report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
+        report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
+        report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",perFrame);
+        reports.add(report);write("profile-"+phase()+".json",report);
+        var dimensions=NativePackRuntime.diagnosticReconstruction();int w=((Number)dimensions.get("outputWidth")).intValue(),h=((Number)dimensions.get("outputHeight")).intValue();
+        String name=phase();
+        image=NativePackRuntime.diagnosticReadback("$display").thenAccept(pixels->{
+            try(var png=new NativeImage(w,h,false)) {
+                for(int y=0;y<h;y++)for(int x=0;x<w;x++) {
+                    int p=(y*w+x)*4;png.setPixelABGR(x,h-1-y,(pixels.get(p)&255)|((pixels.get(p+1)&255)<<8)|((pixels.get(p+2)&255)<<16)|0xff000000);
+                }
+                png.writeToFile(directory.resolve("profile-"+name+".png"));
+            }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
+        });
+        LogUtils.getLogger().info("SULKAN_PERFORMANCE_PHASE_PASS phase={} frames={} wall={}",phase(),frame,statistics(wall));
+        return false;
+    }
+    private static Map<String,Object> statistics(List<Double> values) {
+        if(values.isEmpty())return Map.of("available",false);
+        var sorted=values.stream().sorted().toList();double mean=sorted.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
+        return Map.of("samples",values,"mean",mean,"fpsFromWallOnly",1000/mean,"p50",sorted.get(sorted.size()/2),"p95",sorted.get((int)((sorted.size()-1)*.95)),"max",sorted.getLast());
+    }
+    private void write(String name,Object report)throws Exception {Files.writeString(directory.resolve(name),new GsonBuilder().setPrettyPrinting().create().toJson(report));}
+}

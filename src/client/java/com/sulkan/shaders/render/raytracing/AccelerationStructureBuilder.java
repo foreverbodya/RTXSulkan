@@ -180,6 +180,7 @@ public final class AccelerationStructureBuilder {
     }
 
     public static void dependency(VkCommandBuffer commands, int sourceStage, int destinationStage, int sourceAccess, int destinationAccess) {
+        com.sulkan.shaders.graph.ProfileCounters.asBarrier();
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkMemoryBarrier.Buffer barriers = VkMemoryBarrier.calloc(1, stack).sType$Default().srcAccessMask(sourceAccess).dstAccessMask(destinationAccess);
             VK10.vkCmdPipelineBarrier(commands, sourceStage, destinationStage, 0, barriers, null, null);

@@ -68,6 +68,8 @@ param(
     [switch] $CloudMotionSequence,
     [switch] $CameraBobAudit,
     [switch] $GpuTimings,
+    [switch] $PerformanceProfile,
+    [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
     [switch] $CloudLightingComparison,
     [switch] $CloudLightingVolume,
@@ -103,6 +105,8 @@ param(
     [ValidateRange(180,1800)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
+if($PerformanceProfile -and $ProfilePlan -notmatch '^(static|motion|stream|settled|static-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,(static|motion|stream|settled|static-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
 if($EmissiveComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $EmissiveSampling -ne 0)){throw 'EmissiveComparison requires separate interior night 0/1/0 with display/cost capture'}
@@ -380,6 +384,7 @@ if($CloudMotionAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionAu
 if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionSequence=true')}
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
+if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
 if($SolidShadowComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSolidShadowComparison=true')}
 if($CloudSourceComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudSourceComparison=true')}
 if($NightOnly){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaNightOnly=true')}
@@ -441,6 +446,10 @@ if($RaySurfaceProbe) {
     $required=@('SULKAN_RAY_SURFACE_GPU_PASS','SULKAN_RAY_BUDGET_RETIRE_GPU_PASS','SULKAN_RT_DEVICE_NEGOTIATION requested=true enabled=true extensionsCallable=true')
     $missing=@($required | Where-Object{!$combined.Contains($_)})
     if($combined.Contains('SULKAN_RAY_SURFACE_GPU_FAIL')) {$missing+='Ray surface GPU diagnostic failed'}
+} elseif($PerformanceProfile) {
+    $required=@('SULKAN_PERFORMANCE_PROFILE_PASS','SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
+    $missing=@($required | Where-Object{!$combined.Contains($_)})
+    foreach($phase in $ProfilePlan.Split(',')){if(!$combined.Contains("SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase ")){$missing+="GPU profile missing $phase"}}
 } elseif($VisualWorld) {
     $required=@('SULKAN_QA_VISUAL_CAPTURE_PASS phase=day','SULKAN_QA_VISUAL_CAPTURE_PASS phase=sunset',
         'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
@@ -676,6 +685,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
+    performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison

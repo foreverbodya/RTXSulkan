@@ -17,8 +17,10 @@ import org.lwjgl.vulkan.VkPhysicalDeviceProperties;
 import org.lwjgl.vulkan.VkQueueFamilyProperties;
 
 /** Bounded, explicitly requested QA measurement. Queries are read only after the engine's fence. */
-final class GpuPassTimings {
-    private static final int SAMPLES=32;
+public final class GpuPassTimings {
+    private final int SAMPLES=Integer.getInteger("sulkan.qaGpuTimingSamples",32);
+    private int pending;
+    private boolean samplingFrame;
     private final VulkanDevice device;
     private final String phase;
     private final Path output;
@@ -30,8 +32,13 @@ final class GpuPassTimings {
     private Throwable failure;
     private boolean saved;
 
+    private static final class TimingPool extends VulkanQueryPool {
+        TimingPool(VulkanDevice device){super(device,2);}
+        long handle(){return vkQueryPool();}
+    }
     private static final class Series {
         int recorded;
+        boolean optional;
         final List<Double> milliseconds=new ArrayList<>();
     }
 
@@ -39,6 +46,8 @@ final class GpuPassTimings {
         this.device=device;this.phase=phase;this.output=directory.resolve("gpu-pass-timings-"+phase+".json");
         this.metadata=Map.copyOf(metadata);
         for(String name:names)if(passes.put(name,new Series())!=null)throw new IllegalArgumentException("Duplicate timed pass "+name);
+        for(String name:List.of("geometry.upload","blas.build","tlas.build")){var series=new Series();series.optional=true;passes.put(name,series);}
+        if(SAMPLES<1 || SAMPLES>256)throw new IllegalArgumentException("GPU sample count outside 1..256");
         if(passes.isEmpty())throw new IllegalArgumentException("No compute passes to measure");
         try(var stack=MemoryStack.stackPush()) {
             var properties=VkPhysicalDeviceProperties.calloc(stack);
@@ -54,29 +63,36 @@ final class GpuPassTimings {
         }
     }
 
-    Measurement start(VulkanCommandEncoder encoder,String name) {
+    public Measurement start(VulkanCommandEncoder encoder,String name) { return start(encoder,null,name); }
+    public Measurement start(VulkanCommandEncoder encoder,org.lwjgl.vulkan.VkCommandBuffer commands,String name) {
         if(failure!=null)throw new IllegalStateException("GPU timing failed",failure);
         var series=passes.get(name);
         if(series==null)throw new IllegalArgumentException("Unexpected timed pass "+name);
-        if(series.recorded==SAMPLES)return null;
-        var pool=(VulkanQueryPool)device.createTimestampQueryPool(2);
-        encoder.writeTimestamp(pool,0);
+        if(name.equals("world.total"))samplingFrame=series.recorded<SAMPLES;
+        if(series.optional ? !samplingFrame : series.recorded==SAMPLES)return null;
+        var pool=new TimingPool(device);
+        if(commands==null)encoder.writeTimestamp(pool,0);
+        else VK10.vkCmdWriteTimestamp(commands,VK10.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,pool.handle(),0);
+        pending++;
         series.recorded++;
-        return new Measurement(encoder,pool,series);
+        return new Measurement(encoder,commands,pool,series);
     }
 
-    final class Measurement {
+    public final class Measurement {
+        private final org.lwjgl.vulkan.VkCommandBuffer commands;
         private final VulkanCommandEncoder encoder;
-        private final VulkanQueryPool pool;
+        private final TimingPool pool;
         private final Series series;
         private boolean finished;
-        private Measurement(VulkanCommandEncoder encoder,VulkanQueryPool pool,Series series) {
+        private Measurement(VulkanCommandEncoder encoder,org.lwjgl.vulkan.VkCommandBuffer commands,TimingPool pool,Series series) {
+            this.commands=commands;
             this.encoder=encoder;this.pool=pool;this.series=series;
         }
-        void finish(boolean submitted) {
+        public void finish(boolean submitted) {
             if(finished)throw new IllegalStateException("GPU timing finished twice");
             finished=true;
-            encoder.writeTimestamp(pool,1);
+            if(commands==null)encoder.writeTimestamp(pool,1);
+            else VK10.vkCmdWriteTimestamp(commands,VK10.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,pool.handle(),1);
             encoder.queueForDestroy(()-> {
                 try {
                     if(!submitted)throw new IllegalStateException("Timed pass did not finish recording");
@@ -86,9 +102,9 @@ final class GpuPassTimings {
                     double milliseconds=ticks*period*1e-6;
                     if(!Double.isFinite(milliseconds) || milliseconds<0)throw new IllegalStateException("Invalid timestamp interval");
                     series.milliseconds.add(milliseconds);
-                    saveIfComplete();
+
                 } catch(Throwable problem) {failure=problem;}
-                finally {pool.destroy();}
+                finally {pool.destroy();pending--;try {saveIfComplete();}catch(Throwable problem){failure=problem;}}
             });
         }
     }
@@ -99,17 +115,18 @@ final class GpuPassTimings {
     }
 
     private void saveIfComplete() throws java.io.IOException {
-        if(saved || passes.values().stream().anyMatch(p->p.milliseconds.size()!=SAMPLES))return;
+        if(saved || pending!=0 || passes.values().stream().anyMatch(p->!p.optional && p.milliseconds.size()!=SAMPLES))return;
         var report=new LinkedHashMap<String,Object>(metadata);
         report.put("phase",phase);report.put("samplesPerPass",SAMPLES);
         report.put("timestampPeriodNanoseconds",period);report.put("timestampValidBits",validBits);
-        report.put("scope","Graphics queue compute passes and native DLSS; ALL_COMMANDS timestamp intervals include barriers and dependency stalls. Excludes raster, terrain draw, acceleration-structure build and CPU work. Instrumented ranking, not uninstrumented FPS.");
+        report.put("scope","Graphics queue ALL_COMMANDS intervals include dependency stalls. world.total spans Sulkan beginWorldFrame through post, native DLSS and present, including world raster but excluding UI/swapchain. Nested pass intervals must not be added to total. Optional geometry/BLAS/TLAS results are per-event, zero events reported explicitly. No query waits or added queue/device idle.");
         var results=new LinkedHashMap<String,Object>();
         for(var entry:passes.entrySet()) {
             var sorted=entry.getValue().milliseconds.stream().sorted().toList();
-            results.put(entry.getKey(),Map.of("milliseconds",List.copyOf(entry.getValue().milliseconds),
+            if(sorted.isEmpty()){results.put(entry.getKey(),Map.of("events",0,"milliseconds",List.of(),"mean",0d));continue;}
+            results.put(entry.getKey(),Map.of("events",sorted.size(),"milliseconds",List.copyOf(entry.getValue().milliseconds),
                     "mean",sorted.stream().mapToDouble(Double::doubleValue).average().orElseThrow(),
-                    "median",(sorted.get(15)+sorted.get(16))*.5,"p95",sorted.get(30),"min",sorted.getFirst(),"max",sorted.getLast()));
+                    "median",(sorted.get((sorted.size()-1)/2)+sorted.get(sorted.size()/2))*.5,"p95",sorted.get((int)((sorted.size()-1)*.95)),"min",sorted.getFirst(),"max",sorted.getLast()));
         }
         report.put("passes",results);
         Files.createDirectories(output.getParent());

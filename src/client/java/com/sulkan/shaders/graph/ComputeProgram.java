@@ -348,7 +348,7 @@ final class ComputeProgram implements AutoCloseable {
          ComputeProgram.Descriptors leased = descriptors;
          encoder.queueForDestroy(() -> {
             if (this.closed) {
-               VK10.vkDestroyDescriptorPool(this.device.vkDevice(), leased.pool, null);
+               VK10.vkDestroyDescriptorPool(this.device.vkDevice(), leased.pool, null);ProfileCounters.descriptorFreed();
             } else {
                this.availableDescriptors.addLast(leased);
             }
@@ -408,6 +408,7 @@ final class ComputeProgram implements AutoCloseable {
             barrier(commands, stack, 65536, 2048, 65536, 96);
             VK10.vkCmdBindPipeline(commands, 1, this.pipeline);
             VK10.vkCmdBindDescriptorSets(commands, 1, this.layout, 0, stack.longs(set), null);
+            ProfileCounters.dispatch();
             VK10.vkCmdDispatch(commands, groupsX, groupsY, groupsZ);
             barrier(commands, stack, 2048, 65536, 64, 98304);
             check(VK10.vkEndCommandBuffer(commands));
@@ -457,6 +458,7 @@ final class ComputeProgram implements AutoCloseable {
          )
       );
       long pool = handle.get(0);
+      ProfileCounters.descriptorAllocated();
 
       try {
          check(
@@ -468,12 +470,13 @@ final class ComputeProgram implements AutoCloseable {
          );
          return new ComputeProgram.Descriptors(pool, handle.get(0));
       } catch (Exception failure) {
-         VK10.vkDestroyDescriptorPool(this.device.vkDevice(), pool, null);
+         VK10.vkDestroyDescriptorPool(this.device.vkDevice(), pool, null);ProfileCounters.descriptorFreed();
          throw failure;
       }
    }
 
    static void barrier(VkCommandBuffer buffer, MemoryStack stack, int from, int to, int writes, int reads) {
+      ProfileCounters.barrier();
       VK10.vkCmdPipelineBarrier(buffer, from, to, 0, VkMemoryBarrier.calloc(1, stack).sType$Default().srcAccessMask(writes).dstAccessMask(reads), null, null);
    }
 
@@ -523,7 +526,7 @@ final class ComputeProgram implements AutoCloseable {
       this.closed = true;
 
       for (ComputeProgram.Descriptors descriptors : this.availableDescriptors) {
-         VK10.vkDestroyDescriptorPool(this.device.vkDevice(), descriptors.pool, null);
+         VK10.vkDestroyDescriptorPool(this.device.vkDevice(), descriptors.pool, null);ProfileCounters.descriptorFreed();
       }
 
       this.availableDescriptors.clear();
