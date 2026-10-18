@@ -29,6 +29,8 @@ def load_run(root):
     artifact = json.loads((root / "result.json").read_text(encoding="utf-8"))
     if artifact.get("rayQueryCounts"):
         raise ValueError(f"{root}: instrumented ray-count run has no performance baseline; use ray-query-counts-*.json")
+    if artifact.get("temporalProfile"):
+        raise ValueError(f"{root}: independent image sequence has no performance baseline; use Analyze-TemporalProfile.py")
     completed = (evidence / "performance-profile.json").exists()
     combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8")) if completed else {
         "reports": sorted((json.loads(f.read_text(encoding="utf-8")) for f in evidence.glob("profile-*.json") if f.name!="profile-plan.json"),key=lambda s:s["startEpochMs"])}

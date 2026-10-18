@@ -274,7 +274,7 @@ final class GraphFrame {
             // Camera, local sky-light interpolation and fog remain trajectory-driven.
             if(qaFixedEnvironment==null)qaFixedEnvironment=this.environment.clone();
             System.arraycopy(qaFixedEnvironment,0,this.environment,0,12);
-            System.arraycopy(qaFixedEnvironment,28,this.environment,28,6);
+            System.arraycopy(qaFixedEnvironment,31,this.environment,31,3);
          }
          for (float value : this.environment) {
             this.bytes.putFloat(value);
