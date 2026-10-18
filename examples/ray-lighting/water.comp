@@ -79,7 +79,7 @@ void main() {
         if(any(greaterThan(submergedSolar,vec3(0)))) {
             vec3 entry=shadowStart+waterLight*solarDistance;
             float causticFootprint=max((length(relative)+transmissionDistance)*angularPixel,solarDistance*0.01);
-            WaterWaves entryWaves=waterWaves((RaySceneOrigin.xyz+entry).xz,TimeDeltaFrame.x,causticFootprint,0.3);
+            WaterWaves entryWaves=waterWaves((RaySceneOrigin.xyz+entry).xz,TimeDeltaFrame.x,causticFootprint,0.45);
             submergedSolar*=mix(1.0,waterCaustic(entryWaves,solarDistance,eta),flatness*smoothstep(0.0,0.6,solarDistance));
         }
 #endif

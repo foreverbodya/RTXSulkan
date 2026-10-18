@@ -61,7 +61,7 @@ struct WaterWaves {vec2 slope;float laplacian;float lostVariance;};
 // a soft sun path rather than aliasing.
 WaterWaves waterWaves(vec2 p,float time,float footprint,float minimumWavelength) {
     WaterWaves w=WaterWaves(vec2(0),0.0,0.0);
-    float steepness=0.045+0.025*clamp(WorldTimeWeatherDimension.y,0.0,1.0);
+    float steepness=0.032+0.025*clamp(WorldTimeWeatherDimension.y,0.0,1.0);
     float wavelength=7.0;
     for(int i=0;i<9;i++) {
         float angle=0.35+1.05*sin(float(i)*2.399963);
@@ -69,7 +69,7 @@ WaterWaves waterWaves(vec2 p,float time,float footprint,float minimumWavelength)
         float k=6.283185307/wavelength,omega=sqrt(9.81*k);
         float phase=k*dot(direction,p)-omega*time+float(i)*1.7;
         float fade=smoothstep(2.0*footprint,6.0*footprint,wavelength)*step(minimumWavelength,wavelength);
-        float slope=steepness*(i<3?0.75:1.0);
+        float slope=steepness*(i<3?0.5:1.0);
         w.slope+=direction*(slope*cos(phase)*fade);
         w.laplacian-=slope*k*sin(phase)*fade;
         w.lostVariance+=0.5*slope*slope*(1.0-fade*fade);
@@ -78,7 +78,10 @@ WaterWaves waterWaves(vec2 p,float time,float footprint,float minimumWavelength)
     return w;
 }
 // Perturbs the view-facing geometric normal and keeps it visible from the camera.
+// Slopes calm toward grazing views, where small tilts swing reflections into
+// large high-contrast patches.
 vec3 waterWaveNormal(vec3 geometric,vec3 incident,vec2 slope) {
+    slope*=mix(0.45,1.0,smoothstep(0.05,0.4,dot(geometric,-incident)));
     vec3 n=normalize(geometric-vec3(slope.x,0,slope.y));
     float c=dot(n,-incident);
     return c<0.05?normalize(n-incident*(0.05-c)):n;
@@ -108,6 +111,6 @@ float waterGlint(vec3 n,vec3 view,vec3 light,float alpha2,float eta) {
 // stylized: not energy conserving at focus.
 float waterCaustic(WaterWaves waves,float depth,float eta) {
     float jacobian=1.0+depth*(1.0-eta)*waves.laplacian;
-    return clamp(1.0/max(abs(jacobian),0.4),0.45,2.2);
+    return clamp(1.0/max(abs(jacobian),0.5),0.6,1.7);
 }
 #endif
