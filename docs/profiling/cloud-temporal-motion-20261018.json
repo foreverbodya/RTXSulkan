@@ -1,0 +1,961 @@
+{
+  "run": "qa-profile-temporal-cloud-motion-sunset-2",
+  "source": {
+    "skipImageComparison": false,
+    "experiment": "cloud-3d-env",
+    "profilePlan": "motion",
+    "rayQueryCounts": false,
+    "renderDistance": 6,
+    "prepareGeometry": false,
+    "canonicalPackComparison": false,
+    "alternatePipeline": false,
+    "commit": "6d61f66e8d85fabaed64f93e607951aab28871cb",
+    "temporalProfile": true,
+    "dirty": false,
+    "nativeFrameComparison": false,
+    "profileTime": 12600,
+    "timeoutSeconds": 3600
+  },
+  "analysisComplete": true,
+  "evidenceValid": true,
+  "perceptualAcceptance": null,
+  "sourceGeometrySha256": "ff2db9f8d37339241e2b8cf4f05401f67acc7c19752734eb798af548887c62ef",
+  "inputSize": [
+    1707,
+    960
+  ],
+  "outputSize": [
+    2560,
+    1440
+  ],
+  "uniformExcludedByteRange": [
+    1120,
+    1132
+  ],
+  "terminalResult": {
+    "passed": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "activationFailure": null,
+    "artifactSha256": "C00B75D6AFE6140E5CA3DB3A0E9995F0DF04221E924CD04BEA4EC1D70DB32D10",
+    "runtimeModHashes": {
+      "fabric-api-0.162.0+26.3.jar": "8626C189B702F466800B1C8DDAC6203CF8A1E0BDAEE75A5F9A33B18C2BAA81B1",
+      "sodium-fabric-0.9.2+mc26.3.jar": "87A5BB39F7E6E41106E77F122F82FC93F9D3BC0B6EBCB746B314172A446A287A",
+      "voicechat-fabric-2.6.24+26.3.jar": "97074FA1D094A22F17D5AC11282176965A45137950B66627D3813618810C3D00"
+    },
+    "runtimeModsUnchanged": true,
+    "temporalProfile": true
+  },
+  "displayComparisons": [
+    {
+      "comparison": "A1/A2",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 13800772,
+        "sumSquaredCodeError": 14889778,
+        "maximumAbsoluteCodeError": 88,
+        "meanAbsoluteCodeError": 0.009749216150354456,
+        "rootMeanSquareCodeError": 0.10255982483803303,
+        "pixelsAtOrAbove": {
+          "1": 13122288,
+          "2": 34466,
+          "4": 6719,
+          "8": 1520,
+          "16": 317,
+          "32": 53,
+          "64": 3
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.02780975341796875,
+          "2": 7.304297553168402E-05,
+          "4": 1.4239417182074653E-05,
+          "8": 3.2212999131944444E-06,
+          "16": 6.718105740017361E-07,
+          "32": 1.1232164171006944E-07,
+          "64": 6.357828776041667E-09
+        },
+        "psnrDb": 67.91125819980607,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 27061627,
+        "sumSquaredCodeError": 29429261,
+        "maximumAbsoluteCodeError": 88,
+        "meanAbsoluteCodeError": 0.019267548933499197,
+        "rootMeanSquareCodeError": 0.1447524628951994,
+        "pixelsAtOrAbove": {
+          "1": 25270747,
+          "2": 198531,
+          "4": 13213,
+          "8": 2924,
+          "16": 610,
+          "32": 103,
+          "64": 6
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.05397739253540573,
+          "2": 0.00042405496432086615,
+          "4": 2.8222485372922134E-05,
+          "8": 6.245557195975503E-06,
+          "16": 1.3029377187226596E-06,
+          "32": 2.2000423775153107E-07,
+          "64": 1.2815780839895014E-08
+        }
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 13710856,
+        "sumSquaredCodeError": 14681334,
+        "maximumAbsoluteCodeError": 69,
+        "meanAbsoluteCodeError": 0.009685697202329282,
+        "rootMeanSquareCodeError": 0.1018394203177395,
+        "pixelsAtOrAbove": {
+          "1": 13038379,
+          "2": 34494,
+          "4": 6509,
+          "8": 1415,
+          "16": 278,
+          "32": 34,
+          "64": 1
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.027631927066379125,
+          "2": 7.310231526692709E-05,
+          "4": 1.3794369167751736E-05,
+          "8": 2.998775906032986E-06,
+          "16": 5.891587999131944E-07,
+          "32": 7.205539279513889E-08,
+          "64": 2.1192762586805556E-09
+        },
+        "psnrDb": 67.97248523675759,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 26881638,
+        "sumSquaredCodeError": 28967068,
+        "maximumAbsoluteCodeError": 69,
+        "meanAbsoluteCodeError": 0.019139398956966317,
+        "rootMeanSquareCodeError": 0.14361127993888687,
+        "pixelsAtOrAbove": {
+          "1": 25109774,
+          "2": 197398,
+          "4": 12701,
+          "8": 2686,
+          "16": 493,
+          "32": 58,
+          "64": 2
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.05363356008721566,
+          "2": 0.0004216349177055993,
+          "4": 2.7128872074584426E-05,
+          "8": 5.737197889326334E-06,
+          "16": 1.053029992344707E-06,
+          "32": 1.2388588145231847E-07,
+          "64": 4.271926946631671E-09
+        }
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 13693295,
+        "sumSquaredCodeError": 14642373,
+        "maximumAbsoluteCodeError": 69,
+        "meanAbsoluteCodeError": 0.009673291665536385,
+        "rootMeanSquareCodeError": 0.1017042009451022,
+        "pixelsAtOrAbove": {
+          "1": 13038980,
+          "2": 32125,
+          "4": 6217,
+          "8": 1375,
+          "16": 269,
+          "32": 38,
+          "64": 1
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.02763320075141059,
+          "2": 6.808174981011284E-05,
+          "4": 1.3175540500217013E-05,
+          "8": 2.9140048556857637E-06,
+          "16": 5.700853135850694E-07,
+          "32": 8.053249782986111E-08,
+          "64": 2.1192762586805556E-09
+        },
+        "psnrDb": 67.98402576760941,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 26853942,
+        "sumSquaredCodeError": 28934828,
+        "maximumAbsoluteCodeError": 69,
+        "meanAbsoluteCodeError": 0.019119679742180665,
+        "rootMeanSquareCodeError": 0.14353133887143055,
+        "pixelsAtOrAbove": {
+          "1": 25113592,
+          "2": 192166,
+          "4": 12249,
+          "8": 2623,
+          "16": 507,
+          "32": 70,
+          "64": 2
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.05364171519575678,
+          "2": 0.00041045955681321084,
+          "4": 2.616341658464567E-05,
+          "8": 5.602632190507437E-06,
+          "16": 1.0829334809711285E-06,
+          "32": 1.495174431321085E-07,
+          "64": 4.271926946631671E-09
+        }
+      }
+    }
+  ],
+  "sparseInputComparisons": [
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 25037,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 24948,
+        "maximumAbsoluteError": 1.52587890625E-05,
+        "meanAbsoluteError": 3.830807454836041E-09,
+        "rootMeanSquareError": 8.140611189886037E-08
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 9.5367431640625E-07,
+        "meanAbsoluteError": 2.980232238769531E-07,
+        "rootMeanSquareError": 4.915124923727108E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 18786,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 18643,
+        "maximumAbsoluteError": 9.1552734375E-05,
+        "meanAbsoluteError": 9.081140742523553E-09,
+        "rootMeanSquareError": 4.408297477065624E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 71747,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 69277,
+        "maximumAbsoluteError": 0.0001334562839474529,
+        "meanAbsoluteError": 8.277763396951233E-11,
+        "rootMeanSquareError": 1.0425254202526816E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3083,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3054,
+        "maximumAbsoluteError": 0.10546875,
+        "meanAbsoluteError": 9.832036981729762E-07,
+        "rootMeanSquareError": 9.878857875202579E-05
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 7.152557373046875E-07,
+        "meanAbsoluteError": 1.7881393432617188E-07,
+        "rootMeanSquareError": 3.5762786865234375E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 13760,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 13677,
+        "maximumAbsoluteError": 0.0001220703125,
+        "meanAbsoluteError": 7.133519910225014E-09,
+        "rootMeanSquareError": 3.957344093836197E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 70165,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 67878,
+        "maximumAbsoluteError": 1.1641532182693481E-09,
+        "meanAbsoluteError": 1.2770094296597252E-12,
+        "rootMeanSquareError": 1.0890872196314389E-11
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3048,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3021,
+        "maximumAbsoluteError": 0.015625,
+        "meanAbsoluteError": 8.874419138920864E-07,
+        "rootMeanSquareError": 6.933505372363314E-05
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 4.76837158203125E-06,
+        "meanAbsoluteError": 1.7881393432617188E-06,
+        "rootMeanSquareError": 2.6656007498500226E-06
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1307,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1304,
+        "maximumAbsoluteError": 3.814697265625E-06,
+        "meanAbsoluteError": 1.2297604470903858E-10,
+        "rootMeanSquareError": 1.2211745778460767E-08
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 2.384185791015625E-07,
+        "meanAbsoluteError": 5.960464477539063E-08,
+        "rootMeanSquareError": 1.1920928955078125E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 11659,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 11550,
+        "maximumAbsoluteError": 9.1552734375E-05,
+        "meanAbsoluteError": 7.895109354809517E-09,
+        "rootMeanSquareError": 4.383866183886646E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 71747,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 69277,
+        "maximumAbsoluteError": 0.0001334562839474529,
+        "meanAbsoluteError": 8.277763396951233E-11,
+        "rootMeanSquareError": 1.0425254202526816E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3083,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3054,
+        "maximumAbsoluteError": 0.10546875,
+        "meanAbsoluteError": 9.832036981729762E-07,
+        "rootMeanSquareError": 9.878857875202579E-05
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 4.76837158203125E-07,
+        "meanAbsoluteError": 1.1920928955078125E-07,
+        "rootMeanSquareError": 2.384185791015625E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 10663,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 10592,
+        "maximumAbsoluteError": 0.0001220703125,
+        "meanAbsoluteError": 6.613863373473156E-09,
+        "rootMeanSquareError": 3.9466055392389484E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 70165,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 67878,
+        "maximumAbsoluteError": 1.1641532182693481E-09,
+        "meanAbsoluteError": 1.2770094296597252E-12,
+        "rootMeanSquareError": 1.0890872196314389E-11
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3048,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3021,
+        "maximumAbsoluteError": 0.015625,
+        "meanAbsoluteError": 8.874419138920864E-07,
+        "rootMeanSquareError": 6.933505372363314E-05
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3,
+        "maximumAbsoluteError": 4.76837158203125E-06,
+        "meanAbsoluteError": 1.8477439880371094E-06,
+        "rootMeanSquareError": 2.6682650191306343E-06
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 22091,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 22015,
+        "maximumAbsoluteError": 1.52587890625E-05,
+        "meanAbsoluteError": 3.552647353708453E-09,
+        "rootMeanSquareError": 7.888468513647798E-08
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 17335,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 17202,
+        "maximumAbsoluteError": 9.1552734375E-05,
+        "meanAbsoluteError": 8.916863515097237E-09,
+        "rootMeanSquareError": 4.404505381328668E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 71747,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 69277,
+        "maximumAbsoluteError": 0.0001334562839474529,
+        "meanAbsoluteError": 8.277763396951233E-11,
+        "rootMeanSquareError": 1.0425254202526816E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3083,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3054,
+        "maximumAbsoluteError": 0.10546875,
+        "meanAbsoluteError": 9.832036981729762E-07,
+        "rootMeanSquareError": 9.878857875202579E-05
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 2.384185791015625E-07,
+        "meanAbsoluteError": 5.960464477539063E-08,
+        "rootMeanSquareError": 1.1920928955078125E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 13399,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 13317,
+        "maximumAbsoluteError": 0.0001220703125,
+        "meanAbsoluteError": 7.111559902241257E-09,
+        "rootMeanSquareError": 3.957086444389948E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 70165,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 67878,
+        "maximumAbsoluteError": 1.1641532182693481E-09,
+        "meanAbsoluteError": 1.2770094296597252E-12,
+        "rootMeanSquareError": 1.0890872196314389E-11
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3048,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3021,
+        "maximumAbsoluteError": 0.015625,
+        "meanAbsoluteError": 8.874419138920864E-07,
+        "rootMeanSquareError": 6.933505372363314E-05
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 3,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 3,
+        "maximumAbsoluteError": 4.76837158203125E-06,
+        "meanAbsoluteError": 1.8477439880371094E-06,
+        "rootMeanSquareError": 2.6682650191306343E-06
+      }
+    }
+  ],
+  "failures": [],
+  "scope": "Compact summary of complete real gameplay evidence; no performance data from this image/readback run; no formal perceptual acceptance threshold asserted."
+}

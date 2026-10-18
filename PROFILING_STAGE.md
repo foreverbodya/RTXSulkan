@@ -242,11 +242,18 @@ a complete engine/NGX barrier timeline or isolated stall attribution.
 
 ## Confirmed, hypotheses and open work
 
+The [independent motion history run](docs/profiling/cloud-temporal-motion-20261018.md)
+now contains 512 consecutive native displays across A/A/B/A sunset sequences,
+with stable geometry and matched uniforms. Candidate RGB differences are close
+to both independent controls; those controls already differ before DLSS. No
+extra broad image regression is established, but strict equivalence and the
+stationary sunset sequence remain open. The environment candidate stays opt-in.
+
 The [material lookup checkpoint](docs/profiling/material-lookup-20261018.md)
 records a preliminary +2.16% stationary bracket, a repeat invalidated by an
-external GPU workload, image differences, and an added A/A pass self-control.
-The candidate remains disabled. No clean motion speedup or quality acceptance
-is established. [Water PR #1](docs/profiling/water-pr-1-review.md) was inspected
+external GPU workload, and a fresh gameplay A/A/B control: all 128 A/A pairs
+match, while 78/128 A/B pairs differ, including rare changed intersections.
+The material candidate is rejected for the baseline. [Water PR #1](docs/profiling/water-pr-1-review.md) was inspected
 and retained separately; it is not enabled in this profiling baseline.
 
 The subsequent [real-scene attribution checkpoint](docs/profiling/attribution-20261018.md)
