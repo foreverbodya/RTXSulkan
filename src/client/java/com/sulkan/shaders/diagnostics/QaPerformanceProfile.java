@@ -123,12 +123,16 @@ final class QaPerformanceProfile {
         reports.add(report);write("profile-"+phase()+".json",report);
             timingSaved=true;
         }
-        if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && (phase().equals("static") || phase().equals("motion"))) {
+        if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && !Boolean.getBoolean("sulkan.qaSkipImageComparison") && (phase().equals("static") || phase().equals("motion"))) {
             if(verificationFrame<9) {System.setProperty("sulkan.qaProfileVerify",verificationFrame<8?"true":"false");verificationFrame++;return false;}
-            if(!com.sulkan.shaders.graph.WorkgroupVerification.ready())return false;
+            if(!com.sulkan.shaders.graph.WorkgroupVerification.ready() || !com.sulkan.shaders.graph.NativeFrameComparison.ready())return false;
             var verification=com.sulkan.shaders.graph.WorkgroupVerification.snapshot();
             write("workgroup-verification.json",verification);
-            if(System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d-env") && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
+            if(Boolean.getBoolean("sulkan.qaNativeFrameComparison")){
+                write("native-frame-comparison.json",com.sulkan.shaders.graph.NativeFrameComparison.snapshot());
+                if(verification.stream().anyMatch(row->row.get("pass").equals("frame.self") && !Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Full-frame replay self-control changed HDR");
+            }
+            if(!Boolean.getBoolean("sulkan.qaNativeFrameComparison") && System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d-env") && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
         }
         var dimensions=NativePackRuntime.diagnosticReconstruction();int w=((Number)dimensions.get("outputWidth")).intValue(),h=((Number)dimensions.get("outputHeight")).intValue();
         String name=phase();

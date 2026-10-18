@@ -70,6 +70,8 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $WorkgroupExperiment,
+    [switch] $NativeFrameComparison,
+    [switch] $SkipImageComparison,
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string] $ComputeExperiment = "workgroup",
     [ValidateSet(3000,12600,18000)][int] $ProfileTime = 3000,
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
@@ -390,6 +392,8 @@ if($CloudMotionAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionAu
 if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionSequence=true')}
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
+if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
+if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
 if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")}
 if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfileTime=$ProfileTime");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
 if($SolidShadowComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSolidShadowComparison=true')}
