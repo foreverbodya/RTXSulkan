@@ -49,7 +49,7 @@ public final class QaTemporalProfile {
     private final List<CompletableFuture<Void>> writes=new ArrayList<>();
     private final List<Map<String,Object>> frames=new ArrayList<>();
     private final byte[][] referenceUniforms=new byte[FRAMES][];
-    private int phaseIndex,logicalIndex=-1,stableFrames;
+    private int phaseIndex,logicalIndex=-1,stableFrames,prepMotionFrames;
     private long prepareRevision=-1,sequenceRevision,evaluationsAtFirstFrame;
     private String referenceGeometry,phaseGeometry;
     private Path phaseDirectory;
@@ -98,6 +98,7 @@ public final class QaTemporalProfile {
         Files.writeString(directory.resolve("temporal-manifest-candidate.json"),candidateManifest);
         writeJson(directory.resolve("temporal-plan.json"),Map.of(
             "phases",PHASES,"sequence",sequence,"warmupFrames",WARMUP,"captureFrames",FRAMES,
+            "preparationMotionFramesPerPhase",prepMotionTarget(),
             "logicalSecondsPerFrame",STEP,"sparseInputCaptureIndices",List.of(0,63,127),"inputFormats",inputFormats,
             "scope","Untimed independent complete graph/native history sequences in the same frozen world. One normal graph and native evaluation per logical frame; full native displays and actual uniforms on every adjacent capture frame. Logical QA time deliberately replaces wall cadence; this is not FPS or production-memory evidence."));
         configurePhase();
@@ -108,22 +109,24 @@ public final class QaTemporalProfile {
     }
 
     private String phase() { return PHASES.get(phaseIndex); }
+    private int prepMotionTarget() { return sequence.equals("motion")?2*FRAMES:0; }
 
     private void configurePhase()throws Exception {
-        currentClock=null;logicalIndex=-1;draining=false;stableFrames=0;prepareRevision=-1;
+        currentClock=null;logicalIndex=-1;draining=false;stableFrames=0;prepareRevision=-1;prepMotionFrames=0;
         writes.clear();frames.clear();
         phaseDirectory=directory.resolve("temporal-"+sequence+"-"+phase());Files.createDirectory(phaseDirectory);
         System.setProperty("sulkan.qaProfilePhase","temporal-"+sequence+"-"+phase());
         System.clearProperty("sulkan.qaProfileVerify");System.clearProperty("sulkan.qaProfileDisabled");
         System.setProperty("sulkan.qaProfileGroupY","8");
         Files.writeString(manifestPath,phase().equals("candidate")?candidateManifest:referenceManifest);
-        NativePackRuntime.applyOptions(ShaderRuntime.config().selectedPackId(),options);
+        try { NativePackRuntime.applyOptions(ShaderRuntime.config().selectedPackId(),options); }
+        catch(Exception failure) { recordFailure(failure);throw failure; }
         LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_PREPARE phase={} sequence={} graphReloadOrdinal={}",phase(),sequence,phaseIndex+1);
     }
 
     /** Camera for the next actual rendered frame, also while preparing or draining. */
     public double[] pose() {
-        var pose=base.clone();int index=Math.max(0,logicalIndex);
+        var pose=base.clone();int index=logicalIndex<0?(prepMotionFrames<prepMotionTarget()?prepMotionFrames:0):logicalIndex;
         if(sequence.equals("motion")) {
             double s=Math.sin(Math.floorMod(index,FRAMES)*2.0*Math.PI/FRAMES);
             pose[0]+=2*s;pose[2]+=s;pose[3]+=12*s;
@@ -133,6 +136,11 @@ public final class QaTemporalProfile {
 
     /** Called once after a normal completed world frame, before applying pose() for the next frame. */
     public boolean observe()throws Exception {
+        try { return observeFrame(); }
+        catch(Exception failure) { recordFailure(failure);throw failure; }
+    }
+
+    private boolean observeFrame()throws Exception {
         if(done)return true;
         for(var pending:writes)if(pending.isCompletedExceptionally())pending.join();
         if(draining) {
@@ -150,13 +158,25 @@ public final class QaTemporalProfile {
             configurePhase();return false;
         }
         if(logicalIndex<0) {
+            // Render the complete camera sweep twice before taking any reference
+            // fingerprint. Discovering geometry later must still fail the sequence.
+            if(prepMotionFrames<prepMotionTarget()) {
+                prepMotionFrames++;stableFrames=0;
+                if(prepMotionFrames==prepMotionTarget())LogUtils.getLogger().info("SULKAN_TEMPORAL_PREP_MOTION_PASS phase={} frames={} clockActive=false",phase(),prepMotionFrames);
+                return false;
+            }
             var memory=TerrainGeometryCache.memoryStatistics();
-            if(NativePackRuntime.diagnosticRayScene().pendingSections()!=0) {stableFrames=0;return false;}
+            var sodium=net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer.instanceNullable();
+            boolean terrainComplete=sodium!=null && sodium.isTerrainRenderComplete();
+            if(!terrainComplete || NativePackRuntime.diagnosticRayScene().pendingSections()!=0) {stableFrames=0;return false;}
             if(memory.revision()!=prepareRevision) {prepareRevision=memory.revision();stableFrames=0;return false;}
             if(++stableFrames<PREPARE_STABLE_FRAMES)return false;
             phaseGeometry=NaturalSceneFingerprint.capture(phaseDirectory.resolve("source-geometry.json"));
             if(referenceGeometry==null)referenceGeometry=phaseGeometry;
             if(!referenceGeometry.equals(phaseGeometry))throw new IllegalStateException("Temporal phase geometry changed: "+phase());
+            writeJson(phaseDirectory.resolve("preparation.json"),Map.of("phase",phase(),"prepMotionFrames",prepMotionFrames,
+                "stableFrames",stableFrames,"sodiumTerrainRenderComplete",terrainComplete,"sourceRevision",memory.revision(),
+                "sourceGeometrySha256",phaseGeometry,"logicalClockActive",false));
             sequenceRevision=memory.revision();logicalIndex=0;setClock();
             LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_BEGIN phase={} geometry={} logicalFrames={}",phase(),phaseGeometry,WARMUP+FRAMES);
             return false;
@@ -238,12 +258,32 @@ public final class QaTemporalProfile {
         if(!phaseGeometry.equals(endGeometry))throw new IllegalStateException("Temporal phase ended with different geometry");
         var report=new LinkedHashMap<String,Object>();report.put("phase",phase());report.put("graphReloadOrdinal",phaseIndex+1);
         report.put("sequence",sequence);report.put("sourceGeometrySha256",phaseGeometry);report.put("warmupFrames",WARMUP);
+        report.put("prepMotionFrames",prepMotionFrames);report.put("preparationStableFrames",stableFrames);
         report.put("captureFrames",FRAMES);report.put("frames",List.copyOf(frames));report.put("inputFormats",inputFormats);
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());
         report.put("uniformComparisonExcludedByteRange",List.of(1120,1132));
         report.put("uniformComparisonScope","All 1152 actual uniform bytes except graph-local AS generation/pending words; pending is required zero and exact geometry is checked independently. Raw uniforms are retained without modification.");
         writeJson(phaseDirectory.resolve("sequence.json"),report);reports.add(report);
         LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_PASS phase={} sequence={} captures={} adjacent=true",phase(),sequence,frames.size());
+    }
+
+    private void recordFailure(Exception failure) {
+        try {
+            var report=new LinkedHashMap<String,Object>();
+            report.put("complete",false);report.put("phase",phaseIndex<PHASES.size()?phase():"complete");
+            report.put("sequence",sequence);report.put("logicalFrame",logicalIndex);report.put("prepMotionFrames",prepMotionFrames);
+            report.put("preparationMotionTarget",prepMotionTarget());report.put("stableFrames",stableFrames);
+            report.put("preparationRevision",prepareRevision);report.put("armedSequenceRevision",sequenceRevision);
+            report.put("clock",currentClock);report.put("capturedFrames",frames.size());report.put("failure",failure.toString());
+            report.put("terrainMemory",TerrainGeometryCache.memoryStatistics());
+            var sodium=net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer.instanceNullable();
+            report.put("sodiumTerrainRenderComplete",sodium!=null && sodium.isTerrainRenderComplete());
+            try { report.put("rayScene",NativePackRuntime.diagnosticRayScene()); }
+            catch(Exception unavailable) { report.put("raySceneUnavailable",unavailable.toString()); }
+            Path output=phaseDirectory==null?directory:phaseDirectory;
+            if(logicalIndex>=0)Files.write(output.resolve("failure-frame.bin"),bytes(NativePackRuntime.diagnosticFrame()));
+            writeJson(output.resolve("temporal-failure.json"),report);
+        }catch(Exception witnessFailure) { failure.addSuppressed(witnessFailure); }
     }
 
     private static byte[] bytes(ByteBuffer source) { byte[] result=new byte[source.remaining()];source.duplicate().get(result);return result; }
