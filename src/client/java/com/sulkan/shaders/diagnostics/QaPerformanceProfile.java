@@ -117,10 +117,10 @@ final class QaPerformanceProfile {
             startEpochMs=System.currentTimeMillis();
             geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
             countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
-            geometryCpuStart=GeometryCpuMetrics.snapshot();
             wall.clear();cpu.clear();telemetryWall.clear();telemetryCpu.clear();perFrame.clear();previousTime=previousCpu=0;
             System.setProperty("sulkan.qaGpuTimingSamples",Integer.toString(FRAMES));
             NativePackRuntime.diagnosticBeginGpuTimings("profile-"+phase(),directory);
+            geometryCpuStart=GeometryCpuMetrics.snapshot();
             measuring=true;return false; // first timestamped frame is the following rendered frame
         }
         if(frame<phaseFrames()) {

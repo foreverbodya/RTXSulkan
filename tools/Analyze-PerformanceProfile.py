@@ -161,13 +161,18 @@ def quality_summary(root):
     a=[x for x in all_pairs if x.get("comparison","candidate")=="candidate"]
     self_pairs=[x for x in all_pairs if x.get("comparison")=="self"]
     h=json.loads((root/"evidence/workgroup-verification.json").read_text(encoding="utf-8"))
+    colors={phase:json.loads((root/f"evidence/profile-{phase}.json").read_text(encoding="utf-8"))["reconstruction"]["colorResource"] for phase in {x["phase"] for x in h}}
+    hdr=[x for x in h if x["resource"]==colors[x["phase"]]]
     return {"root":str(root.resolve()),"pairs":len(a),"changedPixels":sum(x["changedPixels"] for x in a),
             "maximumRGBCodeDelta":max(x["maximumRGBCodeDelta"] for x in a),
             "motionPairs":sum(x["phase"]=="motion" for x in a),
             "motionPairsWithNonzeroCameraDelta":sum(x["phase"]=="motion" and any(x["cameraDelta"]) for x in a),
-            "hdrSelfComparisons":sum(x["pass"]=="frame.self" for x in h),
-            "hdrSelfIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.self"),
-            "hdrCandidateIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.candidate"),
+            "hdrSelfComparisons":sum(x["pass"]=="frame.self" for x in hdr),
+            "hdrSelfIdentical":all(x["byteIdentical"] for x in hdr if x["pass"]=="frame.self"),
+            "hdrCandidateIdentical":all(x["byteIdentical"] for x in hdr if x["pass"]=="frame.candidate"),
+            "allPhysicalInputSelfComparisons":sum(x["pass"]=="frame.self" for x in h),
+            "allPhysicalInputsSelfIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.self"),
+            "allPhysicalInputsCandidateIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.candidate"),
             "nativeSelfPairs":len(self_pairs),
             "nativeSelfChangedPixels":sum(x["changedPixels"] for x in self_pairs),
             "nativeSelfMaximumRGBCodeDelta":max((x["maximumRGBCodeDelta"] for x in self_pairs),default=None),

@@ -242,6 +242,12 @@ a complete engine/NGX barrier timeline or isolated stall attribution.
 
 ## Confirmed, hypotheses and open work
 
+The subsequent [real-scene attribution checkpoint](docs/profiling/attribution-20261018.md)
+adds CPU geometry stage/allocation measurements, actual GI ray-query counts and
+comparisons of every native reconstruction/display input. It records another
+three successful gameplay runs and a failed diagnostic setup attempt. These
+measurements do not promote the environment candidate or close the stage.
+
 **Confirmed:** GI/clouds dominate the measured scene; no repeated settled AS
 rebuilds; environment storage/addressing changes reduce its measured GPU cost;
 32-chunk policy failure diagnosis; measured reload/resize/unload retirement.
