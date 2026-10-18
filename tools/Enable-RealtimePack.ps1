@@ -28,6 +28,15 @@ if($Step -ge 3){
     foreach($pass in $manifest.passes|Where-Object{$_.name -eq 'indirect.trace'}){$pass.reads['AtmosphereSky']='atmosphere.sky'}
 }
 if($Step -ge 5){
+    # Cloud transport belongs to the view layer. Every lighting/environment miss
+    # reads the ready clear-atmosphere LUT, rather than launching another cloud
+    # globe integration to reconstruct indirect sky illumination.
+    foreach($pass in $manifest.passes){
+        foreach($key in @($pass.reads.Keys)){
+            if($pass.reads[$key] -eq 'cloud.environment'){$pass.reads[$key]='atmosphere.sky'}
+            if($pass.reads[$key] -eq 'cloud.lighting'){$pass.reads[$key]='atmosphere.lighting'}
+        }
+    }
     $manifest.options['REALTIME_ATMOSPHERE_CACHE']=@{default=1;values=@(1)}
     ($manifest.passes|Where-Object{$_.name -eq 'atmosphere.multiple'}).reads['PreviousMultiple']='atmosphere.multiple@previous'
     $manifest.options['REALTIME_CLOUDS']=@{default=1;values=@(1)}
