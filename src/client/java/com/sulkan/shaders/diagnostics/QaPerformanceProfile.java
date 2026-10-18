@@ -184,6 +184,11 @@ final class QaPerformanceProfile {
             }
             if(!Boolean.getBoolean("sulkan.qaNativeFrameComparison") && System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d-env") && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
         }
+        // Performance-only runs must not grow image-readback staging pools or
+        // encode PNGs between A/B/A windows. Quality has its own launch.
+        if(Boolean.getBoolean("sulkan.qaSkipImageComparison")) {
+            image=CompletableFuture.completedFuture(null);
+        } else {
         var dimensions=NativePackRuntime.diagnosticReconstruction();int w=((Number)dimensions.get("outputWidth")).intValue(),h=((Number)dimensions.get("outputHeight")).intValue();
         String name=phase();
         image=NativePackRuntime.diagnosticReadback("$display").thenAccept(pixels->{
@@ -194,6 +199,7 @@ final class QaPerformanceProfile {
                 png.writeToFile(directory.resolve("profile-"+name+".png"));
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         });
+        }
         LogUtils.getLogger().info("SULKAN_PERFORMANCE_PHASE_PASS phase={} frames={} wallMeanMs={}",phase(),frame,statistics(wall).get("mean"));
         return false;
     }

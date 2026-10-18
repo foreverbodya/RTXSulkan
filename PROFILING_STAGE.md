@@ -237,6 +237,11 @@ copy or update occurs. GPU world intervals exclude UI/swapchain; CPU means activ
 render-thread time, while wall cadence includes waits/engine/pose guard. Nested
 world totals must not be added to constituent intervals. Timestamp readback uses
 existing engine completion fences, without a new per-pass wait.
+Performance-only `-SkipImageComparison` now also skips the per-phase display PNG
+readback/encoding, so image staging pools do not grow between A/B/A windows.
+This is a QA isolation change, not a production-renderer speedup; quality runs
+remain separate. The initial scene preparation may still capture its setup image
+before the timed plan starts.
 Synchronization counters cover Sulkan compute/AS helpers; they do not constitute
 a complete engine/NGX barrier timeline or isolated stall attribution.
 
