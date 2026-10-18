@@ -51,9 +51,11 @@ def load_run(root):
             "syncCpuMsPerFrame": (s["rayEnd"]["syncCpuNanoseconds"] - s["rayStart"]["syncCpuNanoseconds"]) / 1e6 / s["frames"],
             "rayEnd": s["rayEnd"],
             "workCountersDelta": {k: v-s["workCountersStart"][k] for k,v in s["workCountersEnd"].items()},
-            "configuration": {k:s.get(k) for k in ("renderDistance", "worldTime", "options", "reconstruction", "vsync", "poseCheckedEveryFrame")},
+            "configuration": {k:s.get(k) for k in ("seed","generator","camera","renderDistance", "worldTime", "options", "vsync", "poseCheckedEveryFrame")},
+            "posePathSha256":hashlib.sha256(json.dumps([x["pose"] for x in s["perFrame"]],separators=(",",":")).encode()).hexdigest(),
             "passes": g["passes"],
         }
+        row["configuration"]["reconstruction"]={k:v for k,v in s["reconstruction"].items() if k!="evaluations"}
         memory = [x["vulkanMemory"] for x in s["perFrame"] if x.get("vulkanMemory", {}).get("available")]
         if memory:
             row["processHeapEstimatedPeakMiB"] = max(x["deviceLocalEstimatedUsage"] for x in memory) / 2**20
@@ -98,6 +100,13 @@ def comparisons(run):
             continue
         a,b,c = [phases[k] for k in keys]
         geometry = {r[k] for r in (a,b,c) for k in ("geometryStart", "geometryEnd")}
+        invalid=[]
+        if [r["candidateSelected"] for r in (a,b,c)]!=[False,True,False]:invalid.append("selection is not reference/candidate/reference")
+        if len(geometry)!=1:invalid.append("geometry differs")
+        if not (a["configuration"]==b["configuration"]==c["configuration"]):invalid.append("configuration differs")
+        if len({r["posePathSha256"] for r in (a,b,c)})!=1:invalid.append("camera path differs")
+        if len({(r["frames"],r["gpuTimingPrefixFrames"]) for r in (a,b,c)})!=1:invalid.append("sample window differs")
+        if any(not r["sourceRevisionUnchanged"] for r in (a,b,c)):invalid.append("source revision changed within a window")
         mean = lambda field: statistics.mean((a[field], c[field]))
         before = mean("wallMs")
         passes = []
@@ -113,10 +122,10 @@ def comparisons(run):
             after = milliseconds(b)
             passes.append({"pass":name,"beforeMs":baseline,"afterMs":after,"savedMs":baseline-after,
                            "scope":"amortized per frame" if name in ("geometry.upload","blas.build","tlas.build") else "interval mean"})
-        output.append({"phase":phase,"geometryMatched":len(geometry)==1,
+        output.append({"phase":phase,"valid":not invalid,"invalidReasons":invalid,"geometryMatched":len(geometry)==1,
                        "referenceWallMs":before,"candidateWallMs":b["wallMs"],
                        "referenceDriftPercent":100*(c["wallMs"] / a["wallMs"]-1),
-                       "fpsGainPercent":100*(before/b["wallMs"]-1),
+                       "fpsGainPercent":100*(before/b["wallMs"]-1) if not invalid else None,
                        "referenceFps":1000/before,"candidateFps":b["fps"],
                        "referenceGpuMs":mean("gpuWorldMs"),"candidateGpuMs":b["gpuWorldMs"],
                        "referenceActiveCpuMs":mean("renderThreadActiveCpuMs"),"candidateActiveCpuMs":b["renderThreadActiveCpuMs"],
@@ -176,6 +185,9 @@ def main():
     pass_lines=["Per-pass A/B/A means in ms. AS/upload rows are amortized event totals. World total is nested; do not sum rows.", ""]
     for run in comparison:
         for c in run["comparisons"]:
+            if not c["valid"]:
+                pass_lines += [f'## {Path(run["root"]).name} / {c["phase"]}',"","Invalid comparison: "+"; ".join(c["invalidReasons"])+". Raw phase measurements remain in passes.csv.",""]
+                continue
             pass_lines += [f'## {Path(run["root"]).name} / {c["phase"]}',"", "| GPU interval | Before ms | After ms | Saved ms |", "| --- | ---: | ---: | ---: |"]
             pass_lines += [f'| {p["pass"]} | {p["beforeMs"]:.4f} | {p["afterMs"]:.4f} | {p["savedMs"]:.4f} |' for p in sorted(c["passes"],key=lambda p:-p["beforeMs"])]
             pass_lines.append("")
@@ -186,10 +198,13 @@ def main():
         for r in run["reports"]:
             lines.append(f'| {Path(run["root"]).name} / {r["phase"]} | {r["fps"]:.2f} | {r["renderThreadActiveCpuMs"]:.2f} | {r["gpuWorldMs"]:.2f} | {r["blasBuilds"]} / {r["tlasBuilds"]} | {r["nativeLiveMiBEnd"]:.1f} | {r["geometryStable"]} |')
     (output / "summary.md").write_text("\n".join(lines) + "\n")
-    paired=["| Run / path | Geometry matched | FPS before → after | CPU active ms before → after | GPU ms before → after | FPS gain | Reference drift |", "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
+    paired=["| Run / path | Valid comparison | FPS before → after | CPU active ms before → after | GPU ms before → after | FPS gain | Reference drift |", "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
     for run in comparison:
         for c in run["comparisons"]:
-            paired.append(f'| {Path(run["root"]).name} / {c["phase"]} | {c["geometryMatched"]} | {c["referenceFps"]:.2f} → {c["candidateFps"]:.2f} | {c["referenceActiveCpuMs"]:.2f} → {c["candidateActiveCpuMs"]:.2f} | {c["referenceGpuMs"]:.2f} → {c["candidateGpuMs"]:.2f} | {c["fpsGainPercent"]:+.2f}% | {c["referenceDriftPercent"]:+.2f}% |')
+            if not c["valid"]:
+                paired.append(f'| {Path(run["root"]).name} / {c["phase"]} | No: {"; ".join(c["invalidReasons"])} | — | — | — | — | — |')
+                continue
+            paired.append(f'| {Path(run["root"]).name} / {c["phase"]} | Yes | {c["referenceFps"]:.2f} → {c["candidateFps"]:.2f} | {c["referenceActiveCpuMs"]:.2f} → {c["candidateActiveCpuMs"]:.2f} | {c["referenceGpuMs"]:.2f} → {c["candidateGpuMs"]:.2f} | {c["fpsGainPercent"]:+.2f}% | {c["referenceDriftPercent"]:+.2f}% |')
     (output / "before-after.md").write_text("\n".join(paired)+"\n", encoding="utf-8")
     hashes = {}
     for run in args.runs:
