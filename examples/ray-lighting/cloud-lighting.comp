@@ -1,0 +1,19 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+void main() {
+    int index=int(gl_GlobalInvocationID.x);
+    if(index>=imageSize(Output0).x)return;
+    vec4 value=texelFetch(ClearLighting,ivec2(index,0),0);
+    if(index>0 && index<10) {
+        vec3 coefficient=vec3(0);
+        for(int i=0;i<256;i++) {
+            float y=1.0-2.0*(float(i)+0.5)/256.0,phi=float(i)*2.399963230;
+            vec3 d=vec3(cos(phi)*sqrt(1.0-y*y),y,sin(phi)*sqrt(1.0-y*y));
+            coefficient+=atmSky(CloudSky,d)*atmBasis(index-1,d);
+        }
+        float kernel=index==1?ATM_PI:index<=4?2.0*ATM_PI/3.0:ATM_PI/4.0;
+        value=vec4(coefficient*(4.0*ATM_PI/256.0)*kernel,1);
+    }
+    // Solar and aerosol multiple-scattering inputs remain separate clear terms.
+    imageStore(Output0,ivec2(index,0),value);
+}

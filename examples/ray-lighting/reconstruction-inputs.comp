@@ -1,0 +1,11 @@
+#version 460
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(pixel,imageSize(Output0)))) return;
+    float depth=texelFetch(Depth,pixel,0).r;
+#ifdef WATER_HDR
+    vec4 water=texelFetch(Water,pixel,0);
+    if(water.w>1e-7 && floatBitsToUint(water.w)+2u>=floatBitsToUint(depth))depth=water.w;
+#endif
+    imageStore(Output0,pixel,vec4(depth,0,0,0));
+}

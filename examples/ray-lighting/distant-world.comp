@@ -1,0 +1,75 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+// Visibility at the finite loaded-world boundary. Not an extra physical medium.
+// Run after cloud composition, preserving that ray's foreground volume.
+#ifndef DISTANT_CLOUD_TARGET_SCREEN
+#define DISTANT_CLOUD_TARGET_SCREEN 1
+#endif
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec4 base=texelFetch(Base,p,0);
+    float depth=texelFetch(Depth,p,0).r,waterValid=0.0;
+    uvec2 source=texelFetch(Surface,p,0).rg;
+#ifdef WATER_HDR
+    float waterDepth=texelFetch(Water,p,0).w;
+    if(waterDepth>1e-7 && floatBitsToUint(waterDepth)+2u>=floatBitsToUint(depth))depth=waterDepth;
+    waterValid=texelFetch(WaterRadiance,p,0).a;
+#endif
+    float weight=0.0,distance=0.0,kind=0.0,activation=0.0;
+    vec3 target=vec3(0);
+#if DISTANT_WORLD_BLEND == 1
+    if(FogDistances.z>FogDistances.y && atmBlend()>0.0) {
+        activation=atmBlend();
+        vec2 uv=(vec2(p)+0.5)/vec2(size);
+        precise vec4 eye=InverseProjection*vec4(uv*2.0-1.0,depth>1e-7?depth:1.0,1);
+        precise vec3 relative=mat3(InverseView)*(eye.xyz/eye.w);
+        vec3 direction=sulkanCameraRay(uv).direction;
+        bool terrain=(source.x&0xc0000000u)==0x40000000u && depth>1e-7 &&
+            max(source.y,floatBitsToUint(depth))-min(source.y,floatBitsToUint(depth))<=2u;
+        if(depth<=1e-7 && direction.y<0.0) {
+            // A missing distant world is not the atmosphere model's grey planet.
+            kind=1.0;weight=activation;
+        } else if(terrain || waterValid>0.5) {
+            kind=waterValid>0.5?3.0:2.0;
+            distance=max(length(relative.xz),abs(relative.y));
+            weight=clamp((distance-FogDistances.y)/(FogDistances.z-FogDistances.y),0.0,1.0)*activation;
+        }
+        if(weight>0.0) {
+            vec3 skyDirection=direction;
+            if(skyDirection.y<0.0) {
+                float horizontal=length(direction.xz);
+                skyDirection=horizontal>1e-6?vec3(direction.x/horizontal,0,direction.z/horizontal):vec3(1,0,0);
+            }
+            // Keep the disk at its actual direction; extending the environment
+            // lookup to the horizon must not smear the disk down the screen.
+#ifdef CLOUD_PREVIEW_STILL
+#if DISTANT_CLOUD_TARGET_SCREEN == 1
+            // Clamp only the clear background to the horizon. Projecting the
+            // cloud horizon ring downward creates radial spokes inside clouds.
+            // C + T*mix(surface,sky,w) preserves the actual foreground volume.
+            vec4 cloud=texelFetch(CloudCoefficients,p,0);
+            vec3 disk=atmVisibleSky(ClearSky,Lighting,direction)-atmSky(ClearSky,direction);
+            target=cloud.rgb+cloud.a*(atmSky(ClearSky,skyDirection)+disk);
+#else
+            vec3 disk=atmVisibleCloudSky(Sky,Lighting,direction)-atmSky(Sky,direction);
+            target=atmSky(Sky,skyDirection)+disk;
+#endif
+#else
+            vec3 disk=atmVisibleSky(Sky,Lighting,direction)-atmSky(Sky,direction);
+            target=atmSky(Sky,skyDirection)+disk;
+#endif
+        }
+    }
+#endif
+    // Explicit copy preserves every input channel on disabled/unaffected pixels.
+    precise vec4 composed=base;
+    if(weight>0.0)composed=vec4(base.rgb*(1.0-weight)+target*weight,base.a);
+    imageStore(Output0,p,composed);
+#ifdef DISTANT_WORLD_DIAGNOSTIC
+    imageStore(Output1,p,uvec4(source,floatBitsToUint(depth),floatBitsToUint(waterValid)));
+    imageStore(Output2,p,vec4(weight,distance,kind,activation));
+    imageStore(Output3,p,weight>0.0?vec4(target,1):vec4(0));
+    imageStore(Output4,p,composed);
+#endif
+}

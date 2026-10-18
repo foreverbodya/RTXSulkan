@@ -1,0 +1,15 @@
+#version 460
+#include "shaders/exposure-metering.glsl"
+shared uint bins[256];
+void main() {
+    uint index=gl_LocalInvocationIndex;bins[index]=0u;barrier();
+    for(uint sampleIndex=index;sampleIndex<36864u;sampleIndex+=256u) {
+        ivec2 p=ivec2(sampleIndex%256u,sampleIndex/256u);
+        float luminance=exposureLuminance(p);
+        if(isnan(luminance) || isinf(luminance))continue; // The meter propagates invalid HDR to the state.
+        float logL=log2(max(luminance,0.0001));
+        uint bin=uint(clamp(floor((logL+14.0)*(256.0/30.0)),0.0,255.0));
+        atomicAdd(bins[bin],exposureWeight(p));
+    }
+    barrier();imageStore(Output0,ivec2(index,0),uvec4(bins[index],0,0,0));
+}

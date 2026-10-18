@@ -1,0 +1,176 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+#include "shaders/surface-lighting.glsl"
+#ifdef CINEMATIC_ATMOSPHERE
+#include "shaders/atmosphere.glsl"
+#endif
+#include "shaders/secondary-lighting.glsl"
+#include "shaders/emission-sampling.glsl"
+// Arithmetic mean of independent raw paths; temporal reconstruction is separate.
+#ifndef INDIRECT_SAMPLES
+#define INDIRECT_SAMPLES 1
+#endif
+#include "shaders/indirect-sampling.glsl"
+uint indirectSeed(uvec2 pixel) {
+    uint seed=pixel.x+pixel.y*65537u;
+#ifdef INDIRECT_BACK_LOBE
+    seed^=0xa511e9b3u;
+#endif
+#ifdef INDIRECT_TEMPORAL
+    seed^=indirectHash(RaySceneState.w+0x68bc21ebu);
+#endif
+    return seed;
+}
+uint indirectPathSeed(uvec2 pixel,uint sampleIndex) {
+    uint seed=indirectSeed(pixel);
+    return sampleIndex==0u?seed:indirectHash(seed^(sampleIndex*0x9e3779b9u));
+}
+vec3 indirectSky(vec3 direction) {
+    float daylight=smoothstep(-0.05,0.15,SunDirectionAndRainBrightness.y);
+    vec3 result=mix(vec3(0.015,0.02,0.04),mix(vec3(0.22,0.28,0.38),vec3(0.12,0.25,0.5),
+        clamp(direction.y,0.0,1.0)),daylight);
+#ifdef CINEMATIC_ATMOSPHERE
+    // The solar disk is sampled by the explicit shadowed solar term at surfaces.
+    result=mix(result,atmSky(AtmosphereSky,direction),atmBlend());
+#endif
+    return result;
+}
+#if INDIRECT_BOUNCES >= 2
+// Bounded diffuse path. Each visited surface contributes direct/emission;
+// the final vertex has no further scattering. No roulette or radiance clamp.
+// A leaf chooses its reflected/transmitted lobe with probability 1/2 each.
+vec3 indirectPathContinuation(SulkanRaySurface hit,vec3 position,vec3 incident,uint pathSeed,uvec2 pixel,bool diagnostic) {
+    vec3 radiance=vec3(0),throughput=vec3(1);
+    for(int bounce=1;bounce<INDIRECT_BOUNCES;bounce++) {
+        if(hit.material==1u || hit.material==6u) break;
+        vec3 n=secondaryNormal(hit,incident),v=-incident;
+        vec3 base=foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb);
+        bool leaf=secondaryLeaf(hit);
+        uint seed=indirectHash(pathSeed^0xd1b54a35u^(uint(bounce-1)*0x632be59bu));
+        bool back=leaf && ((indirectHash(seed^0x94d049bbu)&1u)!=0u);
+        vec3 samplingNormal=back?-n:n;
+        vec3 direction=indirectDirection(samplingNormal,indirectSampleSeed(seed));
+        vec3 origin=position+samplingNormal*0.005;
+        if(!leaf)radiance+=throughput*base*cinematicEmissionDiffuse(origin,n,v,seed);
+        if(back) throughput*=2.0*foliageTau(base)*(1.0-foliageFresnel(abs(dot(n,direction))))*
+            (1.0-foliageFresnel(max(dot(n,v),0.0)));
+        else {
+            vec3 f=sulkanFresnel(max(dot(v,normalize(v+direction)),0.0),vec3(0.04));
+            throughput*=(leaf?2.0*foliageRho(base):base)*(1.0-f);
+        }
+        rayQueryEXT query;foliageTraceRadiance(query,Atlas,origin,0.002,direction,128.0);
+        vec3 incoming=indirectSky(direction);
+        float terminalDistance=-1.0;
+        if(rayQueryGetIntersectionTypeEXT(query,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+            float distance=rayQueryGetIntersectionTEXT(query,true);
+            terminalDistance=distance;
+            hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query,true),
+                rayQueryGetIntersectionPrimitiveIndexEXT(query,true),rayQueryGetIntersectionBarycentricsEXT(query,true),
+                sulkanRayAtlasShrink(textureSize(Atlas,0)));
+            position=origin+direction*distance;
+            incoming=secondaryAirHitSampled(hit,position,direction,Atlas,seed);
+            if(!leaf)incoming=cinematicEmissionWeightedHit(incoming,hit,
+                rayQueryGetIntersectionInstanceCustomIndexEXT(query,true),rayQueryGetIntersectionPrimitiveIndexEXT(query,true),
+                distance,direction,max(dot(n,direction),0.0)/SULKAN_LIGHT_PI);
+#ifdef CINEMATIC_ATMOSPHERE
+            incoming=mix(incoming,atmAerialWithLighting(incoming,direction,distance,AtmosphereLighting),atmBlend());
+#endif
+        }
+#ifdef RAY_INDIRECT_DIAGNOSTIC
+        if(diagnostic && bounce==1) {
+            ivec2 outputPixel=ivec2(pixel);
+            imageStore(Output4,outputPixel,vec4(origin+direction*max(terminalDistance,0.0),terminalDistance));
+            imageStore(Output5,outputPixel,vec4(direction,back?1.0:0.0));
+        }
+#endif
+        radiance+=throughput*incoming;
+        if(terminalDistance<0.0) break;
+#ifdef CINEMATIC_ATMOSPHERE
+        // Aerial above already adds this segment's in-scatter to its local term.
+        // Only extinction multiplies contributions from subsequent vertices.
+        throughput*=mix(vec3(1),atmAirTransmittance(terminalDistance),atmBlend());
+#endif
+        incident=direction;
+    }
+    return radiance;
+}
+#endif
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(pixel,size))) return;
+    imageStore(Output0,pixel,vec4(0));
+#ifdef RAY_INDIRECT_DIAGNOSTIC
+    imageStore(Output1,pixel,vec4(0));
+    imageStore(Output2,pixel,vec4(0));imageStore(Output3,pixel,vec4(0));
+#if INDIRECT_BOUNCES >= 2
+    imageStore(Output4,pixel,vec4(0,0,0,-2));imageStore(Output5,pixel,vec4(0));
+#endif
+#endif
+    uvec2 surface=texelFetch(Surface,pixel,0).rg;
+    float depth=texelFetch(Depth,pixel,0).r;uint depthBits=floatBitsToUint(depth);
+    if(depth<=1e-7 || (surface.x&0xc0000000u)!=0x40000000u || max(depthBits,surface.y)-min(depthBits,surface.y)>2u) return;
+    uint receiver=texelFetch(Material,pixel,0).y;
+    bool receiverLeaf=false;
+#ifdef LEAF_INDIRECT
+    receiverLeaf=receiver==5u;
+#endif
+#ifdef INDIRECT_BACK_LOBE
+    if(!receiverLeaf) return;
+#endif
+    if(((receiver>=2u && receiver<=6u) && !receiverLeaf) || texelFetch(EmissionMetal,pixel,0).a>0.0) return;
+    vec3 n=normalize(texelFetch(NormalRoughness,pixel,0).xyz);
+    vec2 uv=(vec2(pixel)+0.5)/vec2(size);
+    vec4 eye=InverseProjection*vec4(uv*2.0-1.0,uintBitsToFloat(surface.y),1);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w),v=normalize(-relative);
+    vec3 samplingNormal=n;
+#ifdef INDIRECT_BACK_LOBE
+    samplingNormal=-n;
+#endif
+    vec3 origin=RayCameraPosition.xyz+relative+samplingNormal*0.005;
+    vec3 totalLighting=vec3(0);
+    for(int sampleIndex=0;sampleIndex<INDIRECT_SAMPLES;sampleIndex++) {
+        uint pathSeed=indirectPathSeed(uvec2(pixel),uint(sampleIndex));
+        if(!receiverLeaf)totalLighting+=cinematicEmissionDiffuse(origin,n,v,pathSeed);
+        vec3 direction=indirectDirection(samplingNormal,indirectSampleSeed(pathSeed));
+        rayQueryEXT query;
+        foliageTraceRadiance(query,Atlas,origin,0.002,direction,128.0);
+        vec3 incoming=indirectSky(direction);
+        float distance=-1.0,hitMaterial=-1.0;
+        if(rayQueryGetIntersectionTypeEXT(query,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+            distance=rayQueryGetIntersectionTEXT(query,true);
+            vec3 position=origin+direction*distance;
+            SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query,true),
+                rayQueryGetIntersectionPrimitiveIndexEXT(query,true),rayQueryGetIntersectionBarycentricsEXT(query,true),
+                sulkanRayAtlasShrink(textureSize(Atlas,0)));
+            hitMaterial=float(hit.material);
+            incoming=secondaryAirHitSampled(hit,position,direction,Atlas,pathSeed);
+            if(!receiverLeaf)incoming=cinematicEmissionWeightedHit(incoming,hit,
+                rayQueryGetIntersectionInstanceCustomIndexEXT(query,true),rayQueryGetIntersectionPrimitiveIndexEXT(query,true),
+                distance,direction,max(dot(n,direction),0.0)/SULKAN_LIGHT_PI);
+#if INDIRECT_BOUNCES >= 2
+            incoming+=indirectPathContinuation(hit,position,direction,pathSeed,uvec2(pixel),sampleIndex==0);
+#endif
+#ifdef CINEMATIC_ATMOSPHERE
+            // This is the receiver-to-hit segment; camera-path aerial is separate.
+            incoming=mix(incoming,atmAerialWithLighting(incoming,direction,distance,AtmosphereLighting),atmBlend());
+#endif
+        }
+        vec3 h=normalize(v+direction);
+        vec3 f=sulkanFresnel(max(dot(v,h),0.0),vec3(0.04));
+        // Cosine PDF cancels the receiver Lambert cosine/pi factors.
+        vec3 diffuseLighting=(1.0-f)*incoming;
+#ifdef INDIRECT_BACK_LOBE
+        diffuseLighting=(1.0-foliageFresnel(abs(dot(n,direction))))*(1.0-foliageFresnel(max(dot(n,v),0.0)))*incoming;
+#endif
+        totalLighting+=diffuseLighting;
+#ifdef RAY_INDIRECT_DIAGNOSTIC
+        if(sampleIndex==0) {
+        imageStore(Output1,pixel,vec4(origin+direction*max(distance,0.0),distance));
+        imageStore(Output2,pixel,vec4(direction,max(dot(samplingNormal,direction),0.0)/SULKAN_LIGHT_PI));
+        imageStore(Output3,pixel,vec4(incoming,hitMaterial));
+        }
+#endif
+    }
+    imageStore(Output0,pixel,vec4(totalLighting/float(INDIRECT_SAMPLES),1));
+}

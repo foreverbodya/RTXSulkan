@@ -1,5 +1,10 @@
 #version 460 core
 
+#ifdef SULKAN_VEGETATION
+layout(location=4) in uint a_SulkanMaterial;
+#moj_import <sulkan:vegetation_wind.glsl>
+#endif
+
 #define SULKAN_GLOBALS_BINDING 2
 #moj_import <sulkan:sodium_globals.glsl>
 #moj_import <sodium:chunk_vertex.glsl>
@@ -7,6 +12,8 @@
 layout(binding = 0) uniform sampler2D u_LightTex;
 layout(binding = 3) uniform isamplerBuffer u_SectionTimeInfo;
 layout(location = 0) out vec2 v_TexCoord;
+layout(location = 1) flat out uint v_Material;
+layout(location = 2) out float v_Alpha;
 
 #ifdef VULKAN
 layout(push_constant) uniform PC {
@@ -28,6 +35,11 @@ void main() {
 	_vert_init();
 	vec3 translation = u_RegionOffset + sulkanRelativeChunkCoord(_draw_id) * vec3(16.0);
 	vec3 position = _vert_position + translation;
+#ifdef SULKAN_VEGETATION
+	position += sulkanWindOffset(position, a_SulkanMaterial);
+#endif
 	gl_Position = u_ProjectionMatrix * u_ModelViewMatrix * vec4(position, 1.0);
 	v_TexCoord = _vert_tex_diffuse_coord + _vert_tex_diffuse_coord_bias * u_TexCoordShrink;
+	v_Material = _material_params;
+	v_Alpha = _vert_color.a;
 }

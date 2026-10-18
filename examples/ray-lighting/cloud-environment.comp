@@ -1,0 +1,13 @@
+#version 460
+#define SULKAN_CLOUD_SOURCE_CACHE_USE 1
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec3 direction=atmLutDirection((vec2(p)+0.5)/vec2(size)),clear=atmSky(ClearSky,direction);
+    vec4 transport=vec4(0,0,0,1);float proxy;
+    float blend=atmBlend();
+    if(blend>0.0)transport=cinematicCloudTransport(CloudLayout,ClearLighting,cinematicCloudOrigin(CloudLayout),direction,8000.0,64,proxy);
+    imageStore(Output0,p,vec4(mix(clear,transport.rgb+transport.a*clear,blend),1.0-blend*(1.0-transport.a)));
+}

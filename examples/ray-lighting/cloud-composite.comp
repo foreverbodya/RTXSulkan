@@ -1,0 +1,89 @@
+#version 460
+#define SULKAN_CLOUD_SOURCE_CACHE_USE 1
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+#include "shaders/cloud-sampling.glsl"
+vec4 cloudBilinear(ivec2 pixel,ivec2 fullSize) {
+    ivec2 cells[4];vec4 weights;
+    vec2 w=cinematicCloudFootprint(pixel,fullSize,textureSize(CloudView,0),cells,weights);
+    return mix(mix(texelFetch(CloudView,cells[0],0),texelFetch(CloudView,cells[1],0),w.x),
+        mix(texelFetch(CloudView,cells[2],0),texelFetch(CloudView,cells[3],0),w.x),w.y);
+}
+float cloudProxy(ivec2 cells[4],vec4 weights) {
+    float sum=0.0,mass=0.0;
+    for(int i=0;i<4;i++) {
+        vec2 geometry=texelFetch(CloudGeometry,cells[i],0).rg;
+        float weight=weights[i]*geometry.y;
+        sum+=weight*geometry.x;mass+=weight;
+    }
+    return mass>1e-7?sum/mass:0.0;
+}
+vec4 cloudFullRay(SulkanCameraRay ray,float maximum,out float proxy) {
+    proxy=0.0;float blend=atmBlend();
+    if(blend<=0.0)return vec4(0,0,0,1);
+    vec4 value=cinematicCloudTransport(CloudLayout,ClearLighting,
+        cinematicCloudOrigin(CloudLayout)+ray.origin,ray.direction,maximum,64,proxy);
+    return vec4(value.rgb*blend,1.0-blend*(1.0-value.a));
+}
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec2 uv=(vec2(p)+0.5)/vec2(size);float depth=texelFetch(Depth,p,0).r;
+#ifdef WATER_HDR
+    float water=texelFetch(Water,p,0).w;
+    if(water>1e-7 && floatBitsToUint(water)+2u>=floatBitsToUint(depth))depth=water;
+#endif
+    vec4 eye=InverseProjection*vec4(uv*2.0-1.0,depth>1e-7?depth:1.0,1);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w);
+    SulkanCameraRay ray=sulkanCameraRay(uv);vec3 direction=ray.direction;
+    float maximum=depth>1e-7?min(length(relative-ray.origin),8000.0):8000.0,begin,end;
+    bool intersects=cinematicCloudSegment(cinematicCloudOrigin(CloudLayout)+ray.origin,direction,maximum,begin,end);
+    vec4 transport=intersects?cloudBilinear(p,size):vec4(0,0,0,1);
+    ivec2 cells[4];vec4 weights;
+    cinematicCloudFootprint(p,size,textureSize(CloudView,0),cells,weights);
+    float proxy=cloudProxy(cells,weights),mode=0.0,mass=1.0;int mask=15;
+#if CLOUD_DEPTH_AWARE == 1
+    mode=4.0;proxy=0.0;mass=0.0;mask=0;
+    if(intersects) {
+        float wholeBegin,wholeEnd;
+        cinematicCloudSegment(cinematicCloudOrigin(CloudLayout)+ray.origin,direction,8000.0,wholeBegin,wholeEnd);
+        if(maximum<wholeEnd) {
+            // A clipped foreground ray needs its own volume prefix. Even a
+            // nearby foreground tap can have a different endpoint/optical depth.
+            transport=cloudFullRay(ray,maximum,proxy);mode=1.0;
+        }else {
+            // Whole-volume rays must not borrow prefixes clipped by geometry.
+            // Color and the opacity-weighted finite guide use the same support.
+            ivec2 lowSize=textureSize(CloudView,0);vec4 compatible=vec4(0);
+            for(int i=0;i<4;i++) {
+                SulkanCameraRay tap=sulkanCameraRay((vec2(cells[i])+0.5)/vec2(lowSize));
+                float a,b;
+                bool hit=cinematicCloudSegment(cinematicCloudOrigin(CloudLayout)+tap.origin,tap.direction,8000.0,a,b);
+                if(!hit || texelFetch(CloudGeometry,cells[i],0).w>=b) {
+                    compatible[i]=weights[i];mask|=1<<i;
+                }
+            }
+            mass=dot(compatible,vec4(1));
+            if(mass>0.0) {
+                weights=compatible/mass;
+                if(mask!=15) {
+                    transport=vec4(0);
+                    for(int i=0;i<4;i++)transport+=weights[i]*texelFetch(CloudView,cells[i],0);
+                    // Normalized FP32 weights may sum to one plus one ULP.
+                    // Preserve the physical [0,1] range, not a scene-depth bound.
+                    transport.a=clamp(transport.a,0.0,1.0);
+                }
+                proxy=cloudProxy(cells,weights);mode=2.0;
+            }else {
+                // Thin sky holes can have no usable half-resolution sample.
+                // Integrate that full ray instead of inventing a neighbor.
+                transport=cloudFullRay(ray,maximum,proxy);mode=3.0;
+            }
+        }
+    }
+#endif
+    imageStore(Output0,p,vec4(transport.rgb+texelFetch(Base,p,0).rgb*transport.a,1));
+    imageStore(Output1,p,transport);
+    imageStore(Output2,p,vec4(depth,maximum,intersects?begin:-1.0,intersects?end:-1.0));
+    imageStore(Output3,p,vec4(proxy,mode,mass,float(mask)));
+}

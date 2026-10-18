@@ -1,0 +1,17 @@
+#version 460
+#include "shaders/night-lighting.glsl"
+#ifdef CINEMATIC_ATMOSPHERE
+#include "shaders/atmosphere.glsl"
+#endif
+void main() {
+    int x=int(gl_GlobalInvocationID.x);
+    if(x==0) imageStore(Output0,ivec2(0,0),vec4(cinematicKeyDirection(),WorldTimeWeatherDimension.y));
+    if(x==1) imageStore(Output0,ivec2(1,0),vec4(RaySceneOrigin.xyz,WorldTimeWeatherDimension.w));
+    if(x==2) {
+        vec3 solar=vec3(3.4,3.0,2.5)*smoothstep(0.0,0.15,SunDirectionAndRainBrightness.y)*(1.0-WorldTimeWeatherDimension.y*0.65);
+#ifdef CINEMATIC_ATMOSPHERE
+        solar=mix(solar,texelFetch(AtmosphereLighting,ivec2(0,0),0).rgb,atmBlend());
+#endif
+        imageStore(Output0,ivec2(2,0),vec4(solar,CameraPositionHighAndFogType.w));
+    }
+}

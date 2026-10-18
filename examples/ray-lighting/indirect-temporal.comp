@@ -1,0 +1,81 @@
+#version 460
+#include "sulkan/camera-motion.glsl"
+bool finite3(vec3 value) { return !any(isnan(value)) && !any(isinf(value)); }
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(pixel,size))) return;
+    uvec4 currentState=texelFetch(State,ivec2(0),0);
+    vec4 currentSun=texelFetch(Environment,ivec2(0,0),0);
+    vec4 currentOrigin=texelFetch(Environment,ivec2(1,0),0);
+    vec4 currentSolar=texelFetch(Environment,ivec2(2,0),0);
+    vec4 sampleValue=texelFetch(Sample,pixel,0);
+    imageStore(Output0,pixel,vec4(0));
+#ifndef INDIRECT_BACK_LOBE
+    imageStore(Output1,pixel,vec4(0));imageStore(Output2,pixel,vec4(0));
+#endif
+#ifdef ROUGH_TEMPORAL
+    if(ROUGH_DENOISE==0){imageStore(Output0,pixel,sampleValue);return;}
+#endif
+    if(sampleValue.a<0.5 || !finite3(sampleValue.rgb)) return;
+    uvec2 surface=texelFetch(Surface,pixel,0).rg;
+    vec2 uv=(vec2(pixel)+0.5)/vec2(size);
+    vec4 eye=InverseProjection*vec4(uv*2.0-1.0,uintBitsToFloat(surface.y),1.0);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w);
+    vec3 position=RayCameraPosition.xyz+relative,n=normalize(texelFetch(NormalRoughness,pixel,0).xyz);
+    uint material=texelFetch(Material,pixel,0).y;
+    uvec4 previousState=texelFetch(PreviousState,ivec2(0),0);
+    vec4 oldSun=texelFetch(PreviousEnvironment,ivec2(0,0),0);
+    vec4 oldOrigin=texelFetch(PreviousEnvironment,ivec2(1,0),0);
+    vec4 oldSolar=texelFetch(PreviousEnvironment,ivec2(2,0),0);
+    bool global=CameraDeltaAndHistoryValid.w>0.5 && currentState.w==1u && previousState.w==1u
+        && all(equal(previousState.xy,currentState.xy)) && previousState.z+1u==currentState.z
+        && length(currentSun.xyz-oldSun.xyz)<0.001 && abs(oldSun.w-currentSun.w)<0.01
+        && all(equal(oldOrigin,currentOrigin)) && oldSolar.w==currentSolar.w
+        && all(lessThanEqual(abs(currentSolar.xyz-oldSolar.xyz),0.02*max(abs(currentSolar.xyz),vec3(0.001))));
+    vec2 motion=texelFetch(Motion,pixel,0).rg;
+    // Motion excludes jitter; history images contain actual jittered samples.
+    vec2 previousUv=uv+(motion-CurrentAndPreviousJitter.xy+CurrentAndPreviousJitter.zw)/vec2(size);
+    bool accepted=global && texelFetch(MotionValid,pixel,0).r==1u
+        && all(greaterThanEqual(previousUv,vec2(0))) && all(lessThan(previousUv,vec2(1)));
+    vec4 old=vec4(0);
+    if(accepted) {
+        ivec2 previousPixel=ivec2(floor(previousUv*vec2(size)));
+        old=texelFetch(PreviousLighting,previousPixel,0);
+        vec4 oldPosition=texelFetch(PreviousPosition,previousPixel,0);
+        vec4 oldNormal=texelFetch(PreviousNormal,previousPixel,0);
+        vec3 delta=position-oldPosition.xyz;
+        float footprint=2.0*length(relative)/(max(abs(Projection[1][1]),0.01)*float(size.y));
+        float limit=min(0.25,0.01+2.0*footprint/max(abs(dot(n,normalize(-relative))),0.1));
+        accepted=old.a>=1.0 && old.a<=32.0 && finite3(old.rgb) && finite3(oldPosition.xyz)
+            && oldNormal.a>0.5 && finite3(oldNormal.xyz) && dot(n,normalize(oldNormal.xyz))>0.98
+            && oldPosition.w==float(material) && abs(dot(delta,n))<=0.02 && length(delta)<=limit;
+    }
+    float maximumCount=32.0;
+#ifdef ROUGH_TEMPORAL
+    // Primary-surface reprojection is approximate for reflected motion. Keep
+    // a short response during camera motion and constrain history to current
+    // prefiltered neighbors. This is a biased denoiser, not new transport.
+    bool moving=length(CameraDeltaAndHistoryValid.xyz)>.0001 || length(View[2].xyz-PreviousView[2].xyz)>.0001;
+    maximumCount=moving?4.0:16.0;
+    vec3 low=sampleValue.rgb,high=sampleValue.rgb;
+    for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++) {
+        ivec2 q=clamp(pixel+ivec2(x,y),ivec2(0),size-1);
+        vec4 value=texelFetch(Sample,q,0);
+        if(value.a<.5 || !finite3(value.rgb))continue;
+        if(texelFetch(Material,q,0).y!=material || dot(n,normalize(texelFetch(NormalRoughness,q,0).xyz))<.98)continue;
+        low=min(low,value.rgb);high=max(high,value.rgb);
+    }
+    vec3 margin=(high-low)*.1+vec3(.00001);
+    // Stationary light is averaged without neighborhood clipping; clipping a
+    // rare positive highlight at rest systematically loses source energy.
+    if(moving)old.rgb=clamp(old.rgb,low-margin,high+margin);
+#endif
+    float count=accepted ? min(old.a+1.0,maximumCount) : 1.0;
+    // Exact running average until 32; then a bounded-response 1/32 EMA.
+    vec3 lighting=accepted ? (old.rgb*(count-1.0)+sampleValue.rgb)/count : sampleValue.rgb;
+    imageStore(Output0,pixel,vec4(lighting,count));
+#ifndef INDIRECT_BACK_LOBE
+    imageStore(Output1,pixel,vec4(position,float(material)));
+    imageStore(Output2,pixel,vec4(n,1));
+#endif
+}

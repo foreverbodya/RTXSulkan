@@ -1,0 +1,6 @@
+#version 460
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(pixel, imageSize(Output0)))) return;
+    imageStore(Output0, pixel, vec4(texelFetch(Direct, pixel, 0).rgb + texelFetch(Reflection, pixel, 0).rgb, 1));
+}

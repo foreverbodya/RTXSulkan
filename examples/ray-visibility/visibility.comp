@@ -1,0 +1,40 @@
+#version 460
+// Sulkan supplies SulkanFrame, Depth, Output0 and SulkanRayScene declarations.
+// Opaque terrain only. This is a visibility diagnostic, not cinematic lighting.
+vec3 relativePosition(ivec2 pixel, ivec2 size) {
+    float depth = texelFetch(Depth, clamp(pixel, ivec2(0), size - 1), 0).r;
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
+    vec4 eye = InverseProjection * vec4(uv * 2.0 - 1.0, depth, 1.0);
+    return mat3(InverseView) * (eye.xyz / eye.w);
+}
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(Output0);
+    if (any(greaterThanEqual(pixel, size))) return;
+    float depth = texelFetch(Depth, pixel, 0).r;
+    if (depth <= 1e-7) {
+        imageStore(Output0, pixel, vec4(0, 0, 1, 1));
+        return;
+    }
+    vec3 surface = relativePosition(pixel, size);
+    vec3 dx = relativePosition(min(pixel + ivec2(1, 0), size - 1), size) - surface;
+    vec3 dy = relativePosition(min(pixel + ivec2(0, 1), size - 1), size) - surface;
+    vec3 normal = cross(dx, dy);
+    if (dot(normal, normal) < 1e-12) {
+        imageStore(Output0, pixel, vec4(1, 0, 1, 1));
+        return;
+    }
+    normal = normalize(normal);
+    if (dot(normal, -surface) < 0) normal = -normal;
+    vec3 light = normalize(SunDirectionAndRainBrightness.xyz);
+    vec3 camera = RayCameraPosition.xyz;
+    vec3 origin = camera + surface + normal * 0.005;
+    rayQueryEXT query;
+    rayQueryInitializeEXT(query, SulkanRayScene,
+        gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT, 1,
+        origin, 0.002, light, 128.0);
+    while (rayQueryProceedEXT(query)) {}
+    bool occluded = rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT;
+    // White: visible; black: occluded; blue: sky; magenta: invalid reconstruction.
+    imageStore(Output0, pixel, vec4(vec3(occluded ? 0.0 : 1.0), 1));
+}

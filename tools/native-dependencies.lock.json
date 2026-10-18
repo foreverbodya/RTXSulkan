@@ -1,0 +1,240 @@
+{
+  "packages": [
+    {
+      "extract": "Microsoft.VC.14.44.17.14.Tools.HostX64.TargetX64.base",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/aa209763-134c-427b-9960-9ca54ccc1734/f4ad3cee4ef18e9f36382399261de27be6910ab3467178d7e687377ec841306d/Microsoft.VC.14.44.17.14.Tools.HostX64.TargetX64.base.vsix",
+      "sha256": "f4ad3cee4ef18e9f36382399261de27be6910ab3467178d7e687377ec841306d",
+      "path": "Microsoft.VC.14.44.17.14.Tools.HostX64.TargetX64.base.vsix",
+      "root": "toolchain"
+    },
+    {
+      "extract": "Microsoft.VC.14.44.17.14.CRT.Headers.base",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/c610cd8c-801b-44b8-a80a-82cc382aeb43/852382a9aa73502b7849c1bcadfb603ba7175c4e8b60e6aba03c7de711d4ece5/Microsoft.VC.14.44.17.14.CRT.Headers.base.vsix",
+      "sha256": "852382a9aa73502b7849c1bcadfb603ba7175c4e8b60e6aba03c7de711d4ece5",
+      "path": "Microsoft.VC.14.44.17.14.CRT.Headers.base.vsix",
+      "root": "toolchain"
+    },
+    {
+      "extract": "Microsoft.VC.14.44.17.14.CRT.x64.Desktop.base",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/67cf767c-5e71-47c2-a54a-cd5631e28942/f01f701a7bcd9587a340898c851424f6a52bb913a70c185ff0d5bf0288c5831a/Microsoft.VC.14.44.17.14.CRT.x64.Desktop.base.vsix",
+      "sha256": "f01f701a7bcd9587a340898c851424f6a52bb913a70c185ff0d5bf0288c5831a",
+      "path": "Microsoft.VC.14.44.17.14.CRT.x64.Desktop.base.vsix",
+      "root": "toolchain"
+    },
+    {
+      "extract": "Microsoft.VC.14.44.17.14.CRT.x64.OneCore.Desktop.base",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/67cf767c-5e71-47c2-a54a-cd5631e28942/50d68caa9bba363d6209bf5fc8a572f013c9f370f6e203f36f04e3d84f5083ca/Microsoft.VC.14.44.17.14.CRT.x64.OneCore.Desktop.base.vsix",
+      "sha256": "50d68caa9bba363d6209bf5fc8a572f013c9f370f6e203f36f04e3d84f5083ca",
+      "path": "Microsoft.VC.14.44.17.14.CRT.x64.OneCore.Desktop.base.vsix",
+      "root": "toolchain"
+    },
+    {
+      "extract": "msvc-resources-en-US",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/aa209763-134c-427b-9960-9ca54ccc1734/603375e4d6d639bc6e0a7d0d657b17e0c3b72e52450f78eb41e987f40c3b5305/Microsoft.VC.14.44.17.14.Tools.HostX64.TargetX64.Res.base.enu.vsix",
+      "sha256": "603375e4d6d639bc6e0a7d0d657b17e0c3b72e52450f78eb41e987f40c3b5305",
+      "path": "en-US-Microsoft.VC.14.44.17.14.Tools.HostX64.TargetX64.Res.base.enu.vsix",
+      "root": "toolchain"
+    },
+    {
+      "extract": "microsoft.windows.sdk.cpp",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.sdk.cpp/10.0.26100.6584/microsoft.windows.sdk.cpp.10.0.26100.6584.nupkg",
+      "sha256": "5D31B38205BDD9AC761B4CB39FBBC6B7209B01C11194324AFC674D7D119483A0",
+      "path": "microsoft.windows.sdk.cpp.10.0.26100.6584.nupkg",
+      "root": "toolchain"
+    },
+    {
+      "extract": "microsoft.windows.sdk.cpp.x64",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.sdk.cpp.x64/10.0.26100.6584/microsoft.windows.sdk.cpp.x64.10.0.26100.6584.nupkg",
+      "sha256": "C29CE7A4641CB37EE32EBB8078CC65CFBABC7025076BCFBA869039204B1E960D",
+      "path": "microsoft.windows.sdk.cpp.x64.10.0.26100.6584.nupkg",
+      "root": "toolchain"
+    },
+    {
+      "extract": "vulkan-headers",
+      "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/zip/c46850864f4661461b0f6cb9922c058ffea4915e",
+      "sha256": "45FD1CBFBA537884F8A54D5DC2A69CB18DE42FD94E84DC6A9BF66B5DF829D79A",
+      "path": "vulkan-headers.zip",
+      "root": "sdk"
+    }
+  ],
+  "vulkanHeadersCommit": "c46850864f4661461b0f6cb9922c058ffea4915e",
+  "schema": 1,
+  "files": [
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_defs_dlssd.h",
+      "sha256": "2E97FE1595B1334F71B51724F2CB67496E8C296A7A2EEC5606DA53055882E716",
+      "path": "nvsdk_ngx_defs_dlssd.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_defs_dlssg.h",
+      "sha256": "98EC3A6FAA5AA250828C174BF8F3491AAFAC693DFE57CC798049C8918597FC60",
+      "path": "nvsdk_ngx_defs_dlssg.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_defs_vk.h",
+      "sha256": "0A24D0861ACE7D6B9362A67B7F08BEA1B33EA123C5CE730B19133DE8A891D031",
+      "path": "nvsdk_ngx_defs_vk.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_defs.h",
+      "sha256": "EA23F33497CD274860D1C25A97644FCE807DCB0037C594547203343103FAD03E",
+      "path": "nvsdk_ngx_defs.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_cuda.h",
+      "sha256": "F2851A76107BDF4FBCB7B261F3C35573C312D8ECB4BC18FB02D9E2CEC7705042",
+      "path": "nvsdk_ngx_helpers_cuda.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_d3d.h",
+      "sha256": "EC75224F36ED6580BAAF250FA83620405AD81A1D98C2C436654A0C9CF6A6B8BA",
+      "path": "nvsdk_ngx_helpers_d3d.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssd_cuda.h",
+      "sha256": "7E35CDE214D905346A487B9A28C05D35E1C55B480E237FE3DE69580A7E332730",
+      "path": "nvsdk_ngx_helpers_dlssd_cuda.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssd_d3d.h",
+      "sha256": "6DF9D02C6F47FEEE3AFC8D12340A9F554A7DDCE4DDACB1B6A13A42B26C2C6293",
+      "path": "nvsdk_ngx_helpers_dlssd_d3d.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssd_vk.h",
+      "sha256": "11DF8FBDA532A97FE867C8EF2B40058B49B7898183710F3468E55B1EEDB8F40B",
+      "path": "nvsdk_ngx_helpers_dlssd_vk.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssd.h",
+      "sha256": "A25FDDA925B479DFE869593AEBA311EF08793DA54E0391F2FE2FE756CBEF5532",
+      "path": "nvsdk_ngx_helpers_dlssd.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssg_d3d.h",
+      "sha256": "6335EBCB95DE39A361E87FE0257D6CE0723E5D8DEAA15DB3B35AFACF2B3F4220",
+      "path": "nvsdk_ngx_helpers_dlssg_d3d.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssg_vk.h",
+      "sha256": "B371D90B9F4372B9A415E68A0AFBDC2F31B7B552E219A9637D848749BC965316",
+      "path": "nvsdk_ngx_helpers_dlssg_vk.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_dlssg.h",
+      "sha256": "6881D21419C40C78EC948B326902ECE09FC112B0223144D51C4905F3FCED7A1F",
+      "path": "nvsdk_ngx_helpers_dlssg.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers_vk.h",
+      "sha256": "C192BFF72138F12F770DB48E12C1D8F712DFC81EA0E8E055EBB27D8DD1B31623",
+      "path": "nvsdk_ngx_helpers_vk.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_helpers.h",
+      "sha256": "5BCBADFE7478B802CF6D3ACA4DC5DDD7D0889B99726E69C63F9E9BD555F44471",
+      "path": "nvsdk_ngx_helpers.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_loader.h",
+      "sha256": "ABDF5F66A692620538357D29FDF78E3E2A677EE8140B7A638962ECB766585E75",
+      "path": "nvsdk_ngx_loader.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_params_dlssd.h",
+      "sha256": "D41E3BA8F1D72583B55273092C99BF426DC4A0D46DE827229E25D5B1325A370E",
+      "path": "nvsdk_ngx_params_dlssd.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_params_dlssg.h",
+      "sha256": "C24FA5AA68FFA2808C828B75CFA32843F1606F80A145F84055AC450D7E6C74AD",
+      "path": "nvsdk_ngx_params_dlssg.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_params.h",
+      "sha256": "943BC8CC5CDAE03B6303016FBAD3183636F2335AE27A2D18776798C3B4EFABBC",
+      "path": "nvsdk_ngx_params.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_standalone_common.h",
+      "sha256": "38413C3338B0AEA0202C07DA95D426BFEE7080A42913823FA2D9DD585B087B53",
+      "path": "nvsdk_ngx_standalone_common.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_standalone_cuda.h",
+      "sha256": "B23436ED5040051AC8E81554C9AF080F2463C941435BBC3B82222E5431A09499",
+      "path": "nvsdk_ngx_standalone_cuda.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx_vk.h",
+      "sha256": "2D364CE7132881EB669E9498FD570D74CBA563B1FBEBC82C235F8E1AD2DD8B6D",
+      "path": "nvsdk_ngx_vk.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/include/nvsdk_ngx.h",
+      "sha256": "DC38E7467CF415379C9D12AE1B6E4A494C453ED92720FB53E92AECB523E7B848",
+      "path": "nvsdk_ngx.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt",
+      "sha256": "D4216E39EBEF5F9B50A6712EBB37BEEB5379862A67733A9999C651F21592AAF0",
+      "path": "LICENSE.txt",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/lib/Windows_x86_64/x64/nvsdk_ngx_s.lib",
+      "sha256": "4E5D355086D2BC11E1A0842457D2519EA528EE1F3E112C45679A84960C07DFF3",
+      "path": "lib/Windows_x86_64/x64/nvsdk_ngx_s.lib",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/lib/Windows_x86_64/dev/nvngx_dlss.dll",
+      "sha256": "378262F4BA429E6199CE25D6F9275734F354C3B017F3F096D8CEA1AF468312FF",
+      "path": "lib/Windows_x86_64/dev/nvngx_dlss.dll",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/share/native/include/jni.h",
+      "sha256": "1E03BD83D1662AC00647F7A06C11D32333767EE537803EC1D153E89888414520",
+      "path": "jni/jni.h",
+      "root": "sdk"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/openjdk/jdk/jdk-25%2B36/src/java.base/windows/native/include/jni_md.h",
+      "sha256": "C989B8C6F03C26C6F170836DF8531379EB5CB3F5891F5D53F3BD17C1FDB28938",
+      "path": "jni/win32/jni_md.h",
+      "root": "sdk"
+    },
+    {
+      "root": "sdk",
+      "url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/lib/Windows_x86_64/rel/nvngx_dlss.dll",
+      "path": "lib/Windows_x86_64/rel/nvngx_dlss.dll",
+      "sha256": "3975567B8943C53ACCE397F2B72380092F84F162D00B0D2C7D08A1025C563983"
+    }
+  ],
+  "sdkCommit": "374959484e79a640feaba44c93ac8cfb0a03f5b5",
+  "sdkApi": 21
+}

@@ -1,0 +1,7 @@
+#version 460
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(pixel,imageSize(Output0))))return;
+    vec4 water=texelFetch(Water,pixel,0);
+    imageStore(Output0,pixel,vec4(water.a>0.5?water.rgb:texelFetch(Base,pixel,0).rgb,1));
+}

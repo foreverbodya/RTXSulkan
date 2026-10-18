@@ -2,210 +2,180 @@ package com.sulkan.shaders.runtime;
 
 import com.mojang.logging.LogUtils;
 import com.sulkan.shaders.config.ShaderConfig;
-import com.sulkan.shaders.effect.ShaderEffectRegistry;
-import com.sulkan.shaders.pack.ShaderPackRepository;
+import com.sulkan.shaders.graph.GraphRenderer;
+import com.sulkan.shaders.graph.NativePackRuntime;
+import com.sulkan.shaders.pack.LegacyPackMigration;
 import com.sulkan.shaders.pack.ShaderPackScanner;
-import com.sulkan.shaders.render.FullscreenPostRenderer;
-import com.sulkan.shaders.render.PostChain;
-import com.sulkan.shaders.render.ScenePostUniforms;
-import com.sulkan.shaders.render.atmosphere.AtmosphereRenderer;
-import com.sulkan.shaders.render.cloud.VolumetricCloudRenderer;
 import com.sulkan.shaders.render.shadow.DirectionalShadowPipelines;
 import com.sulkan.shaders.render.shadow.DirectionalShadowRenderer;
 import com.sulkan.shaders.render.shadow.SodiumShadowTerrainRenderer;
 import com.sulkan.shaders.render.shadow.SodiumTerrainShadowPipelines;
-import com.sulkan.shaders.render.water.WaterSceneCapture;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 public final class ShaderRuntime {
-	private static final Logger LOGGER = LogUtils.getLogger();
+   private static final Logger LOGGER = LogUtils.getLogger();
+   private static ShaderConfig config = new ShaderConfig();
+   private static List<ShaderPackScanner.AvailableShaderPack> packs = List.of();
+   private static volatile boolean resourceReloading;
 
-	private static ShaderConfig config = new ShaderConfig();
-	private static List<ShaderPackScanner.AvailableShaderPack> packs = List.of();
-	private static ShaderPipelineState pipelineState = ShaderPipelineState.fromConfig(config);
-	private static volatile boolean resourceReloading;
+   private ShaderRuntime() {
+   }
 
-	private ShaderRuntime() {
-	}
+   public static void init() {
+      config = ShaderConfig.load();
+      ShaderPackScanner.ensureShaderPackDirectory();
+      packs = ShaderPackScanner.listAvailablePacks();
+      if (!ShaderPackScanner.isKnownPackId(config.selectedPackId(), packs)) {
+         config = config.withSelection(config.enabled(), "__builtin__");
+         config.save();
+      }
+   }
 
-	public static void init() {
-		config = ShaderConfig.load();
-		pipelineState = ShaderPipelineState.fromConfig(config);
-		ShaderEffectRegistry.applyState(pipelineState);
-		ShaderPipelines.ensureInitialized(pipelineState);
-		syncFeaturePipelines();
-		ShaderPackScanner.ensureShaderPackDirectory();
-		packs = ShaderPackScanner.listAvailablePacks();
-		if (!ShaderPackScanner.isKnownPackId(config.selectedPackId(), packs)) {
-			config = config.withSelection(config.enabled(), ShaderConfig.BUILTIN_PACK_ID);
-			config.save();
-			pipelineState = ShaderPipelineState.fromConfig(config);
-			ShaderEffectRegistry.applyState(pipelineState);
-			ShaderPipelines.ensureInitialized(pipelineState);
-			syncFeaturePipelines();
-		}
-	}
+   public static void bootstrap(Minecraft minecraft) {
+      applyConfig(minecraft, config, true).whenComplete((ignored, failure) -> {
+         if (failure != null) {
+            LOGGER.error("Failed to load the selected Sulkan shader pack", failure);
+         }
+      });
+      if (!BackendStatus.vulkanActive()) {
+         LOGGER.warn(
+            "Sulkan shaders paused: Minecraft is using a non-Vulkan backend. See Video Settings to select Vulkan and restart; unsupported devices can continue with OpenGL."
+         );
+      }
 
-	public static void bootstrap(Minecraft minecraft) {
-		syncSelectedPack(minecraft, false);
-		LOGGER.info(
-				"Sulkan Shaders bootstrap complete: enabled={}, selectedPack={}, externalPacks={}",
-				config.enabled(),
-				config.selectedPackId(),
-				packs.size());
-	}
+      LOGGER.info(
+         "Sulkan Shaders bootstrap complete: enabled={}, selectedPack={}, externalPacks={}",
+         new Object[]{config.enabled(), config.selectedPackId(), packs.size()}
+      );
+   }
 
-	public static ShaderConfig config() {
-		return config;
-	}
+   public static ShaderConfig config() {
+      return config;
+   }
 
-	public static List<ShaderPackScanner.AvailableShaderPack> packs() {
-		return packs;
-	}
+   public static List<ShaderPackScanner.AvailableShaderPack> packs() {
+      return packs;
+   }
 
-	public static ShaderPipelineState pipelineState() {
-		return pipelineState;
-	}
+   public static boolean shadersEnabled() {
+      return config.enabled() && BackendStatus.vulkanActive();
+   }
 
-	public static boolean resourceReloading() {
-		return resourceReloading;
-	}
+   public static boolean resourceReloading() {
+      return resourceReloading;
+   }
 
-	public static void reloadPacks() {
-		packs = ShaderPackScanner.listAvailablePacks();
-	}
+   public static void reloadPacks() {
+      packs = ShaderPackScanner.listAvailablePacks();
+   }
 
-	public static CompletableFuture<Void> applySelection(Minecraft minecraft, boolean enabled, String selectedPackId) {
-		reloadPacks();
-		String normalizedPackId = normalizePackId(selectedPackId);
-		return applyConfig(minecraft, config.withSelection(enabled, normalizedPackId), true);
-	}
+   public static CompletableFuture<Void> applySelection(Minecraft minecraft, boolean enabled, String selectedPackId) {
+      reloadPacks();
+      String normalizedPackId = normalizePackId(selectedPackId);
+      return applyConfig(minecraft, config.withSelection(enabled, normalizedPackId), true);
+   }
 
-	public static CompletableFuture<Void> applyConfig(Minecraft minecraft, ShaderConfig nextConfig, boolean forcePackRebuild) {
-		config = nextConfig;
-		pipelineState = ShaderPipelineState.fromConfig(config);
-		ShaderEffectRegistry.applyState(pipelineState);
-		ShaderPipelines.ensureInitialized(pipelineState);
-		syncFeaturePipelines();
-		config.save();
-		boolean reloadRequired = syncSelectedPack(minecraft, forcePackRebuild);
-		minecraft.options.save();
-		if (!reloadRequired) {
-			invalidateTerrainRenderer(minecraft);
-			return CompletableFuture.completedFuture(null);
-		}
-		resourceReloading = true;
-		closeReloadableResources();
-		return minecraft.reloadResourcePacks().thenRun(() -> minecraft.execute(() -> {
-			ShaderPipelines.ensureInitialized(pipelineState);
-			syncFeaturePipelines();
-			ShaderEffectRegistry.reloadResources();
-			invalidateTerrainRenderer(minecraft);
-			resourceReloading = false;
-		})).whenComplete((ignored, throwable) -> minecraft.execute(() -> {
-			if (throwable != null) {
-				ShaderPipelines.ensureInitialized(pipelineState);
-				syncFeaturePipelines();
-				invalidateTerrainRenderer(minecraft);
-				resourceReloading = false;
-			}
-		}));
-	}
+   public static CompletableFuture<Void> applyConfig(Minecraft minecraft, ShaderConfig nextConfig, boolean forcePackRebuild) {
+      if (resourceReloading) {
+         return CompletableFuture.failedFuture(new IllegalStateException("A shader reload is already in progress"));
+      }
 
-	public static void close() {
-		ShaderEffectRegistry.close();
-		ShaderPipelines.close();
-		DirectionalShadowPipelines.close();
-		DirectionalShadowRenderer.close();
-		SodiumShadowTerrainRenderer.close();
-		SodiumTerrainShadowPipelines.close();
-		FullscreenPostRenderer.close();
-		ScenePostUniforms.close();
-		AtmosphereRenderer.close();
-		VolumetricCloudRenderer.close();
-		WaterSceneCapture.close();
-		PostChain.get().close();
-		packs = List.of();
-	}
+      ShaderConfig previousConfig = config;
+      GraphRenderer candidate = null;
 
-	private static boolean syncSelectedPack(Minecraft minecraft, boolean forceRebuild) {
-		ShaderPackScanner.AvailableShaderPack selectedPack = findPack(config.selectedPackId());
-		if (config.enabled() && !ShaderConfig.BUILTIN_PACK_ID.equals(config.selectedPackId()) && selectedPack == null) {
-			config = config.withSelection(config.enabled(), ShaderConfig.BUILTIN_PACK_ID);
-			config.save();
-			pipelineState = ShaderPipelineState.fromConfig(config);
-			ShaderEffectRegistry.applyState(pipelineState);
-			ShaderPipelines.ensureInitialized(pipelineState);
-		}
-		selectedPack = findPack(config.selectedPackId());
-		return ShaderPackRepository.sync(minecraft, config, selectedPack, forceRebuild);
-	}
+      try {
+         candidate = NativePackRuntime.prepare(nextConfig);
+         GraphRenderer prepared = candidate;
+         return applyConfigInternal(minecraft, nextConfig, forcePackRebuild).whenComplete((ignored, failurex) -> {
+            if (failurex == null) {
+               NativePackRuntime.activate(prepared, nextConfig.selectedPackId());
+            } else {
+               if (prepared != null) {
+                  prepared.close();
+               }
 
-	private static void syncFeaturePipelines() {
-		if (pipelineState.shadowsEnabled()) {
-			DirectionalShadowPipelines.ensureInitialized();
-		} else {
-			DirectionalShadowRenderer.close();
-			DirectionalShadowPipelines.close();
-			SodiumShadowTerrainRenderer.close();
-			SodiumTerrainShadowPipelines.close();
-		}
-		if (!pipelineState.waterEnabled()) {
-			WaterSceneCapture.close();
-			FullscreenPostRenderer.releaseWaterTarget();
-		}
-		if (!pipelineState.aoEnabled()) {
-			FullscreenPostRenderer.releaseAmbientOcclusionTarget();
-		}
-		if (!pipelineState.atmosphereEnabled()) {
-			AtmosphereRenderer.close();
-		}
-		if (!pipelineState.cloudsEnabled()) {
-			VolumetricCloudRenderer.close();
-		}
-	}
+               config = previousConfig;
+               config.save();
+            }
+         });
+      } catch (Exception failure) {
+         if (candidate != null) {
+            candidate.close();
+         }
 
-	private static void closeReloadableResources() {
-		ShaderPipelines.close();
-		DirectionalShadowPipelines.close();
-		DirectionalShadowRenderer.close();
-		SodiumShadowTerrainRenderer.close();
-		SodiumTerrainShadowPipelines.close();
-		FullscreenPostRenderer.close();
-		ScenePostUniforms.close();
-		AtmosphereRenderer.close();
-		VolumetricCloudRenderer.close();
-		WaterSceneCapture.close();
-		PostChain.get().close();
-	}
+         resourceReloading = false;
+         config = previousConfig;
+         LOGGER.error("Failed to apply Sulkan shader settings", failure);
+         return CompletableFuture.failedFuture(failure);
+      }
+   }
 
-	private static void invalidateTerrainRenderer(Minecraft minecraft) {
-		if (minecraft.level != null) {
-			minecraft.levelRenderer.invalidateCompiledGeometry(
-					minecraft.level,
-					minecraft.options,
-					minecraft.gameRenderer.mainCamera(),
-					minecraft.getBlockColors());
-		}
-	}
+   private static CompletableFuture<Void> applyConfigInternal(Minecraft minecraft, ShaderConfig nextConfig, boolean forcePackRebuild) {
+      config = nextConfig;
+      boolean reloadRequired = LegacyPackMigration.detach(minecraft);
+      reloadRequired |= forcePackRebuild && shadersEnabled();
+      config.save();
+      minecraft.options.save();
+      if (!reloadRequired) {
+         invalidateTerrainRenderer(minecraft);
+         return CompletableFuture.completedFuture(null);
+      } else {
+         resourceReloading = true;
+         closeReloadableResources();
+         return minecraft.reloadResourcePacks().handleAsync((ignored, throwable) -> {
+            try {
+               invalidateTerrainRenderer(minecraft);
+               if (throwable != null) {
+                  throw new CompletionException(throwable);
+               } else {
+                  return (Void)null;
+               }
+            } finally {
+               resourceReloading = false;
+            }
+         }, minecraft);
+      }
+   }
 
-	private static String normalizePackId(String selectedPackId) {
-		if (selectedPackId == null || selectedPackId.isBlank() || ShaderConfig.BUILTIN_PACK_ID.equals(selectedPackId)) {
-			return ShaderConfig.BUILTIN_PACK_ID;
-		}
-		return findPack(selectedPackId) == null ? ShaderConfig.BUILTIN_PACK_ID : selectedPackId;
-	}
+   public static void close() {
+      NativePackRuntime.close();
+      DirectionalShadowPipelines.close();
+      DirectionalShadowRenderer.close();
+      SodiumShadowTerrainRenderer.close();
+      SodiumTerrainShadowPipelines.close();
+      packs = List.of();
+   }
 
-	private static ShaderPackScanner.AvailableShaderPack findPack(String selectedPackId) {
-		for (ShaderPackScanner.AvailableShaderPack pack : packs) {
-			if (pack.id().equals(selectedPackId)) {
-				return pack;
-			}
-		}
-		return null;
-	}
+   private static void closeReloadableResources() {
+      DirectionalShadowPipelines.close();
+      DirectionalShadowRenderer.close();
+      SodiumShadowTerrainRenderer.close();
+      SodiumTerrainShadowPipelines.close();
+   }
+
+   private static void invalidateTerrainRenderer(Minecraft minecraft) {
+      NativePackRuntime.requestGeometryRebuild();
+   }
+
+   private static String normalizePackId(String selectedPackId) {
+      if (selectedPackId != null && !selectedPackId.isBlank() && !"__builtin__".equals(selectedPackId)) {
+         return findPack(selectedPackId) == null ? "__builtin__" : selectedPackId;
+      } else {
+         return "__builtin__";
+      }
+   }
+
+   private static ShaderPackScanner.AvailableShaderPack findPack(String selectedPackId) {
+      for (ShaderPackScanner.AvailableShaderPack pack : packs) {
+         if (pack.id().equals(selectedPackId)) {
+            return pack;
+         }
+      }
+
+      return null;
+   }
 }

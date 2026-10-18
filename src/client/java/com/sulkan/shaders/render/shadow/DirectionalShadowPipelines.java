@@ -1,149 +1,93 @@
 package com.sulkan.shaders.render.shadow;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Builder;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline.Snippet;
+import com.sulkan.shaders.graph.GraphShaderSources;
 import com.sulkan.shaders.mixin.RenderPipelinesAccessor;
 import com.sulkan.shaders.runtime.ShaderResourceIds;
-import com.sulkan.shaders.runtime.ShaderRuntime;
-import net.minecraft.client.renderer.BindGroupLayouts;
-
 import java.util.Optional;
+import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.client.renderer.RenderPipelines;
 
 public final class DirectionalShadowPipelines {
-	private static int receiverQualityTier = -1;
-	public static RenderPipeline ENTITY_DEPTH_SOLID;
-	public static RenderPipeline ENTITY_DEPTH_CUTOUT;
-	public static RenderPipeline ENTITY_DEPTH_TRANSLUCENT;
-	public static RenderPipeline ENTITY_RECEIVER_SOLID;
-	public static RenderPipeline ENTITY_RECEIVER_CUTOUT;
-	public static RenderPipeline ENTITY_RECEIVER_TRANSLUCENT;
+   public static RenderPipeline ENTITY_DEPTH_SOLID;
+   public static RenderPipeline ENTITY_DEPTH_CUTOUT;
+   public static RenderPipeline ENTITY_DEPTH_TRANSLUCENT;
 
-	private DirectionalShadowPipelines() {
-	}
+   private DirectionalShadowPipelines() {
+   }
 
-	public static void ensureInitialized() {
-		int qualityTier = ShaderRuntime.config().shadowQualityPreset().tier();
-		if (ENTITY_DEPTH_SOLID != null && receiverQualityTier == qualityTier) {
-			return;
-		}
-		close();
-		receiverQualityTier = qualityTier;
+   public static void ensureInitialized() {
+      if (ENTITY_DEPTH_SOLID == null) {
+         close();
+         DepthStencilState depthWrite = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 0.0F, 0.0F);
+         ColorTargetState shadowColor = new ColorTargetState(Optional.empty(), GpuFormat.R8_UNORM, 1);
+         ENTITY_DEPTH_SOLID = entity("pipeline/shadow/entity_depth_solid", "entity_shadow_depth")
+            .withColorTargetState(shadowColor)
+            .withDepthStencilState(depthWrite)
+            .withCull(false)
+            .withBindGroupLayout(casterLayout())
+            .build();
+         ENTITY_DEPTH_CUTOUT = entity("pipeline/shadow/entity_depth_cutout", "entity_shadow_depth")
+            .withColorTargetState(shadowColor)
+            .withDepthStencilState(depthWrite)
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F)
+            .withCull(false)
+            .withBindGroupLayout(casterLayout())
+            .build();
+         ENTITY_DEPTH_TRANSLUCENT = entity("pipeline/shadow/entity_depth_translucent", "entity_shadow_depth")
+            .withColorTargetState(shadowColor)
+            .withDepthStencilState(depthWrite)
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F)
+            .withCull(false)
+            .withBindGroupLayout(casterLayout())
+            .build();
+      }
+   }
 
-		DepthStencilState depthWrite = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, 0.0f, 0.0f);
-		ColorTargetState shadowColor = new ColorTargetState(Optional.empty(), GpuFormat.R8_UNORM, ColorTargetState.WRITE_RED);
-		ENTITY_DEPTH_SOLID = entity("pipeline/shadow/entity_depth_solid", "entity_shadow_depth")
-				.withColorTargetState(shadowColor)
-				.withDepthStencilState(depthWrite)
-				.withCull(false)
-				.withBindGroupLayout(casterLayout())
-				.build();
-		ENTITY_DEPTH_CUTOUT = entity("pipeline/shadow/entity_depth_cutout", "entity_shadow_depth")
-				.withColorTargetState(shadowColor)
-				.withDepthStencilState(depthWrite)
-				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
-				.withCull(false)
-				.withBindGroupLayout(casterLayout())
-				.build();
-		ENTITY_DEPTH_TRANSLUCENT = entity("pipeline/shadow/entity_depth_translucent", "entity_shadow_depth")
-				.withColorTargetState(shadowColor)
-				.withDepthStencilState(depthWrite)
-				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
-				.withCull(false)
-				.withBindGroupLayout(casterLayout())
-				.build();
-		ENTITY_RECEIVER_SOLID = entity("pipeline/shadow/entity_receiver_solid_q" + qualityTier, "entity_shadow_receiver")
-				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
-				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
-				.withBindGroupLayout(receiverLayout())
-				.build();
-		ENTITY_RECEIVER_CUTOUT = entity("pipeline/shadow/entity_receiver_cutout_q" + qualityTier, "entity_shadow_receiver")
-				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
-				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
-				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
-				.withBindGroupLayout(receiverLayout())
-				.build();
-		ENTITY_RECEIVER_TRANSLUCENT = entity("pipeline/shadow/entity_receiver_translucent_q" + qualityTier, "entity_shadow_receiver")
-				.withShaderDefine("ALPHA_CUTOUT", 0.1f)
-				.withShaderDefine("PER_FACE_LIGHTING")
-				.withShaderDefine("SULKAN_SHADOW_FILTER_TIER", qualityTier)
-				.withShaderDefine("SULKAN_SHADOW_CASCADE_COUNT", activeCascadeCount())
-				.withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-				.withCull(false)
-				.withBindGroupLayout(receiverLayout())
-				.build();
-	}
+   public static void close() {
+      for (RenderPipeline pipeline : new RenderPipeline[]{ENTITY_DEPTH_SOLID, ENTITY_DEPTH_CUTOUT, ENTITY_DEPTH_TRANSLUCENT}) {
+         if (pipeline != null) {
+            GraphShaderSources.remove(pipeline);
+         }
+      }
 
-	public static void close() {
-		ENTITY_DEPTH_SOLID = null;
-		ENTITY_DEPTH_CUTOUT = null;
-		ENTITY_DEPTH_TRANSLUCENT = null;
-		ENTITY_RECEIVER_SOLID = null;
-		ENTITY_RECEIVER_CUTOUT = null;
-		ENTITY_RECEIVER_TRANSLUCENT = null;
-		receiverQualityTier = -1;
-	}
+      ENTITY_DEPTH_SOLID = null;
+      ENTITY_DEPTH_CUTOUT = null;
+      ENTITY_DEPTH_TRANSLUCENT = null;
+   }
 
-	private static int activeCascadeCount() {
-		return switch (ShaderRuntime.config().shadowQualityPreset()) {
-			case LOW -> 1;
-			case MEDIUM -> 3;
-			case HIGH, ULTRA -> 4;
-			case OFF -> 0;
-		};
-	}
+   public static RenderPipeline entityDepthPipeline(RenderPipeline pipeline) {
+      if (pipeline == RenderPipelines.ENTITY_SOLID || pipeline == RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD) {
+         return ENTITY_DEPTH_SOLID;
+      } else if (pipeline == RenderPipelines.ENTITY_CUTOUT
+         || pipeline == RenderPipelines.ENTITY_CUTOUT_CULL
+         || pipeline == RenderPipelines.ENTITY_CUTOUT_Z_OFFSET
+         || pipeline == RenderPipelines.ENTITY_CUTOUT_DISSOLVE
+         || pipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL
+         || pipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL) {
+         return ENTITY_DEPTH_CUTOUT;
+      } else {
+         return pipeline != RenderPipelines.ENTITY_TRANSLUCENT && pipeline != RenderPipelines.ENTITY_TRANSLUCENT_CULL ? null : ENTITY_DEPTH_TRANSLUCENT;
+      }
+   }
 
-	public static RenderPipeline entityDepthPipeline(RenderPipeline pipeline) {
-		if (pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_SOLID
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD) {
-			return ENTITY_DEPTH_SOLID;
-		}
-		if (pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_CUTOUT
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_CUTOUT_CULL
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_CUTOUT_Z_OFFSET
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_CUTOUT_DISSOLVE
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ARMOR_CUTOUT_NO_CULL
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL) {
-			return ENTITY_DEPTH_CUTOUT;
-		}
-		if (pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT_CULL
-				|| pipeline == net.minecraft.client.renderer.RenderPipelines.ARMOR_TRANSLUCENT) {
-			return ENTITY_DEPTH_TRANSLUCENT;
-		}
-		return null;
-	}
+   private static Builder entity(String location, String shaderName) {
+      return RenderPipeline.builder(new Snippet[]{RenderPipelinesAccessor.sulkan$entitySnippet()})
+         .withLocation(ShaderResourceIds.id(location))
+         .withVertexShader(ShaderResourceIds.coreShader(shaderName))
+         .withFragmentShader(ShaderResourceIds.coreShader(shaderName))
+         .withBindGroupLayout(BindGroupLayouts.SAMPLER1);
+   }
 
-	private static RenderPipeline.Builder entity(String location, String shaderName) {
-		return RenderPipeline.builder(RenderPipelinesAccessor.sulkan$entitySnippet())
-				.withLocation(ShaderResourceIds.id(location))
-				.withVertexShader(ShaderResourceIds.coreShader(shaderName))
-				.withFragmentShader(ShaderResourceIds.coreShader(shaderName))
-				.withBindGroupLayout(BindGroupLayouts.SAMPLER1);
-	}
-
-	private static BindGroupLayout receiverLayout() {
-		return BindGroupLayout.builder()
-				.withSampler("SulkanShadowMap0")
-				.withSampler("SulkanShadowMap1")
-				.withSampler("SulkanShadowMap2")
-				.withSampler("SulkanShadowMap3")
-				.withSampler("SulkanEntityShadowMap0")
-				.withSampler("SulkanEntityShadowMap1")
-				.withSampler("SulkanEntityShadowMap2")
-				.withSampler("SulkanEntityShadowMap3")
-				.withUniform("SulkanShadowData", UniformType.UNIFORM_BUFFER)
-				.build();
-	}
-
-	private static BindGroupLayout casterLayout() {
-		return BindGroupLayout.builder()
-				.withUniform("SulkanCascade", UniformType.UNIFORM_BUFFER)
-				.build();
-	}
+   private static BindGroupLayout casterLayout() {
+      return BindGroupLayout.builder().withUniform("SulkanCascade", UniformType.UNIFORM_BUFFER).build();
+   }
 }

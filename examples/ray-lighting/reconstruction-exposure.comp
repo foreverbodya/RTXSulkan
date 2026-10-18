@@ -1,0 +1,2 @@
+#version 460
+void main() { imageStore(Output0,ivec2(0),vec4(1,0,0,0)); }

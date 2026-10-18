@@ -1,0 +1,18 @@
+#version 460
+#include "shaders/exposure-metering.glsl"
+void main() {
+    ivec2 tile=ivec2(gl_GlobalInvocationID.xy),tiles=imageSize(Output0);
+    if(any(greaterThanEqual(tile,tiles)))return;
+    float sum=0.0,weights=0.0,minimum=3.402823e38,maximum=0.0;
+    for(int y=0;y<4;y++)for(int x=0;x<4;x++) {
+        ivec2 samplePixel=tile*4+ivec2(x,y);
+        float luminance=exposureLuminance(samplePixel);
+        if(isnan(luminance) || isinf(luminance)) {
+            imageStore(Output0,tile,vec4(uintBitsToFloat(0x7fc00000u)));return;
+        }
+        float weight=float(exposureWeight(samplePixel))/1024.0;
+        sum+=log2(max(luminance,0.0001))*weight;weights+=weight;
+        minimum=min(minimum,luminance);maximum=max(maximum,luminance);
+    }
+    imageStore(Output0,tile,vec4(sum,weights,minimum,maximum));
+}

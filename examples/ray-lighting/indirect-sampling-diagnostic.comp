@@ -1,0 +1,17 @@
+#version 460
+#include "shaders/indirect-sampling.glsl"
+// Fixed endpoint stress cases, independent of frame seed, world and camera.
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy);
+    if(p.x>=4096 || p.y>=4) return;
+    uint radial=p.x<2048?0xffffffu-uint(p.x):uint(p.x-2048);
+    vec3 n=p.y==0?vec3(1,0,0):p.y==1?normalize(vec3(1,-0.000005424,-0.00004059)):
+        p.y==2?vec3(0,0,1):normalize(vec3(0.3,0.4,0.866025403784));
+    vec3 sampleValue=indirectSampleBits(radial,0x5abcdeu);
+    vec3 d=indirectDirection(n,sampleValue);
+    imageStore(Output0,p,vec4(d,max(dot(n,d),0.0)/3.141592653589793));
+    // Counterexample: the old subtraction, evaluated on the same actual GPU.
+    sampleValue.z=1.0-sampleValue.x;
+    d=indirectDirection(n,sampleValue);
+    imageStore(Output1,p,vec4(d,max(dot(n,d),0.0)/3.141592653589793));
+}

@@ -1,0 +1,13 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+void main() {
+    ivec2 id=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(id,size)))return;
+    vec2 period=cinematicCloudPeriod(CloudLayout);
+    vec3 p=vec3((float(id.x)+0.37)/float(size.x)*period.x*(id.x%2==0?1.0:-1.0),
+        cinematicCloudBottom()+(float(id.y)+0.23)/float(size.y)*CLOUD_THICKNESS,
+        -(float(id.y)+0.23)/float(size.y)*period.y);
+    imageStore(Output0,id,cinematicCloudAmbientColumns(CloudLayout,p));
+    imageStore(Output1,id,vec4(p,1));
+}

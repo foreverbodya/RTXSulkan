@@ -1,0 +1,4 @@
+#version 460
+void main() {
+    imageStore(Output0,ivec2(0),uvec4(RaySceneState.xy,RaySceneState.w,RaySceneState.z==0u && RaySceneFlags.x==1u?1u:0u));
+}

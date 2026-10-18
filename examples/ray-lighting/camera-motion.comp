@@ -1,0 +1,22 @@
+#version 460
+#include "sulkan/camera-motion.glsl"
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size=imageSize(Output0);
+    if (any(greaterThanEqual(pixel,size))) return;
+    vec2 motion=vec2(0);
+    uvec2 source=texelFetch(MotionSource,pixel,0).rg;
+    uvec2 surface=texelFetch(Surface,pixel,0).rg;
+    float depth=texelFetch(Depth,pixel,0).r;
+    uint bits=floatBitsToUint(depth);
+    bool staticSurface=source.y==1u && (surface.x&0xc0000000u)==0x40000000u
+        && max(source.x,bits)-min(source.x,bits)<=2u;
+#ifdef WATER_HDR
+    bool water=source.y==2u && (surface.x&0xc0000000u)==0x80000000u && source.x+2u>=bits;
+    if(water){depth=uintBitsToFloat(source.x);staticSurface=true;}
+#endif
+    bool valid=staticSurface && sulkanStaticCameraMotion((vec2(pixel)+.5)/vec2(size),depth,motion);
+    if(depth<=1e-7)valid=sulkanSkyCameraMotion((vec2(pixel)+.5)/vec2(size),motion);
+    imageStore(Output0,pixel,vec4(valid ? motion : vec2(0),0,0));
+    imageStore(Output1,pixel,uvec4(valid ? 1u : 0u));
+}

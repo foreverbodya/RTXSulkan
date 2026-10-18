@@ -1,0 +1,14 @@
+#version 460
+#include "shaders/cloud-view-density.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec3 origin=texelFetch(Positions,p*4,0).xyz;
+    const vec3 directions[8]=vec3[8](vec3(1,0,0),vec3(-1,0,0),vec3(0,1,0),vec3(0,-1,0),
+        vec3(0,0,1),vec3(0,0,-1),vec3(1,1,1),vec3(-1,1,-1));
+    const float lengths[8]=float[8](0.0,0.001,0.125,0.5,1.0,2.0,6.0,31.25);
+    float length=lengths[p.x%8];vec3 direction=normalize(directions[p.y%8]);
+    int count=clamp(int(ceil(length)),1,32);float ds=length/float(count);
+    imageStore(Output0,p,cinematicCloudDensityColumn(CloudLayout,origin,direction,length));
+    imageStore(Output1,p,vec4(origin,length));imageStore(Output2,p,vec4(direction,float(count)));
+}

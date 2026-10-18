@@ -1,0 +1,10 @@
+RasterCoverageReference.java adapts the single-sample coverage interval approach
+from calculateTriangleCoverage in framework/common/tcuRasterizationVerifier.cpp:
+https://github.com/KhronosGroup/VK-GL-CTS/blob/bee83722547054754049485ae6ae8344496c02a6/framework/common/tcuRasterizationVerifier.cpp
+
+Copyright 2014 The Android Open Source Project
+Licensed under the Apache License, Version 2.0. See VK-GL-CTS-Apache-2.0.txt.
+
+Local changes: bounded Java long arithmetic, double projected coordinates,
+single-sample coverage only, explicit small-triangle overlap handling, and an
+independent source-plane witness. This is not the complete Khronos verifier.

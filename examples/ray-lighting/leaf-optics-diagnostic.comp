@@ -1,0 +1,8 @@
+#version 460
+#include "shaders/leaf-optics.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(p,imageSize(Output0))))return;
+    vec3 albedo=vec3(float(p.x)/4095.0,float((p.x*73)%4096)/4095.0,float(p.x%16)/15.0);
+    imageStore(Output0,p,vec4(p.y==0?foliageRho(albedo):foliageTau(albedo),float(FOLIAGE_OPTICS)));
+}

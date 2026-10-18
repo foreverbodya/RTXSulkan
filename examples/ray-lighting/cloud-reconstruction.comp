@@ -1,0 +1,53 @@
+#version 460
+#include "shaders/cloud-sampling.glsl"
+#include "sulkan/camera-rays.glsl"
+// One representative volume point is an approximation for multilayer transparency.
+// Keep GI reprojection on the original surface motion; only the SR inputs change.
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy), size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    float depth=texelFetch(BaseDepth,p,0).r;
+    vec2 motion=texelFetch(BaseMotion,p,0).rg;
+    uint valid=texelFetch(BaseValid,p,0).r;
+    vec2 uv=(vec2(p)+0.5)/vec2(size);
+    ivec2 cells[4];vec4 weights;
+    cinematicCloudFootprint(p,size,textureSize(CloudGeometry,0),cells,weights);
+    float distanceSum=0.0, opacitySum=0.0;
+    for(int i=0;i<4;i++) {
+        vec2 geometry=texelFetch(CloudGeometry,cells[i],0).rg;
+        float weight=weights[i]*geometry.y;
+        distanceSum+=weight*geometry.x;opacitySum+=weight;
+    }
+    float proxy=opacitySum>1e-7?distanceSum/opacitySum:0.0;
+#if CLOUD_DEPTH_AWARE == 1
+    proxy=texelFetch(CloudProxy,p,0).x;
+#endif
+    float opacity=1.0-texelFetch(CloudCoefficients,p,0).a;
+    vec4 segment=texelFetch(CloudSegment,p,0);
+    SulkanCameraRay ray=sulkanCameraRay(uv);
+    vec3 relative=ray.origin+ray.direction*proxy;
+    vec4 current=Projection*View*vec4(relative,1.0);
+    float projected=current.w>1e-8?current.z/current.w:0.0;
+    bool selected=false;
+#if CLOUD_RECONSTRUCTION_GUIDES == 1
+    // Use the finite proxy only where the volume dominates the composed pixel,
+    // lies in its full-resolution ray segment, and is in front of its surface.
+    selected=opacity>=0.5 && segment.z>=0.0 && proxy>=segment.z && proxy<=segment.w
+        && current.w>1e-8 && projected>max(depth,1e-7) && projected<=1.0;
+    if(selected) {
+        depth=projected;motion=vec2(0);valid=0u;
+        vec4 previous=PreviousProjection*PreviousView*vec4(relative+CameraDeltaAndHistoryValid.xyz,1.0);
+        if(CameraDeltaAndHistoryValid.w>=0.5 && previous.w>1e-8 && !any(isnan(previous)) && !any(isinf(previous))) {
+            vec2 candidate=(previous.xy/previous.w*0.5+0.5-uv)*ViewSizeAndInverse.xy
+                +CurrentAndPreviousJitter.xy-CurrentAndPreviousJitter.zw;
+            if(!any(isnan(candidate)) && !any(isinf(candidate)) && all(lessThanEqual(abs(candidate),vec2(65504.0)))) {
+                motion=candidate;valid=1u;
+            }
+        }
+    }
+#endif
+    imageStore(Output0,p,vec4(depth,0,0,0));
+    imageStore(Output1,p,vec4(motion,0,0));
+    imageStore(Output2,p,uvec4(valid));
+    imageStore(Output3,p,vec4(proxy,opacity,projected,selected?1.0:0.0));
+}

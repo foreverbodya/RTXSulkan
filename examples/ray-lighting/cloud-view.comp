@@ -1,0 +1,31 @@
+#version 460
+#define SULKAN_CLOUD_SOURCE_CACHE_USE 1
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec2 uv=(vec2(p)+0.5)/vec2(size);
+    ivec2 fullSize=textureSize(Depth,0),pixel=clamp(ivec2(uv*vec2(fullSize)),ivec2(0),fullSize-1);
+    float depth=texelFetch(Depth,pixel,0).r;
+#ifdef WATER_HDR
+    float water=texelFetch(Water,pixel,0).w;
+    if(water>1e-7 && floatBitsToUint(water)+2u>=floatBitsToUint(depth))depth=water;
+#endif
+    vec4 eye=InverseProjection*vec4(uv*2.0-1.0,depth>1e-7?depth:1.0,1);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w);
+    SulkanCameraRay ray=sulkanCameraRay(uv);vec3 direction=ray.direction;
+    float maximum=depth>1e-7?min(length(relative-ray.origin),8000.0):8000.0;
+    vec4 transport=vec4(0,0,0,1);float proxy=0.0,projectedDepth=0.0;
+    float blend=atmBlend();
+    if(blend>0.0) {
+        transport=cinematicCloudTransport(CloudLayout,ClearLighting,cinematicCloudOrigin(CloudLayout)+ray.origin,direction,maximum,64,proxy);
+        transport=vec4(transport.rgb*blend,1.0-blend*(1.0-transport.a));
+        if(proxy>0.0) {
+            vec4 projected=Projection*View*vec4(ray.origin+direction*proxy,1);
+            if(projected.w>1e-8)projectedDepth=projected.z/projected.w;
+        }
+    }
+    imageStore(Output0,p,transport);
+    imageStore(Output1,p,vec4(proxy,1.0-transport.a,projectedDepth,maximum));
+}

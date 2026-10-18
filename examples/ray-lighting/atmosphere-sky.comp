@@ -1,0 +1,27 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(pixel,size))) return;
+    vec4 sky=vec4(0,0,0,1);
+    if(atmBlend()>0.0) sky=atmIntegrate(atmLutDirection((vec2(pixel)+0.5)/vec2(size)),normalize(SunDirectionAndRainBrightness.xyz),atmObserverHeight()
+#if ATM_MULTIPLE_SCATTERING == 1
+        ,AtmosphereMultiple
+#endif
+    );
+#if NIGHT_SKY == 1
+    if(atmBlend()>0.0) {
+        vec3 direction=atmLutDirection((vec2(pixel)+0.5)/vec2(size));
+        vec4 moon=atmIntegrate(direction,normalize(MoonDirectionAndPhase.xyz),atmObserverHeight()
+#if ATM_MULTIPLE_SCATTERING == 1
+            ,AtmosphereMultiple
+#endif
+        );
+        sky.rgb+=CINEMATIC_MOON_SCALE*cinematicMoonPhase()*CINEMATIC_MOON_TINT*moon.rgb;
+        // Authored dim airglow is part of the environment, hence also traced
+        // indirect light and reflected sky. It is not an unoccluded surface fill.
+        sky.rgb+=cinematicNightAmount()*vec3(0.000008,0.000013,0.000022)*smoothstep(-0.02,0.15,direction.y);
+    }
+#endif
+    imageStore(Output0,pixel,sky);
+}

@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(value = RenderSectionManager.class, remap = false)
 public interface RenderSectionManagerAccessor {
-	@Accessor("regions")
-	RenderRegionManager sulkan$regions();
+   @Accessor("regions")
+   RenderRegionManager sulkan$regions();
 }

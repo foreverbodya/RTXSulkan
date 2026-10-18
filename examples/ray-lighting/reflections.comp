@@ -1,0 +1,102 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+#ifdef CINEMATIC_ATMOSPHERE
+#include "shaders/atmosphere.glsl"
+#endif
+// Static smooth-metal reflections with opaque and alpha-tested terrain hits.
+// Rough reflections, dynamic objects and temporal denoising follow separately.
+const float PI = 3.141592653589793;
+vec3 srgbToLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), greaterThan(c, vec3(0.04045)));
+}
+vec3 environment(vec3 direction) {
+    float daylight = smoothstep(-0.05, 0.15, SunDirectionAndRainBrightness.y);
+    vec3 result=mix(vec3(0.015, 0.02, 0.04), mix(vec3(0.22, 0.28, 0.38), vec3(0.12, 0.25, 0.5),
+        clamp(direction.y, 0.0, 1.0)), daylight);
+#ifdef CINEMATIC_ATMOSPHERE
+    result=mix(result,atmSky(AtmosphereSky,direction),atmBlend());
+#endif
+    return result;
+}
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(Output0);
+    if (any(greaterThanEqual(pixel, size))) return;
+    imageStore(Output0, pixel, vec4(0));
+    imageStore(Output1, pixel, vec4(0));
+    float depth = texelFetch(Depth, pixel, 0).r;
+    uvec2 surfaceId = texelFetch(Surface, pixel, 0).rg;
+    uint bits = floatBitsToUint(depth);
+    bool terrain = depth > 1e-7 && (surfaceId.x & 0xc0000000u) == 0x40000000u
+        && max(bits, surfaceId.y) - min(bits, surfaceId.y) <= 2u;
+    vec4 geometry = texelFetch(NormalRoughness, pixel, 0);
+    vec4 material = texelFetch(EmissionMetal, pixel, 0);
+    if (!terrain || material.a < 0.99 || geometry.w > 0.025) return;
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
+    vec4 eye = InverseProjection * vec4(uv * 2.0 - 1.0, depth, 1.0);
+    vec3 relative = mat3(InverseView) * (eye.xyz / eye.w);
+    vec3 incident = normalize(relative);
+    vec3 normal = normalize(geometry.xyz);
+    vec3 direction = reflect(incident, normal);
+    vec3 camera = RayCameraPosition.xyz;
+    vec3 origin = camera + relative + normal * 0.005;
+    rayQueryEXT query;
+    foliageTraceRadiance(query, Atlas, origin, 0.002, direction, 128.0);
+    vec3 incoming = environment(direction);
+    if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+        float distance = rayQueryGetIntersectionTEXT(query, true);
+        vec3 position = origin + direction * distance;
+        SulkanRaySurface hit = sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query, true),
+            rayQueryGetIntersectionPrimitiveIndexEXT(query, true), rayQueryGetIntersectionBarycentricsEXT(query, true),
+            sulkanRayAtlasShrink(textureSize(Atlas, 0)));
+        vec3 albedo = srgbToLinear(clamp((textureLod(Atlas, hit.uv, 0.0) * hit.color).rgb, 0.0, 1.0));
+        // Terrain instances currently translate section-local geometry without rotation.
+        vec3 hitNormal = dot(hit.normal, direction) < 0.0 ? hit.normal : -hit.normal;
+        float emission = hit.material == 9u ? 4.0 : hit.material == 10u ? 1.5 : hit.material == 11u ? 2.0 : 0.0;
+        incoming = albedo * ((vec3(0.12, 0.16, 0.23) * hit.light.y * hit.light.y
+            + vec3(1.2, 0.58, 0.22) * pow(clamp(hit.light.x, 0.0, 1.0), 2.4)) * hit.occlusion + emission);
+#ifdef CINEMATIC_ATMOSPHERE
+        incoming+=atmBlend()*albedo*(atmIrradiance(AtmosphereLighting,hitNormal)/PI-vec3(0.12,0.16,0.23))*hit.light.y*hit.light.y*hit.occlusion;
+#endif
+        vec3 light = cinematicKeyDirection();
+        bool leaf=false;
+#ifdef FOLIAGE_TRANSMISSION
+        leaf=hit.material==5u;
+        if(leaf) {
+            vec3 front=vec3(0.12,0.16,0.23)*PI,back=front;
+#ifdef CINEMATIC_ATMOSPHERE
+            front=mix(front,atmIrradiance(AtmosphereLighting,hitNormal),atmBlend());
+            back=mix(back,atmIrradiance(AtmosphereLighting,-hitNormal),atmBlend());
+#endif
+            vec3 oldSky=albedo*front/PI;
+            incoming+=((foliageRho(albedo)*.96*front+foliageTau(albedo)*.9216*back)/PI-oldSky)*hit.light.y*hit.light.y*hit.occlusion;
+        }
+#endif
+        float signedNl=dot(hitNormal,light),nl=max(signedNl,0.0);
+        if ((nl > 0.0 || (leaf && signedNl<0)) && light.y > 0.0 && hit.material != 6u) {
+            vec3 visibility;
+            visibility=foliageSolarVisibility(Atlas,position+hitNormal*(leaf && signedNl<0 ? -.005 : .005),light,128.0);
+            if (any(greaterThan(visibility,vec3(0)))) {
+                vec3 solar=vec3(3.4,3.0,2.5)*smoothstep(0.0,0.15,light.y)*(1.0-WorldTimeWeatherDimension.y*0.65);
+#ifdef CINEMATIC_ATMOSPHERE
+                solar=mix(solar,texelFetch(AtmosphereLighting,ivec2(0,0),0).rgb,atmBlend());
+#endif
+                incoming+=(leaf ? foliageRho(albedo)*.96 : albedo)/PI*solar*visibility*nl;
+                if(leaf && signedNl<0) incoming+=foliageBtdf(albedo,-signedNl,max(dot(hitNormal,-direction),0.0))*solar*visibility*(-signedNl);
+            }
+        }
+#ifdef CINEMATIC_ATMOSPHERE
+        incoming=mix(incoming,atmAerialWithLighting(incoming,direction,distance,AtmosphereLighting),atmBlend());
+#endif
+        imageStore(Output1, pixel, vec4(position, distance));
+    }
+    vec3 f0 = texelFetch(Albedo, pixel, 0).rgb;
+    vec3 fresnel = f0 + (1.0 - f0) * pow(1.0 - max(dot(normal, -incident), 0.0), 5.0);
+    vec3 reflected=incoming*fresnel;
+#ifdef CINEMATIC_ATMOSPHERE
+    // Camera-path in-scattering is already added once by the direct pass.
+    reflected*=mix(vec3(1),atmAirTransmittance(length(relative)),atmBlend());
+#endif
+    imageStore(Output0,pixel,vec4(max(reflected,vec3(0)),1));
+}

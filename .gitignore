@@ -3,3 +3,28 @@ build/
 run/
 */build/
 *.log
+playtest-*/
+# Original Minecraft assets captured only for local QA replay.
+evidence/**/cloud-source.png
+# CPU replay snapshots contain original Minecraft texture samples in JSON too.
+evidence/**/*-source*-geometry.json
+evidence/**/second-bounce-reference-failure.json
+# Local replay payloads and source checkpoints; retain reports/hashes separately.
+evidence/**/*.bin
+evidence/**/*.zip
+evidence/**/*.png
+evidence/**/*.jpg
+evidence/**/*.apng
+evidence/**/*.mp4
+__pycache__/
+*.py[cod]
+# Local captures contain original game samples, machine paths and large replay
+# payloads. Publish the explicit validation snapshot and curated previews instead.
+evidence/
+*.dll
+*.pdb
+*.exe
+.env
+.env.*
+*.key
+*.pem

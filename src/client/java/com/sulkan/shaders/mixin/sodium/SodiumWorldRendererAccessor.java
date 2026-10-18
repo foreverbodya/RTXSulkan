@@ -8,9 +8,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(value = SodiumWorldRenderer.class, remap = false)
 public interface SodiumWorldRendererAccessor {
-	@Accessor("renderSectionManager")
-	RenderSectionManager sulkan$renderSectionManager();
+   @Accessor("renderSectionManager")
+   RenderSectionManager sulkan$renderSectionManager();
 
-	@Accessor("uniformBufferManager")
-	UniformBufferManager sulkan$uniformBufferManager();
+   @Accessor("uniformBufferManager")
+   UniformBufferManager sulkan$uniformBufferManager();
 }

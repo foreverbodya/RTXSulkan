@@ -1,0 +1,37 @@
+#version 460
+#include "sulkan/ray-attributes.glsl"
+// A diagnostic of real terrain hits and the live Minecraft atlas, not a lighting effect.
+vec3 srgbToLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), greaterThan(c, vec3(0.04045)));
+}
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(Output0);
+    if (any(greaterThanEqual(pixel, size))) return;
+    imageStore(Output0, pixel, vec4(0));
+    imageStore(Output1, pixel, vec4(0));
+    imageStore(Output2, pixel, vec4(0));
+    float depth = texelFetch(Depth, pixel, 0).r;
+    if (depth <= 1e-7) return;
+    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
+    vec4 eye = InverseProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
+    vec3 relative = mat3(InverseView) * (eye.xyz / eye.w);
+    float distance = length(relative);
+    vec3 direction = relative / distance;
+    vec3 camera = RayCameraPosition.xyz;
+    rayQueryEXT query;
+    rayQueryInitializeEXT(query, SulkanRayScene, gl_RayFlagsOpaqueEXT, 1,
+        camera, 0.002, direction, distance + 0.01);
+    while (rayQueryProceedEXT(query)) {}
+    if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) return;
+    uint primitive = rayQueryGetIntersectionPrimitiveIndexEXT(query, true);
+    uint header = rayQueryGetIntersectionInstanceCustomIndexEXT(query, true);
+    vec2 bary = rayQueryGetIntersectionBarycentricsEXT(query, true);
+    SulkanRaySurface surface = sulkanRayAttributes(header, primitive, bary,
+        sulkanRayAtlasShrink(textureSize(Atlas, 0)));
+    vec4 texel = textureLod(Atlas, surface.uv, 0.0) * surface.color;
+    imageStore(Output0, pixel, vec4(srgbToLinear(clamp(texel.rgb, 0.0, 1.0)), surface.occlusion));
+    imageStore(Output1, pixel, vec4(rayQueryGetIntersectionTEXT(query, true),
+        float(surface.material), float(primitive), float(header)));
+    imageStore(Output2, pixel, vec4(surface.uv, surface.color.rg));
+}

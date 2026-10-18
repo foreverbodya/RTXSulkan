@@ -1,6 +1,3 @@
-// Shared cascaded-shadow sampling. The including shader declares the four
-// SulkanShadowMap samplers and the SulkanShadowData uniform block.
-
 #ifndef SULKAN_SHADOW_CASCADE_COUNT
 #define SULKAN_SHADOW_CASCADE_COUNT 4
 #endif
@@ -28,10 +25,10 @@ int sulkanSelectCascade(float cameraDistance) {
 }
 
 float sulkanShadowDepth(int cascade, vec2 uv) {
-	if (cascade == 0) return texture(SulkanShadowMap0, uv).r;
-	if (cascade == 1) return texture(SulkanShadowMap1, uv).r;
-	if (cascade == 2) return texture(SulkanShadowMap2, uv).r;
-	return texture(SulkanShadowMap3, uv).r;
+	if (cascade == 0) return textureLod(SulkanShadowMap0, uv, 0.0).r;
+	if (cascade == 1) return textureLod(SulkanShadowMap1, uv, 0.0).r;
+	if (cascade == 2) return textureLod(SulkanShadowMap2, uv, 0.0).r;
+	return textureLod(SulkanShadowMap3, uv, 0.0).r;
 }
 
 vec4 sulkanShadowGather(int cascade, vec2 uv) {
@@ -41,21 +38,30 @@ vec4 sulkanShadowGather(int cascade, vec2 uv) {
 	return textureGather(SulkanShadowMap3, uv);
 }
 
+#ifndef SULKAN_TERRAIN_SHADOWS_ONLY
 vec4 sulkanEntityShadowGather(int cascade, vec2 uv) {
-	if (cascade == 0) return textureGather(SulkanEntityShadowMap0, uv);
-	return textureGather(SulkanEntityShadowMap1, uv);
+	return textureGather(SulkanEntityShadowMap0, uv);
 }
 
 vec2 sulkanEntityShadowTexel(int cascade) {
-	if (cascade == 0) return 1.0 / vec2(textureSize(SulkanEntityShadowMap0, 0));
-	return 1.0 / vec2(textureSize(SulkanEntityShadowMap1, 0));
+	return 1.0 / vec2(textureSize(SulkanEntityShadowMap0, 0));
 }
 
-vec2 sulkanReceiverDepthGradient(vec3 coord) {
-	vec2 uvDx = dFdxFine(coord.xy);
-	vec2 uvDy = dFdyFine(coord.xy);
-	float depthDx = dFdxFine(coord.z);
-	float depthDy = dFdyFine(coord.z);
+#endif
+
+vec2 sulkanReceiverDepthGradient(int cascade, vec3 normal) {
+	
+	
+	
+	vec3 axis = abs(normal.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+	vec3 tangent = normalize(cross(normal, axis));
+	vec3 bitangent = cross(normal, tangent);
+	vec3 projectedTangent = mat3(ShadowViewProjection[cascade]) * tangent;
+	vec3 projectedBitangent = mat3(ShadowViewProjection[cascade]) * bitangent;
+	vec2 uvDx = projectedTangent.xy * 0.5;
+	vec2 uvDy = projectedBitangent.xy * 0.5;
+	float depthDx = projectedTangent.z;
+	float depthDy = projectedBitangent.z;
 	float determinant = uvDx.x * uvDy.y - uvDx.y * uvDy.x;
 	if (abs(determinant) < 1.0e-10) return vec2(0.0);
 	vec2 gradient = vec2(
@@ -76,10 +82,11 @@ vec4 sulkanGatherCompareDepths(
 	float lowerRight = receiverDepth + dot(depthGradient, lowerLeftUv + vec2(texel.x, 0.0) - receiverUv);
 	float upperLeft = receiverDepth + dot(depthGradient, lowerLeftUv + vec2(0.0, texel.y) - receiverUv);
 	float upperRight = receiverDepth + dot(depthGradient, lowerLeftUv + texel - receiverUv);
-	// textureGather order: upper-left, upper-right, lower-right, lower-left.
+	
 	return vec4(upperLeft, upperRight, lowerRight, lowerLeft);
 }
 
+#ifndef SULKAN_TERRAIN_SHADOWS_ONLY
 float sulkanEntityBilinearVisibility(
 		int cascade,
 		vec2 uv,
@@ -123,6 +130,8 @@ float sulkanEntityShadowVisibility(
 #endif
 #endif
 }
+
+#endif
 
 vec2 sulkanShadowTexel(int cascade) {
 	if (cascade == 0) return 1.0 / vec2(textureSize(SulkanShadowMap0, 0));
@@ -191,67 +200,67 @@ vec3 sulkanShadowCoord(int cascade, vec3 position) {
 float sulkanShadowNormalOffset(int cascade, vec3 normal) {
 	float facing = clamp(dot(normal, LightDirection.xyz), 0.0, 1.0);
 	float texelWorldSize = max(CascadeParams[cascade].x, 0.0001);
-	// A small normal offset is stable across sun angles. Unlike a fixed depth
-	// offset, its apparent ground-plane gap does not grow as the sun approaches
-	// the horizon.
+	
+	
+	
 	return clamp(texelWorldSize * mix(0.06, 0.14, 1.0 - facing), 0.0005, 0.020);
 }
 
-float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal) {
+float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal, bool grassReceiver) {
 	float texelWorldSize = max(CascadeParams[cascade].x, 0.0001);
 	vec3 coord = sulkanShadowCoord(cascade, position + normal * sulkanShadowNormalOffset(cascade, normal));
 	vec2 texel = sulkanShadowTexel(cascade);
-	vec2 entityTexel = cascade < 2 ? sulkanEntityShadowTexel(cascade) : vec2(0.0);
+	#ifdef SULKAN_TERRAIN_SHADOWS_ONLY
+	vec2 entityTexel = vec2(0.0);
+#else
+	vec2 entityTexel = cascade == 0 ? sulkanEntityShadowTexel(cascade) : vec2(0.0);
+#endif
 	vec2 guard = max(texel, entityTexel) * 1.5;
 	if (coord.x <= guard.x || coord.x >= 1.0 - guard.x
 			|| coord.y <= guard.y || coord.y >= 1.0 - guard.y
 			|| coord.z <= 0.0 || coord.z >= 1.0) return 1.0;
 
-	// Only retain a sub-texel precision allowance after the normal offset. This
-	// is deliberately tiny so it cannot detach the shadow from the caster.
+	
+	
 	float precisionBias = (0.0005 + texelWorldSize * 0.015) / max(CascadeParams[cascade].w, 1.0);
 	float compareDepth = coord.z - precisionBias;
-	vec2 depthGradient = sulkanReceiverDepthGradient(coord);
+	vec2 depthGradient = sulkanReceiverDepthGradient(cascade, normal);
 	float visible;
-	if (cascade == 0) {
-		visible = sulkanCloseTerrainVisibility(cascade, coord.xy, compareDepth, depthGradient);
-#if SULKAN_SHADOW_FILTER_TIER <= 1
-	} else {
-		visible = sulkanShadowPointVisibility(cascade, coord.xy, coord.xy, compareDepth, depthGradient);
-	}
-#elif SULKAN_SHADOW_FILTER_TIER == 2
-	} else {
-		visible = 0.0;
-		visible += sulkanShadowPointVisibility(cascade, coord.xy + vec2(-0.5, -0.5) * texel, coord.xy, compareDepth, depthGradient);
-		visible += sulkanShadowPointVisibility(cascade, coord.xy + vec2( 0.5, -0.5) * texel, coord.xy, compareDepth, depthGradient);
-		visible += sulkanShadowPointVisibility(cascade, coord.xy + vec2(-0.5,  0.5) * texel, coord.xy, compareDepth, depthGradient);
-		visible += sulkanShadowPointVisibility(cascade, coord.xy + vec2( 0.5,  0.5) * texel, coord.xy, compareDepth, depthGradient);
-		visible *= 0.25;
-	}
+    
+    
+    if(grassReceiver) {
+        
+        
+        
+        
+        float facing=clamp(abs(dot(normal,normalize(LightDirection.xyz))),0.0,1.0);
+        float slope=sqrt(max(1.0-facing*facing,0.0))/max(facing,0.2);
+        float allowance=clamp(texelWorldSize*(0.65+0.7*slope),0.015,0.16);
+        float grassDepth=compareDepth-allowance/max(CascadeParams[cascade].w,1.0);
+        visible=sulkanShadowBilinearVisibility(cascade,coord.xy,coord.xy,grassDepth,vec2(0));
+    } else {
+        visible = sulkanCloseTerrainVisibility(cascade, coord.xy, compareDepth, depthGradient);
+    }
+	#ifdef SULKAN_TERRAIN_SHADOWS_ONLY
+	return visible;
 #else
-	} else {
-		visible = 0.0;
-		for (int y = -1; y <= 1; ++y) {
-			for (int x = -1; x <= 1; ++x) {
-				vec2 uv = coord.xy + vec2(float(x), float(y)) * texel;
-				visible += sulkanShadowPointVisibility(cascade, uv, coord.xy, compareDepth, depthGradient);
-			}
-		}
-		visible /= 9.0;
-	}
-#endif
-	float entityVisible = cascade < 2
+	float entityVisible = cascade == 0
 		? sulkanEntityShadowVisibility(cascade, coord.xy, compareDepth, depthGradient)
 		: 1.0;
 	return min(visible, entityVisible);
+#endif
 }
 
-float sulkanCastShadowVisibility(vec3 position, vec3 normal) {
+float sulkanCascadeVisibility(int cascade, vec3 position, vec3 normal) {
+    return sulkanCascadeVisibility(cascade,position,normal,false);
+}
+
+float sulkanCastShadowVisibility(vec3 position, vec3 normal, bool grassReceiver) {
 	float cameraDistance = length(position);
 	int current = sulkanSelectCascade(cameraDistance);
 	int last = sulkanLastCascade();
 	if (cameraDistance >= CascadeParams[last].z) return 1.0;
-	float currentVisibility = sulkanCascadeVisibility(current, position, normal);
+	float currentVisibility = sulkanCascadeVisibility(current, position, normal, grassReceiver);
 
 	if (current == last) {
 		float fadeStart = mix(CascadeParams[last].y, CascadeParams[last].z, 0.88);
@@ -262,7 +271,11 @@ float sulkanCastShadowVisibility(vec3 position, vec3 normal) {
 	float blendStart = mix(CascadeParams[current].y, CascadeParams[current].z, 0.90);
 	float blend = smoothstep(blendStart, CascadeParams[current].z, cameraDistance);
 	if (blend <= 0.0) return currentVisibility;
-	return mix(currentVisibility, sulkanCascadeVisibility(current + 1, position, normal), blend);
+	return mix(currentVisibility, sulkanCascadeVisibility(current + 1, position, normal, grassReceiver), blend);
+}
+
+float sulkanCastShadowVisibility(vec3 position, vec3 normal) {
+    return sulkanCastShadowVisibility(position,normal,false);
 }
 
 float sulkanDirectionalVisibility(vec3 position, vec3 normal) {

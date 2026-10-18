@@ -1,0 +1,27 @@
+{
+  "volumeSize": [
+    128,
+    128,
+    128
+  ],
+  "atlasSize": [
+    2048,
+    1024
+  ],
+  "tiles": [
+    16,
+    8
+  ],
+  "channels": [
+    "inverted clamped squared F1, 8 cells",
+    "inverted clamped squared F1, 16 cells",
+    "inverted clamped squared F1, 32 cells",
+    "periodic value noise, 8 cells"
+  ],
+  "scalarChecks": 528,
+  "sourcePngSha256": "dd31ea38e17a162cff0f87837a7126f3cbf04dadc1a7c3a9d1585d53925f2ecc",
+  "rgbaPixelSha256": "f46cf7c82d22c7f88efd69665a9e515f87d9d13b65dbcde5b5be8af7165aa7ba",
+  "sourceReference": "sebh/TileableVolumeNoise@1f879a26b89aaa4b5a7f112f14ec149d08057661",
+  "license": "MIT nearest-cell structure; local integer features/atlas work under project GPL",
+  "scope": "Deterministic asset and selected independent scalar checks; not GPU interpolation or cinematic acceptance."
+}

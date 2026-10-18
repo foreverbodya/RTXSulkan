@@ -1,0 +1,23 @@
+#version 460
+#include "shaders/cloud-scattering.glsl"
+// Uniform plane slab: independent closed-form CPU oracle, not PNG quadrature.
+void main() {
+    ivec2 id=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(id,size)))return;
+    const float columns[8]=float[8](0.0,0.000244140625,0.0009765625,0.015625,0.0625,0.25,1.0,4.0);
+    float columnOptical=columns[id.x%8];
+    float viewY=0.25+0.75*float((id.x/8)%4)/3.0;
+    float sunY=0.2+0.8*float(id.y%8)/7.0;
+    if(id.y%8==0)sunY=viewY;
+    float cosine=-1.0+2.0*float(id.y/8)/7.0;
+    const int count=256;
+    float ds=1.0/viewY/float(count);
+    vec3 transmission=vec3(1),radiance=vec3(0),phase=cinematicCloudOrderPhases(cosine);
+    for(int i=0;i<count;i++) {
+        float y=(float(i)+0.5)/float(count);
+        vec3 weight=cinematicCloudStepWeights(columnOptical*ds,transmission);
+        radiance+=weight*phase*exp(-columnOptical*(1.0-y)/sunY*CLOUD_ORDER_EXTINCTION);
+    }
+    imageStore(Output0,id,vec4(radiance,transmission.x));
+    imageStore(Output1,id,vec4(columnOptical,viewY,sunY,cosine));
+}

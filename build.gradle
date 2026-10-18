@@ -45,16 +45,10 @@ processResources {
 	}
 }
 
-tasks.withType(ProcessResources).configureEach {
-	doLast {
-		fileTree(dir: destinationDir, includes: ["**/*.fsh", "**/*.vsh", "**/*.glsl"]).each { File file ->
-			def content = file.text
-			content = content.replaceAll(/(?s)\/\*.*?\*\//, "")
-			content = content.replaceAll(/\/\/[^\n]*/, "")
-			content = content.replaceAll(/\n{3,}/, "\n\n")
-			file.text = content.trim() + "\n"
-		}
-	}
+// Keep shader comments and line numbers intact for attribution and GPU diagnostics.
+tasks.withType(Jar).configureEach {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
 }
 
 tasks.withType(JavaCompile).configureEach {

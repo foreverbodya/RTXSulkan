@@ -1,0 +1,9 @@
+#version 460
+// Exact RGBA8 atlas-to-volume copy, with one periodic apron voxel per side.
+void main() {
+    ivec3 p=ivec3(gl_GlobalInvocationID.xyz);
+    if(any(greaterThanEqual(p,imageSize(Output0))))return;
+    ivec3 q=(p-ivec3(1))&ivec3(127);
+    ivec2 source=ivec2((q.z&15)*128+q.x,(q.z>>4)*128+q.y);
+    imageStore(Output0,p,texelFetch(CloudNoise,source,0));
+}

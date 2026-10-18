@@ -10,15 +10,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = TerrainRenderPass.class, remap = false)
 public abstract class TerrainRenderPassMixin {
-	@Inject(method = "getTarget", at = @At("HEAD"), cancellable = true)
-	private void sulkan$useShadowTarget(CallbackInfoReturnable<RenderTarget> cir) {
-		if (!DirectionalShadowRenderer.isRenderingShadowMap()) {
-			return;
-		}
-
-		RenderTarget target = DirectionalShadowRenderer.get().activeTarget();
-		if (target != null) {
-			cir.setReturnValue(target);
-		}
-	}
+   @Inject(method = "getTarget", at = @At("HEAD"), cancellable = true)
+   private void sulkan$useShadowTarget(CallbackInfoReturnable<RenderTarget> cir) {
+      if (DirectionalShadowRenderer.isRenderingShadowMap()) {
+         RenderTarget target = DirectionalShadowRenderer.get().activeTarget();
+         if (target != null) {
+            cir.setReturnValue(target);
+         }
+      }
+   }
 }

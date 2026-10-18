@@ -13,24 +13,29 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(OptionsScreen.class)
 public abstract class OptionsScreenMixin extends Screen {
-	protected OptionsScreenMixin(Component title) {
-		super(title);
-	}
+   protected OptionsScreenMixin(Component title) {
+      super(title);
+   }
 
-	@ModifyArg(
-			method = "init",
-			at = @At(
-					value = "INVOKE",
-					target = "Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;addToContents(Lnet/minecraft/client/gui/layouts/LayoutElement;)Lnet/minecraft/client/gui/layouts/LayoutElement;"),
-			index = 0)
-	private LayoutElement sulkan$addShadersButton(LayoutElement contents) {
-		if (contents instanceof GridLayout grid) {
-			grid.addChild(Button.builder(Component.literal("Shaders"), button ->
-							this.minecraft.setScreenAndShow(new ShadersScreen((OptionsScreen) (Object) this)))
-					.width(310)
-					.build(), 5, 0, 1, 2);
-		}
+   @ModifyArg(
+      method = "init",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;addToContents(Lnet/minecraft/client/gui/layouts/LayoutElement;)Lnet/minecraft/client/gui/layouts/LayoutElement;"
+      ),
+      index = 0
+   )
+   private LayoutElement sulkan$addShadersButton(LayoutElement contents) {
+      if (contents instanceof GridLayout grid) {
+         grid.addChild(
+            Button.builder(Component.literal("Shaders"), button -> this.minecraft.setScreenAndShow(new ShadersScreen((OptionsScreen)(Object)this))).width(310).build(),
+            5,
+            0,
+            1,
+            2
+         );
+      }
 
-		return contents;
-	}
+      return contents;
+   }
 }

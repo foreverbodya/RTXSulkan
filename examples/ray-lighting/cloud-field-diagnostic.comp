@@ -1,0 +1,29 @@
+#version 460
+#include "shaders/cinematic-cloud-field.glsl"
+void main() {
+    ivec2 id=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(id,imageSize(Output0))))return;
+    precise vec3 p=vec3((float(id.x)+0.37)*37.0*(id.x%2==0?1.0:-1.0),
+        cinematicCloudBottom()-8.0+(float(id.y)+0.23)*(CLOUD_THICKNESS+16.0)/64.0,
+        -(float(id.x)*0.618+float(id.y)*0.3+0.17)*71.0);
+    vec4 field=cinematicCloudField(CloudLayout,p);
+    imageStore(Output0,id,field);
+    imageStore(Output1,id,vec4(cinematicCloudDensity(CloudLayout,p),cinematicCloudNoise(CloudLayout,p),
+        cinematicCloudNoiseScale(CloudLayout,p,64.0),cinematicCloudNoiseScale(CloudLayout,p,16.0)));
+    imageStore(Output2,id,vec4(p,1));
+    vec2 period=cinematicCloudPeriod(CloudLayout);
+    precise vec3 translatedX=p+vec3(period.x,0,0),translatedZ=p-vec3(0,0,period.y);
+    imageStore(Output3,id,vec4(cinematicCloudDensity(CloudLayout,translatedX),
+        cinematicCloudDensity(CloudLayout,translatedZ),0,1));
+    vec3 q=cinematicCloudNoiseCoordinates(CloudLayout,p);ivec3 cell=ivec3(floor(q));
+    ivec2 cells=ivec2(max(ceil(period/32.0),vec2(1)));ivec3 old=cell;
+    // Deliberate legacy counterexample; never used by actual field evaluation.
+    old.x=(old.x%cells.x+cells.x)%cells.x;old.z=(old.z%cells.y+cells.y)%cells.y;
+    imageStore(Output4,id,uvec4(cinematicCloudHash(cell,cells),cinematicCloudHash(old,cells),
+        uint(sulkanWrapInt(cell.z,cells.y)),uint(old.z)));
+    imageStore(Output5,id,vec4(q,1));
+    int modulus=id.y%4==0?1:id.y%4==1?256:id.y%4==2?384:511;
+    int value=id.x==0?int(0x80000000u):id.x==1?int(0x7fffffffu):(id.x-64)*100003+(id.y-32)*17;
+    imageStore(Output6,id,uvec4(uint(sulkanWrapInt(value,modulus)),uint(value),uint(modulus),0));
+    imageStore(Output7,id,vec4(translatedX.xz,translatedZ.xz));
+}

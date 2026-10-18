@@ -1,0 +1,27 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size))) return;
+    imageStore(Output0,p,vec4(0));
+    imageStore(Output1,p,vec4(-1));
+    uvec2 surface=texelFetch(Surface,p,0).rg;
+    if((surface.x&0xc0000000u)!=0x40000000u) return;
+    float depth=uintBitsToFloat(surface.y);
+    vec4 eye=InverseProjection*vec4((vec2(p)+.5)/vec2(size)*2.0-1.0,depth,1);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w);
+    vec3 n=normalize(texelFetch(NormalRoughness,p,0).xyz),light=normalize(SunDirectionAndRainBrightness.xyz);
+    bool leaf=texelFetch(Material,p,0).g==5u;
+    float side=leaf && dot(n,light)<0 ? -.005 : .005;
+    vec3 origin=RayCameraPosition.xyz+relative+n*side;
+    imageStore(Output0,p,vec4(foliageShadow(Atlas,origin,light,128),1));
+    rayQueryEXT first;
+    sulkanTraceTerrain(first,Atlas,origin,.002,light,128,false);
+    if(rayQueryGetIntersectionTypeEXT(first,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+        SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(first,true),
+            rayQueryGetIntersectionPrimitiveIndexEXT(first,true),rayQueryGetIntersectionBarycentricsEXT(first,true),
+            sulkanRayAtlasShrink(textureSize(Atlas,0)));
+        imageStore(Output1,p,vec4(rayQueryGetIntersectionTEXT(first,true),rayQueryGetIntersectionFrontFaceEXT(first,true)?1:0,float(hit.material),0));
+    }
+}

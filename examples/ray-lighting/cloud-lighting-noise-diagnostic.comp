@@ -1,0 +1,22 @@
+#version 460
+#include "shaders/cinematic-cloud-field.glsl"
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(pixel,imageSize(Output0))))return;
+    vec3 p=texelFetch(Positions,pixel,0).xyz;
+#if CLOUD_LIGHTING_VOLUME == 1
+    vec4 coarse,detail;cinematicCloudLightingCellularPair(CloudLayout,p,coarse,detail);
+#else
+    vec4 coarse=cinematicCloudCellularScale(CloudLayout,CloudNoise,p,512.0);
+    vec4 detail=cinematicCloudCellularScale(CloudLayout,CloudNoise,p,128.0);
+#endif
+    int index=pixel.x+pixel.y*128;
+    ivec3 q=index<8?ivec3((index&1)*129,((index>>1)&1)*129,((index>>2)&1)*129):
+        ivec3(index%130,(index/130)%130,(index*53)%130);
+    ivec3 voxel=(q-ivec3(1))&ivec3(127);
+    vec4 expected=texelFetch(CloudNoise,ivec2((voxel.z&15)*128+voxel.x,(voxel.z>>4)*128+voxel.y),0);
+    vec4 delta=abs(texelFetch(CloudLightingNoise,q,0)-expected);
+    imageStore(Output0,pixel,coarse);imageStore(Output1,pixel,detail);
+    imageStore(Output2,pixel,vec4(cinematicCloudDensityImpl(CloudLayout,p,true),
+        max(max(delta.x,delta.y),max(delta.z,delta.w)),0,0));
+}

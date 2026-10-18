@@ -1,0 +1,13 @@
+#version 460
+#include "shaders/cinematic-cloud-field.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy);
+    if(any(greaterThanEqual(p,imageSize(Output0))))return;
+    vec3 position=texelFetch(Positions,p,0).xyz;vec4 shifted=texelFetch(Translations,p,0);
+    imageStore(Output0,p,cinematicCloudCellular(CloudLayout,CloudNoise,position));
+    imageStore(Output1,p,cinematicCloudCellular(CloudLayout,CloudNoise,vec3(shifted.x,position.y,shifted.y)));
+    imageStore(Output2,p,cinematicCloudCellular(CloudLayout,CloudNoise,vec3(shifted.z,position.y,shifted.w)));
+    imageStore(Output3,p,cinematicCloudCellularScale(CloudLayout,CloudNoise,position,128.0));
+    imageStore(Output4,p,cinematicCloudCellularScale(CloudLayout,CloudNoise,vec3(shifted.x,position.y,shifted.y),128.0));
+    imageStore(Output5,p,cinematicCloudCellularScale(CloudLayout,CloudNoise,vec3(shifted.z,position.y,shifted.w),128.0));
+}

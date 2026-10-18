@@ -1,0 +1,29 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+#include "shaders/cloud-source-grid.glsl"
+void main() {
+    ivec3 cell=ivec3(gl_GlobalInvocationID.xyz);
+    if(any(greaterThanEqual(cell,imageSize(Output0))))return;
+    vec4 solar[3];vec2 ambient[3];
+    for(int cascade=0;cascade<3;cascade++) {
+        vec3 columns=vec3(0);
+#if CLOUD_SOURCE_CACHE == 1
+        vec3 p=cloudSourcePosition(CloudLayout,cell,cascade);
+        vec3 sun=cinematicKeyDirection();
+        float a,b;int count=24;
+        if(sun.y>0.0 && cinematicCloudSegment(p,sun,16384.0,a,b))
+            count=int(clamp(ceil((b-a)/4.0),24.0,512.0));
+        columns.x=sun.y>0.0?cinematicCloudOpticalDepthImpl(CloudLayout,p,sun,16384.0,count,true):0.0;
+#if CLOUD_AMBIENT_OCCLUSION == 1
+        columns.y=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,1,0),16384.0,32,true);
+        columns.z=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,-1,0),16384.0,32,true);
+#endif
+#endif
+        ambient[cascade]=vec2(cinematicCloudHemisphereTransmission(columns.y),cinematicCloudHemisphereTransmission(columns.z));
+        solar[cascade]=vec4(exp(-columns.x*CLOUD_ORDER_EXTINCTION),ambient[cascade].x);
+    }
+    imageStore(Output0,cell,solar[0]);imageStore(Output1,cell,vec4(ambient[0].y,0,0,1));
+    imageStore(Output2,cell,solar[1]);imageStore(Output3,cell,vec4(ambient[1].y,0,0,1));
+    imageStore(Output4,cell,solar[2]);imageStore(Output5,cell,vec4(ambient[2].y,0,0,1));
+}

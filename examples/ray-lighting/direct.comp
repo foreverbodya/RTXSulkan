@@ -1,0 +1,128 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+#include "shaders/surface-lighting.glsl"
+#ifdef CINEMATIC_ATMOSPHERE
+#include "shaders/atmosphere.glsl"
+#endif
+#ifdef CLOUD_PREVIEW_STILL
+#include "shaders/cloud-shadow.glsl"
+#endif
+// Frame, sampled images, HDR Output0 and ray scene bindings are supplied by Sulkan.
+const float PI = 3.141592653589793;
+vec3 srgbToLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), greaterThan(c, vec3(0.04045)));
+}
+vec3 fresnel(float cosine, vec3 f0) { return f0 + (1.0 - f0) * pow(1.0 - cosine, 5.0); }
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(Output0);
+    if (any(greaterThanEqual(pixel, size))) return;
+#ifdef LIGHTING_AUDIT
+    imageStore(Output1,pixel,vec4(0));imageStore(Output2,pixel,vec4(0));
+    imageStore(Output3,pixel,vec4(0));imageStore(Output4,pixel,vec4(0));imageStore(Output5,pixel,vec4(0));
+#endif
+    float depth = texelFetch(Depth, pixel, 0).r;
+    uvec2 surface = texelFetch(Surface, pixel, 0).rg;
+    uint bits = floatBitsToUint(depth);
+    bool terrain = depth > 1e-7 && (surface.x & 0xc0000000u) == 0x40000000u
+        && max(bits, surface.y) - min(bits, surface.y) <= 2u;
+    if (!terrain) {
+        vec3 background=srgbToLinear(max(texelFetch(Scene,pixel,0).rgb,vec3(0)));
+#ifdef CINEMATIC_ATMOSPHERE
+        if(depth<=1e-7) {
+            vec2 skyUv=(vec2(pixel)+0.5)/vec2(size);
+            vec3 direction=sulkanCameraRay(skyUv).direction;
+            background=mix(background,atmVisibleSky(AtmosphereSky,AtmosphereLighting,direction),atmBlend());
+        }
+#endif
+        imageStore(Output0,pixel,vec4(background,1));
+        return;
+    }
+    vec4 albedo = texelFetch(Albedo, pixel, 0);
+    vec4 geometry = texelFetch(NormalRoughness, pixel, 0);
+    vec4 emission = texelFetch(EmissionMetal, pixel, 0);
+    uvec2 materialData=texelFetch(Material,pixel,0).rg;
+    bool leaf=false;
+#ifdef FOLIAGE_TRANSMISSION
+    leaf=materialData.y==5u;
+#endif
+    vec3 normal = normalize(geometry.xyz);
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(size);
+    vec4 eye = InverseProjection * vec4(uv * 2.0 - 1.0, depth, 1.0);
+    vec3 relative = mat3(InverseView) * (eye.xyz / eye.w);
+    vec3 view = normalize(-relative);
+    vec3 light = cinematicKeyDirection();
+    float nv = max(dot(normal, view), 0.0001);
+    float signedNl=dot(normal,light);
+    float nl = max(signedNl, 0.0);
+    vec3 direct = vec3(0);
+    if ((nl > 0 || (leaf && signedNl<0)) && light.y > 0) {
+        vec3 camera = RayCameraPosition.xyz;
+        vec3 visibility;
+        visibility=foliageSolarVisibility(Atlas,camera+relative+normal*(leaf && signedNl<0 ? -0.005 : 0.005),light,128.0);
+        if (any(greaterThan(visibility,vec3(0)))) {
+            vec3 brdf=sulkanSunBrdf(albedo.rgb,leaf ? foliageRho(albedo.rgb) : albedo.rgb,
+                geometry.w,emission.a,normal,view,light);
+            vec3 radiance = vec3(3.4, 3.0, 2.5) * smoothstep(0.0, 0.15, light.y)
+                * (1.0 - WorldTimeWeatherDimension.y * 0.65);
+#ifdef CINEMATIC_ATMOSPHERE
+            radiance=mix(radiance,texelFetch(AtmosphereLighting,ivec2(0,0),0).rgb,atmBlend());
+#endif
+#ifdef CLOUD_PREVIEW_STILL
+            radiance*=cinematicCloudRaySolarVisibility(ShadowCloudLayout,CloudShadow,RayCameraPosition.xyz+relative,light);
+#endif
+            direct = brdf * radiance * visibility * nl;
+            if(leaf && signedNl<0) direct=foliageBtdf(albedo.rgb,-signedNl,nv)*radiance*visibility*(-signedNl);
+        }
+    }
+    // Sky fill is a temporary approximation, not traced indirect illumination.
+    float skylight = albedo.a * albedo.a;
+    vec3 skyFill = albedo.rgb * vec3(0.12, 0.16, 0.23) * skylight * (1.0 - emission.a);
+#ifdef CINEMATIC_ATMOSPHERE
+    skyFill=mix(skyFill,albedo.rgb/PI*atmIrradiance(AtmosphereLighting,normal)*skylight*(1.0-emission.a),atmBlend());
+#endif
+#ifdef FOLIAGE_TRANSMISSION
+    if(leaf) {
+        vec3 front=vec3(0.12,0.16,0.23)*PI,back=front;
+#ifdef CINEMATIC_ATMOSPHERE
+        front=mix(front,atmIrradiance(AtmosphereLighting,normal),atmBlend());
+        back=mix(back,atmIrradiance(AtmosphereLighting,-normal),atmBlend());
+#endif
+        skyFill=(foliageRho(albedo.rgb)*0.96*front+foliageTau(albedo.rgb)*0.9216*back)/PI*skylight;
+    }
+#endif
+    skyFill*=uintBitsToFloat(materialData.x);
+    vec3 localEmission=emission.rgb;
+    vec3 transmittedFill=vec3(0);
+    bool tracedFill=false;
+#ifdef DIFFUSE_INDIRECT
+    vec4 indirect=texelFetch(Indirect,pixel,0);
+    if(indirect.a>0.5) {
+        tracedFill=true;
+        skyFill=albedo.rgb*indirect.rgb;
+#ifdef LEAF_INDIRECT
+        if(leaf) {
+            vec4 transmitted=texelFetch(IndirectTransmission,pixel,0);
+            skyFill=foliageRho(albedo.rgb)*indirect.rgb+foliageTau(albedo.rgb)*transmitted.rgb;
+            transmittedFill=foliageTau(albedo.rgb)*transmitted.rgb;
+        }
+#endif
+        // The traced path replaces the overlapping vanilla sky/block-light fill.
+        localEmission=sulkanSurfaceEmission(albedo.rgb,materialData.y);
+    }
+#endif
+    vec3 result = direct + skyFill + localEmission;
+#ifdef LIGHTING_AUDIT
+    // Actual pre-camera-aerial terms, with exact material/supported-path labels.
+    imageStore(Output1,pixel,vec4(direct,float(materialData.y+1u)));
+    imageStore(Output2,pixel,vec4(skyFill-transmittedFill,tracedFill?1.0:0.0));
+    imageStore(Output3,pixel,vec4(transmittedFill,leaf?1.0:0.0));
+    imageStore(Output4,pixel,vec4(localEmission,1));
+    imageStore(Output5,pixel,vec4(albedo.rgb,depth));
+#endif
+#ifdef CINEMATIC_ATMOSPHERE
+    result=mix(result,atmAerialWithLighting(result,normalize(relative),length(relative),AtmosphereLighting),atmBlend());
+#endif
+    imageStore(Output0, pixel, vec4(max(result, vec3(0)), 1));
+}

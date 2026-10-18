@@ -1,0 +1,75 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+#include "shaders/surface-lighting.glsl"
+#ifdef CINEMATIC_ATMOSPHERE
+#include "shaders/atmosphere.glsl"
+#endif
+#include "shaders/secondary-lighting.glsl"
+#include "shaders/water-optics.glsl"
+void main() {
+    ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(pixel,size)))return;
+    imageStore(Output0,pixel,vec4(0));
+#ifdef WATER_DIAGNOSTIC
+    imageStore(Output1,pixel,vec4(0,0,0,-1));imageStore(Output2,pixel,vec4(0,0,0,-1));imageStore(Output3,pixel,vec4(0));
+    imageStore(Output4,pixel,vec4(0));
+#endif
+    vec4 surface=texelFetch(Water,pixel,0);uvec2 id=texelFetch(Surface,pixel,0).rg;
+    float depth=texelFetch(Depth,pixel,0).r;
+    if(surface.w<=1e-7 || (id.x&0xc0000000u)!=0x80000000u || CameraPositionHighAndFogType.w!=0.0
+        || depth>surface.w && floatBitsToUint(depth)-floatBitsToUint(surface.w)>2u) return;
+    vec2 uv=(vec2(pixel)+0.5)/vec2(size);
+    vec4 eye=InverseProjection*vec4(uv*2.0-1.0,surface.w,1);
+    vec3 relative=mat3(InverseView)*(eye.xyz/eye.w),incident=normalize(relative),n=normalize(surface.xyz);
+    vec3 position=RayCameraPosition.xyz+relative;
+    float eta=1.0/WATER_IOR,cosine=max(dot(n,-incident),0.0),f=waterFresnel(cosine,eta);
+    vec3 r=reflect(incident,n),t=refract(incident,n,eta);
+    rayQueryEXT reflected;foliageTraceRadiance(reflected,Atlas,position+n*0.005,0.002,r,128.0);
+    vec3 reflection=waterEnvironment(r);float reflectionDistance=-1.0;
+    vec3 reflectionPoint=vec3(0);
+    if(rayQueryGetIntersectionTypeEXT(reflected,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+        reflectionDistance=rayQueryGetIntersectionTEXT(reflected,true);reflectionPoint=position+n*0.005+r*reflectionDistance;
+        SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(reflected,true),rayQueryGetIntersectionPrimitiveIndexEXT(reflected,true),rayQueryGetIntersectionBarycentricsEXT(reflected,true),sulkanRayAtlasShrink(textureSize(Atlas,0)));
+        reflection=secondaryAirHit(hit,reflectionPoint,r,Atlas);
+#ifdef CINEMATIC_ATMOSPHERE
+        reflection=mix(reflection,atmAerialWithLighting(reflection,r,reflectionDistance,AtmosphereLighting),atmBlend());
+#endif
+    }
+    vec3 airLight=cinematicKeyDirection(),waterLight=-refract(-airLight,n,eta);
+    float airCos=dot(n,airLight),waterCos=max(dot(n,waterLight),0.0001);
+    vec3 solarWater=airLight.y>0.0 && airCos>0.0?secondarySolar()*(1.0-waterFresnel(airCos,eta))*airCos/waterCos:vec3(0);
+    vec3 entryVisibility=any(greaterThan(solarWater,vec3(0)))?secondaryVisibility(Atlas,position,n,false,airLight,128.0):vec3(0);
+    rayQueryEXT transmitted;foliageTraceRadiance(transmitted,Atlas,position-n*0.005,0.002,t,128.0);
+    vec3 transmission=vec3(0),transmissionPoint=vec3(0);float transmissionDistance=-1.0;
+    if(rayQueryGetIntersectionTypeEXT(transmitted,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+        transmissionDistance=rayQueryGetIntersectionTEXT(transmitted,true);transmissionPoint=position-n*0.005+t*transmissionDistance;
+        SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(transmitted,true),rayQueryGetIntersectionPrimitiveIndexEXT(transmitted,true),rayQueryGetIntersectionBarycentricsEXT(transmitted,true),sulkanRayAtlasShrink(textureSize(Atlas,0)));
+        vec3 hn=secondaryNormal(hit,t),base=foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb);
+        float side=secondaryLeaf(hit) && dot(hn,waterLight)<0.0?-0.005:0.005;
+        vec3 shadowStart=transmissionPoint+hn*side;
+        float solarDistance=max(dot(position-shadowStart,n),0.0)/waterCos;
+        vec3 visibility=vec3(0);
+        if(any(greaterThan(solarWater,vec3(0)))) {
+            visibility=solarDistance>0.004?secondaryRayVisibility(Atlas,shadowStart,waterLight,solarDistance-0.002):vec3(1);
+            visibility*=secondaryRayVisibility(Atlas,shadowStart+waterLight*solarDistance+airLight*0.005,airLight,128.0);
+#ifdef CLOUD_PREVIEW_STILL
+            visibility*=cinematicCloudRaySolarVisibility(ShadowCloudLayout,CloudShadow,shadowStart+waterLight*solarDistance,airLight);
+#endif
+        }
+        float hitDepth=max(dot(position-transmissionPoint,n),0.0);
+        transmission=secondaryShade(hit,base,hn,t,waterLight,solarWater*waterTransmittance(hitDepth/waterCos),visibility);
+    }
+    float distance=transmissionDistance<0.0?128.0:transmissionDistance;
+    transmission=transmission*waterTransmittance(distance)+waterScatter(distance,t,n,waterLight,solarWater,entryVisibility);
+    vec3 result=f*reflection+(1.0-f)*eta*eta*transmission;
+#ifdef CINEMATIC_ATMOSPHERE
+    result=mix(result,atmAerialWithLighting(result,incident,length(relative),AtmosphereLighting),atmBlend());
+#endif
+    imageStore(Output0,pixel,vec4(max(result,vec3(0)),1));
+#ifdef WATER_DIAGNOSTIC
+    imageStore(Output1,pixel,vec4(reflectionPoint,reflectionDistance));imageStore(Output2,pixel,vec4(transmissionPoint,transmissionDistance));
+    imageStore(Output3,pixel,vec4(f,cosine,max(dot(n,-t),0.0),distance));
+    imageStore(Output4,pixel,vec4(position,1));
+#endif
+}
