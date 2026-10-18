@@ -27,6 +27,8 @@ def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
     artifact = json.loads((root / "result.json").read_text(encoding="utf-8"))
+    if artifact.get("cloudNoisePairs"):
+        raise ValueError(f"{root}: paired noise instrumentation has no performance baseline; use cloud-noise-pairs-*.json")
     assessment_path = root / "performance-assessment.json"
     assessment = json.loads(assessment_path.read_text(encoding="utf-8")) if assessment_path.exists() else None
     invalid_reasons = assessment.get("invalidReasons", []) if assessment else []

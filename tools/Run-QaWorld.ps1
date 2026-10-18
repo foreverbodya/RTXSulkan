@@ -70,6 +70,7 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $RayQueryCounts,
+    [switch] $CloudNoisePairs,
     [switch] $TemporalProfile,
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
@@ -114,6 +115,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
 if($TemporalProfile -and (!$PerformanceProfile -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
@@ -307,6 +309,7 @@ if ($RayVisibility -or $RayLighting) {
     if($WaterHdr) {$createArguments.WaterHdr=$true;$createArguments.WaterDiagnostic=!$VisualWorld}
     & (Join-Path $PSScriptRoot $creator) @createArguments | Out-Null
     if($RayQueryCounts){& (Join-Path $PSScriptRoot 'Enable-QaRayQueryCounts.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
+    if($CloudNoisePairs){& (Join-Path $PSScriptRoot 'Enable-QaCloudNoisePairs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
     if($CloudAmbientComparison) {
         $path=Join-Path $qaPath ('shaders/'+$packName+'/sulkan.json')
         $manifest=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
@@ -400,6 +403,7 @@ if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotio
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
+if($CloudNoisePairs){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudNoisePairs=true')}
 if($TemporalProfile){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaTemporalProfile=true')}
 if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
 if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
@@ -480,7 +484,7 @@ if($RaySurfaceProbe) {
     $required=@($profileMarker,'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
     $missing=@($required | Where-Object{!$combined.Contains($_)})
     foreach($phase in $(if($TemporalProfile){@()}else{$ProfilePlan.Split(',')})){
-        $marker=if($RayQueryCounts){"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase=$phase"}else{"SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase "}
+        $marker=if($CloudNoisePairs){"SULKAN_CLOUD_NOISE_PAIRS_PASS phase=$phase"}elseif($RayQueryCounts){"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase=$phase"}else{"SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase "}
         if(!$combined.Contains($marker)){$missing+="Profile missing $phase"}
     }
 } elseif($VisualWorld) {
@@ -718,7 +722,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; cloudNoisePairs = [bool]$CloudNoisePairs; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison

@@ -105,12 +105,12 @@ final class QaPerformanceProfile {
         if(!measuring) {
             if(!java.util.Set.of("stream","travel").contains(path()) && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
             if(preparingReload){System.clearProperty("sulkan.qaProfilePrepareGeometry");preparingReload=false;frame=-WARMUP;return false;}
-            if(Boolean.getBoolean("sulkan.qaRayQueryCounts")) {
+            if(Boolean.getBoolean("sulkan.qaCloudNoisePairs") || Boolean.getBoolean("sulkan.qaRayQueryCounts")) {
                 // A separate counted pipeline: never start FPS/GPU timing windows here.
-                if(rayCounts==null)rayCounts=QaRayQueryCounts.capture(directory,phase());
+                if(rayCounts==null)rayCounts=Boolean.getBoolean("sulkan.qaCloudNoisePairs")?QaCloudNoisePairs.capture(directory,phase()):QaRayQueryCounts.capture(directory,phase());
                 if(!rayCounts.isDone())return false;
                 reports.add(rayCounts.join());image=CompletableFuture.completedFuture(null);
-                LogUtils.getLogger().info("SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase={}",phase());return false;
+                LogUtils.getLogger().info(Boolean.getBoolean("sulkan.qaCloudNoisePairs")?"SULKAN_CLOUD_NOISE_PAIRS_PASS phase={}":"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase={}",phase());return false;
             }
             // Keep fingerprint decoding outside both preparation and timed CPU scopes.
             geometryPreparationEnd=GeometryCpuMetrics.snapshot();preparationEndNs=System.nanoTime();
