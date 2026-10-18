@@ -1,5 +1,5 @@
 #Requires -Version 7.0
-param([Parameter(Mandatory)][string]$PackDirectory)
+param([Parameter(Mandatory)][string]$PackDirectory,[switch]$PerturbVolume)
 $ErrorActionPreference='Stop'
 $manifestPath=Join-Path $PackDirectory 'sulkan.json'
 $manifest=Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
@@ -42,7 +42,16 @@ foreach($name in @('metrics','point','reference','candidate')) {
     $manifest.resources[$resource]=$definition;$pass.writes+=@($resource)
 }
 $manifest.options['SULKAN_QA_CLOUD_NOISE_PAIRS']=@{default=1;values=@(1)}
+$manifest.options['SULKAN_QA_CLOUD_NOISE_PERTURB']=@{default=[int][bool]$PerturbVolume;values=@(0,1)}
+if($PerturbVolume) {
+    $fillPath=Join-Path $PackDirectory 'shaders/cloud-exact-noise.comp'
+    $fill=(Get-Content -LiteralPath $fillPath -Raw).Replace("`r`n","`n")
+    $store='imageStore(Output0,p,texelFetch(CloudNoise,source,0));'
+    if([regex]::Matches($fill,[regex]::Escape($store)).Count -ne 1){throw 'Volume fill changed'}
+    $fill=$fill.Replace($store,'imageStore(Output0,p,clamp(texelFetch(CloudNoise,source,0)+vec4(1.0/255.0,0,0,0),vec4(0),vec4(1)));')
+    Set-Content -LiteralPath $fillPath -Value $fill -NoNewline
+}
 Set-Content -LiteralPath $cellPath -Value $source -NoNewline
 Set-Content -LiteralPath $environmentPath -Value $environment -NoNewline
 $manifest | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $manifestPath
-@{sourceCellularSha256=$hash;scope='Disposable paired sampler instrumentation only. Both eight-fetch results receive the same actual cloud-march coordinate and weights. Radiance follows the atlas reference. No performance claim.'} | ConvertTo-Json | Set-Content (Join-Path $PackDirectory 'qa-cloud-noise-pairs.json')
+@{sourceCellularSha256=$hash;perturbVolume=[bool]$PerturbVolume;scope='Disposable paired sampler instrumentation only. Both eight-fetch results receive the same actual cloud-march coordinate and weights. Radiance follows the atlas reference. No performance claim.'} | ConvertTo-Json | Set-Content (Join-Path $PackDirectory 'qa-cloud-noise-pairs.json')

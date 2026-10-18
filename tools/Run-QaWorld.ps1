@@ -71,6 +71,7 @@ param(
     [switch] $PerformanceProfile,
     [switch] $RayQueryCounts,
     [switch] $CloudNoisePairs,
+    [switch] $CloudNoisePairsPerturb,
     [switch] $TemporalProfile,
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
@@ -115,6 +116,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb requires CloudNoisePairs'}
 if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
@@ -309,7 +311,7 @@ if ($RayVisibility -or $RayLighting) {
     if($WaterHdr) {$createArguments.WaterHdr=$true;$createArguments.WaterDiagnostic=!$VisualWorld}
     & (Join-Path $PSScriptRoot $creator) @createArguments | Out-Null
     if($RayQueryCounts){& (Join-Path $PSScriptRoot 'Enable-QaRayQueryCounts.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
-    if($CloudNoisePairs){& (Join-Path $PSScriptRoot 'Enable-QaCloudNoisePairs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
+    if($CloudNoisePairs){& (Join-Path $PSScriptRoot 'Enable-QaCloudNoisePairs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) -PerturbVolume:$CloudNoisePairsPerturb | Out-Null}
     if($CloudAmbientComparison) {
         $path=Join-Path $qaPath ('shaders/'+$packName+'/sulkan.json')
         $manifest=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable

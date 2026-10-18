@@ -12,12 +12,14 @@ param(
     [switch]$CanonicalPackComparison,
     [switch]$RayQueryCounts,
     [switch]$CloudNoisePairs,
+    [switch]$CloudNoisePairsPerturb,
     [switch]$TemporalProfile,
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
 )
 $ErrorActionPreference='Stop'
+if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb requires CloudNoisePairs'}
 if($CloudNoisePairs -and ($ComputeExperiment -ne 'cloud-3d-env' -or $WorkgroupExperiment -or $NativeFrameComparison -or $CanonicalPackComparison -or $TemporalProfile -or $RayQueryCounts)){throw 'CloudNoisePairs requires separate cloud-3d-env diagnostic mode'}
 $workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $workspace=Split-Path $workspace -Parent
@@ -29,13 +31,13 @@ $sourceInfo=$target+'-source.json'
 @{commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
   profilePlan=$ProfilePlan;profileTime=$ProfileTime;renderDistance=$RenderDistance;experiment=$ComputeExperiment;
   alternatePipeline=[bool]$WorkgroupExperiment;canonicalPackComparison=[bool]$CanonicalPackComparison;rayQueryCounts=[bool]$RayQueryCounts;temporalProfile=[bool]$TemporalProfile;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;prepareGeometry=[bool]$PrepareGeometry;
-  timeoutSeconds=$TimeoutSeconds;cloudNoisePairs=[bool]$CloudNoisePairs} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
+  timeoutSeconds=$TimeoutSeconds;cloudNoisePairs=[bool]$CloudNoisePairs;cloudNoisePairsPerturb=[bool]$CloudNoisePairsPerturb} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
 & nvidia-smi -q | Set-Content -LiteralPath $gpuInfo
 # Owned, read-only telemetry helper; WDDM reports device-wide usage, not process residency.
 $stopFile=$target+'-gpu.stop'
 $monitor=Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile','-File',('"'+(Join-Path $PSScriptRoot 'Sample-Gpu.ps1')+'"'),'-OutputPath',('"'+$telemetry+'"'),'-StopFile',('"'+$stopFile+'"'),'-ParentPid',$PID) -WindowStyle Hidden -PassThru
 try {
-    & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -CloudNoisePairs:$CloudNoisePairs -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
+    & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -CloudNoisePairs:$CloudNoisePairs -CloudNoisePairsPerturb:$CloudNoisePairsPerturb -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
         -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
