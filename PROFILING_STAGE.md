@@ -305,3 +305,5 @@ indirect Tmin and original moving-sky/hand regressions stay tracked. No claim of
 universal stability, a finished renderer or a completed profiling stage is made.
 
 The [environment input witness](docs/profiling/cloud-environment-inputs-20261018.md) returned 80 exact A/A and A/B rows, but the original discrepancy disappeared under instrumentation. It is inconclusive for the original cause and provides no new accepted speedup. Further witness-output expansion is deferred.
+
+The [GI miss-only sky experiment](docs/profiling/indirect-lazy-sky-20261018.md) removes overwritten sky evaluation in an optional pipeline. All 32 A/A raw pairs match; 7/32 A/B pairs differ, confined to moving diffuse GI. Native display impact and isolated speed remain unproven; no baseline promotion or speedup is claimed.
