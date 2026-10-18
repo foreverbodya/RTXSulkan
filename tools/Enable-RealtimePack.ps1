@@ -24,19 +24,21 @@ if($Step -ge 2){
 }
 if($Step -ge 3){
     $manifest.options['REALTIME_DIFFUSE']=@{default=1;values=@(1)}
+    $manifest.options['VEGETATION_WIND'].default=0
     foreach($pass in $manifest.passes|Where-Object{$_.name -eq 'indirect.trace'}){$pass.reads['AtmosphereSky']='atmosphere.sky'}
 }
 if($Step -ge 5){
     $manifest.options['REALTIME_CLOUDS']=@{default=1;values=@(1)}
     $manifest.options['CLOUD_LIGHTING_VOLUME']=@{default=1;values=@(1)}
-    $manifest.resources['cloud.source.light']=@{format='RGBA16_FLOAT';size=@(96,32,96)}
-    $manifest.resources['cloud.source.ambient']=@{format='RG16_FLOAT';size=@(96,32,96)}
+    $manifest.resources['cloud.source.light']=@{format='RGBA16_FLOAT';size=@(96,32,96);history=$true}
+    $manifest.resources['cloud.source.ambient']=@{format='RG16_FLOAT';size=@(96,32,96);history=$true}
+    $manifest.resources['cloud.source.state']=@{format='RGBA32_FLOAT';size=@(1,1,1);history=$true}
     foreach($pass in $manifest.passes|Where-Object{$_.name -in @('cloud.view','cloud.environment','cloud.composite')}){
         $pass.reads['CloudLightingVolume']='cloud.source.light';$pass.reads['CloudAmbientVolume']='cloud.source.ambient'
         $pass.linearReads=@(@($pass.linearReads)+@('CloudLightingVolume','CloudAmbientVolume')|Where-Object{$_})
     }
     $manifest.passes+=@{name='cloud.source.light';compute='shaders/realtime-cloud-light.comp';localSize=@(8,4,8);
-        reads=@{CloudLayout='$texture/vanilla-clouds';CloudNoise='$texture/cloud-cellular'};writes=@('cloud.source.light','cloud.source.ambient')}
+        reads=@{CloudLayout='$texture/vanilla-clouds';CloudNoise='$texture/cloud-cellular';PreviousLight='cloud.source.light@previous';PreviousAmbient='cloud.source.ambient@previous';PreviousState='cloud.source.state@previous'};writes=@('cloud.source.light','cloud.source.ambient','cloud.source.state')}
     # Half width/height means one quarter of input pixels (854x480 at DLSS
     # Quality input 1707x960). The reconstruction itself remains full output.
     foreach($name in @('cloud.view','cloud.accum')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';scale=0.5;history=$true}}
