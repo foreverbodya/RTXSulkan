@@ -162,7 +162,7 @@ final class ComputeProgram implements AutoCloseable {
                this.layout = handle.get(0);
 
                var shaderDefines = new java.util.LinkedHashMap<>(graph.options());
-               for(String binding:pass.reads().keySet())shaderDefines.put("SULKAN_HAS_BINDING_"+binding,1d);
+               for(String binding:pass.reads().keySet())shaderDefines.put("SULKAN_HAS_BINDING_"+binding.toUpperCase(java.util.Locale.ROOT),1d);
                if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d"))shaderDefines.put("SULKAN_CLOUD_NOISE_EXACT_3D",0d);
                if (pass.rayAttributes()) {
                   shaderDefines.put("SULKAN_RAY_SUBTEXEL_SCALE", Math.scalb(1.0,

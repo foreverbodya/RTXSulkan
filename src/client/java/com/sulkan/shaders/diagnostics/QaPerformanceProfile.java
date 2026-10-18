@@ -39,7 +39,7 @@ final class QaPerformanceProfile {
         plan=List.of(System.getProperty("sulkan.qaProfilePlan","static,motion,static-repeat,stream,settled").split(","));
         if(thread.isCurrentThreadCpuTimeSupported() && !thread.isThreadCpuTimeEnabled())thread.setThreadCpuTimeEnabled(true);
         write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,"experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"),
-            "path","motion: X +/-4m, Z +/-2m, yaw +/-12deg, one sine cycle/128 rendered frames; stream: +4m X/frame for 512m; time does not select path positions",
+            "path","motion: X +/-2m, Z +/-1m, yaw +/-12deg, one sine cycle/128 rendered frames; stream: +4m X/frame for 512m; time does not select path positions",
             "timingScope","No GPU readbacks or disk writes during timed frames; CPU thread time is current render-thread active CPU between world-completion callbacks, excludes blocked GPU waits. Wall includes engine/ticks/pose guard. Vulkan allocation counters exclude engine, Sodium and NGX; device-wide VRAM/usage sampled externally."));
         configure();
     }
@@ -59,7 +59,7 @@ final class QaPerformanceProfile {
         double[] pose=base.clone();int n=verificationFrame>0?verificationFrame*16:frame<0?Math.floorMod(frame,FRAMES):Math.min(FRAMES-1,frame);
         if(frame<0 && !path().equals("motion"))n=0;
         if(path().equals("motion")) {
-            double s=Math.sin(n*2*Math.PI/FRAMES);pose[0]+=4*s;pose[2]+=2*s;pose[3]+=12*s;
+            double s=Math.sin(n*2*Math.PI/FRAMES);pose[0]+=2*s;pose[2]+=s;pose[3]+=12*s;
         } else if(path().equals("travel"))pose[0]+=Math.max(0,frame)*4;
         else if(path().equals("stream") || path().equals("settled"))pose[0]+=path().equals("stream")?n*4:508;
         return pose;
