@@ -247,6 +247,13 @@ a complete engine/NGX barrier timeline or isolated stall attribution.
 
 ## Confirmed, hypotheses and open work
 
+The [paired cloud sampler diagnosis](docs/profiling/cloud-noise-pairs-20261018.md)
+observes 126,163,382 actual same-invocation atlas/3D calls with zero numeric
+differences. A deliberate one-code volume perturbation is detected in every
+observed positive-control call. This narrows the image investigation but does
+not establish separate-module/full-frame equivalence or diagnose a driver fault.
+No production default or visual effect changed.
+
 The [clean environment repeat](docs/profiling/cloud-clean-20261018.md) confirms
 +3.84% static / +3.75% motion FPS without phase image readbacks, with stable
 A/B/A geometry/path and zero timed AS builds/allocations/uploads. All 48 GPU
