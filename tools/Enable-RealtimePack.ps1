@@ -5,6 +5,9 @@ $manifestPath=Join-Path $PackDirectory 'sulkan.json'
 $manifest=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json -AsHashtable
 $manifest.name="Sulkan Realtime — step $Step"
 if($Step -ge 2){
+    $manifest.options['EMISSIVE_SAMPLING']=@{default=1;values=@(1)}
+    $manifest.options['REALTIME_EMITTER_TREE']=@{default=1;values=@(1)}
+    $manifest.materials['minecraft:lantern']=15
     $manifest.options['REALTIME_DIRECT_SUN']=@{default=1;values=@(1)}
     $manifest.options['SULKAN_SOLID_SHADOW_PREFLIGHT']=@{default=0;values=@(0)}
     foreach($name in @('sun.raw','sun.accum','sun.normal')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';history=$true}}

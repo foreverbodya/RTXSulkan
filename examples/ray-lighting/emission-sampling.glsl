@@ -9,6 +9,28 @@
 // count=0 and both sampling and MIS revert to the original BSDF-only estimator.
 layout(buffer_reference,std430,buffer_reference_align=16) readonly buffer CinematicEmitterData {uvec4 words[];};
 uint cinematicEmitterCount(){return RaySceneFlags.y;}
+uint cinematicEmitterSelect(vec3 origin,float selector,out float probability) {
+    uint count=cinematicEmitterCount();probability=1.0/float(count);
+#if REALTIME_EMITTER_TREE == 1
+    CinematicEmitterData data=CinematicEmitterData(RaySceneFlags.zw);
+    vec3 world=origin+RaySceneOrigin.xyz;uint node=0u;probability=1.0;
+    for(int level=0;level<32;level++) {
+        uint base=count*2u+node*2u;uvec4 children=data.words[base+1u];
+        if(children.x==0xffffffffu)return children.z;
+        uint left=count*2u+children.x*2u,right=count*2u+children.y*2u;
+        vec4 a=uintBitsToFloat(data.words[left]),b=uintBitsToFloat(data.words[right]);
+        float ra=uintBitsToFloat(data.words[left+1u].w),rb=uintBitsToFloat(data.words[right+1u].w);
+        float wa=a.w/max(dot(a.xyz-world,a.xyz-world),ra*ra+1.0);
+        float wb=b.w/max(dot(b.xyz-world,b.xyz-world),rb*rb+1.0);
+        float p=clamp(wa/(wa+wb),1e-6,1.0-1e-6);
+        if(selector<p){probability*=p;selector/=p;node=children.x;}
+        else{probability*=1.0-p;selector=(selector-p)/(1.0-p);node=children.y;}
+    }
+    return 0u; // Balanced bounded tree reaches a leaf in at most 19 levels.
+#else
+    return min(uint(selector*float(count)),count-1u);
+#endif
+}
 void cinematicEmitterVertices(uint header,uint primitive,out vec3 a,out vec3 b,out vec3 c) {
     SulkanRayMeshData mesh=SulkanRayMeshData(uvec2(SulkanRayAttributeData.words[header],SulkanRayAttributeData.words[header+1u]));
     uvec3 indices;
@@ -38,6 +60,13 @@ float cinematicEmissionBsdfWeight(uint header,uint primitive,uint material,float
 // retain their previous estimator; NEE is not a second copy of those terms.
 vec3 cinematicEmissionWeightedHit(vec3 incoming,SulkanRaySurface hit,uint header,uint primitive,
         float distance,vec3 direction,float bsdfPdf) {
+#if REALTIME_EMITTER_TREE == 1
+    // This mode uses explicit NEE for surface emission (no BSDF/NEE double
+    // counting or mismatched uniform-light MIS PDF). Camera-visible emission
+    // remains in the raster/direct pass. Overflow retains BSDF emission.
+    if(cinematicEmitterCount()>0u)return incoming-sulkanSurfaceEmission(
+        foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb),hit.material);
+#endif
     float weight=cinematicEmissionBsdfWeight(header,primitive,hit.material,distance,direction,bsdfPdf);
     vec3 base=foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb);
     return incoming-(1.0-weight)*sulkanSurfaceEmission(base,hit.material);
@@ -48,7 +77,8 @@ bool cinematicSampleEmitter(vec3 origin,uint seed,out vec3 direction,out vec3 ra
     uint count=cinematicEmitterCount();if(count==0u)return false;
     CinematicEmitterData emitters=CinematicEmitterData(RaySceneFlags.zw);
     float selector=(float(indirectHash(seed^0xc2b2ae35u)&0xffffffu)+.5)/16777216.0;
-    uint index=min(uint(selector*float(count)),count-1u);
+    float selectionProbability;
+    uint index=cinematicEmitterSelect(origin,selector,selectionProbability);
     uvec4 location=emitters.words[index*2u],data=emitters.words[index*2u+1u];
     float u=(float(indirectHash(seed^0x85ebca6bu)&0xffffffu)+.5)/16777216.0;
     float v=(float(indirectHash(seed^0x27d4eb2fu)&0xffffffu)+.5)/16777216.0;
@@ -61,6 +91,7 @@ bool cinematicSampleEmitter(vec3 origin,uint seed,out vec3 direction,out vec3 ra
     if(distance<=.002 || distance>128.0)return false;
     direction=delta/distance;
     pdf=cinematicEmitterPdf(location.w,data.x,distance,direction);
+    pdf*=selectionProbability*float(count);
     if(pdf<=0.0 || isinf(pdf))return false;
     radiance=sulkanSurfaceEmission(foliageLinear(texel.rgb),sampled.material);
     if(max(radiance.r,max(radiance.g,radiance.b))<=0.0)return false;
@@ -83,6 +114,10 @@ vec3 cinematicEmissionDiffuse(vec3 origin,vec3 normal,vec3 view,uint seed) {
     if(!cinematicSampleEmitter(origin,seed,direction,radiance,lightPdf))return vec3(0);
     float cosine=max(dot(normal,direction),0.0),bsdfPdf=cosine/SULKAN_LIGHT_PI;
     vec3 f=sulkanFresnel(max(dot(view,normalize(view+direction)),0.0),vec3(.04));
+#if REALTIME_EMITTER_TREE == 1
+    return (1.0-f)*radiance*(bsdfPdf/lightPdf);
+#else
     return (1.0-f)*radiance*(bsdfPdf/lightPdf)*cinematicPowerWeight(lightPdf,bsdfPdf);
+#endif
 }
 #endif

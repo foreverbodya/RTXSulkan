@@ -37,11 +37,13 @@ public final class TerrainRayScene {
     private final VkDevice device;
     private final RayEmissionSources emissionSources=new RayEmissionSources();
     private boolean sampleEmission;
+    private boolean weightedEmission;
     private RayEmissionSources.Snapshot emission=new RayEmissionSources.Snapshot(null,0,false);
     public void sampleEmission(boolean enabled){ensureActive();sampleEmission=enabled;}
+    public void weightedEmission(boolean enabled){ensureActive();weightedEmission=enabled;}
     public long emissionAddress(){return emission.address();}
     public int emissionTriangles(){return emission.triangles();}
-    public Map<String,Object> emissionStatistics(){return Map.of("triangles",emission.triangles(),"bytes",(long)emission.triangles()*RayEmissionSources.STRIDE,"overflowFallback",emission.overflow(),"enabled",sampleEmission);}
+    public Map<String,Object> emissionStatistics(){return Map.of("triangles",emission.triangles(),"bytes",emission.buffer()==null?0L:emission.buffer().bytes(),"overflowFallback",emission.overflow(),"enabled",sampleEmission,"weighted",weightedEmission);}
     private final Map<Object, List<Geometry>> sections = new IdentityHashMap<>();
     private final Map<Object, TerrainGeometryCache.Change> pending = new IdentityHashMap<>();
     private AccelerationStructure top;
@@ -176,7 +178,7 @@ public final class TerrainRayScene {
                         (float)((long)section.z()-requestedOrigin.z()), value.id(), mask));
                 metadata.put(value.id(), value);
             }
-            nextEmission=sampleEmission && attributeArena!=null?emissionSources.create(device,metadata):new RayEmissionSources.Snapshot(null,0,false);
+            nextEmission=sampleEmission && attributeArena!=null?emissionSources.create(device,metadata,weightedEmission):new RayEmissionSources.Snapshot(null,0,false);
             AccelerationStructureBuilder.dependency(commands,VK10.VK_PIPELINE_STAGE_HOST_BIT,
                 VK10.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT|VK10.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK10.VK_ACCESS_HOST_WRITE_BIT,VK10.VK_ACCESS_SHADER_READ_BIT);

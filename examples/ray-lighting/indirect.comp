@@ -148,9 +148,13 @@ void main() {
 #endif
     vec3 origin=RayCameraPosition.xyz+relative+samplingNormal*0.005;
     vec3 totalLighting=vec3(0);
+    bool emitterReceiver=!receiverLeaf;
+#if REALTIME_EMITTER_TREE == 1
+    emitterReceiver=true;
+#endif
     for(int sampleIndex=0;sampleIndex<INDIRECT_SAMPLES;sampleIndex++) {
         uint pathSeed=indirectPathSeed(uvec2(pixel),uint(sampleIndex));
-        if(!receiverLeaf)totalLighting+=cinematicEmissionDiffuse(origin,n,v,pathSeed);
+        if(emitterReceiver)totalLighting+=cinematicEmissionDiffuse(origin,n,v,pathSeed);
         vec3 direction=indirectDirection(samplingNormal,indirectSampleSeed(pathSeed));
         rayQueryEXT query;
         indirectTrace(query,origin,direction);
@@ -167,7 +171,7 @@ void main() {
                 sulkanRayAtlasShrink(textureSize(Atlas,0)));
             hitMaterial=float(hit.material);
             incoming=secondaryAirHitSampled(hit,position,direction,Atlas,pathSeed);
-            if(!receiverLeaf)incoming=cinematicEmissionWeightedHit(incoming,hit,
+            if(emitterReceiver)incoming=cinematicEmissionWeightedHit(incoming,hit,
                 rayQueryGetIntersectionInstanceCustomIndexEXT(query,true),rayQueryGetIntersectionPrimitiveIndexEXT(query,true),
                 distance,direction,max(dot(n,direction),0.0)/SULKAN_LIGHT_PI);
 #if INDIRECT_BOUNCES >= 2

@@ -558,6 +558,7 @@ public final class GraphRenderer implements AutoCloseable {
          }
          this.rayScene.enqueue(TerrainGeometryCache.drainChanges());
          this.rayScene.sampleEmission(this.graph.options().getOrDefault("EMISSIVE_SAMPLING",0d)>0);
+         this.rayScene.weightedEmission(this.graph.options().getOrDefault("REALTIME_EMITTER_TREE",0d)>0);
          if(this.graph.cameraRelativeRays()) this.rayScene.followCamera(camera.pos.x,camera.pos.y,camera.pos.z);
          // Explicit QA-only initial/reload preparation. Timed gameplay always restores eight meshes.
          int meshBudget=Boolean.getBoolean("sulkan.qaPerformanceProfile") && Boolean.getBoolean("sulkan.qaProfilePrepareGeometry")?128:8;
