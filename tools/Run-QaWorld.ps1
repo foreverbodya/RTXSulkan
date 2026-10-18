@@ -72,6 +72,7 @@ param(
     [switch] $RayQueryCounts,
     [switch] $CloudNoisePairs,
     [switch] $CloudNoisePairsPerturb,
+    [switch] $CloudEnvironmentInputs,
     [switch] $TemporalProfile,
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
@@ -116,6 +117,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($CloudEnvironmentInputs -and (!$PerformanceProfile -or !$CloudPreview -or !$WorkgroupExperiment -or $ComputeExperiment -ne 'cloud-3d-env' -or $CloudNoisePairs -or $RayQueryCounts -or $TemporalProfile -or $NativeFrameComparison -or $CanonicalPackComparison -or $SkipImageComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudEnvironmentInputs requires one cloud environment A/A/B probe'}
 if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb requires CloudNoisePairs'}
 if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
@@ -312,6 +314,7 @@ if ($RayVisibility -or $RayLighting) {
     & (Join-Path $PSScriptRoot $creator) @createArguments | Out-Null
     if($RayQueryCounts){& (Join-Path $PSScriptRoot 'Enable-QaRayQueryCounts.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
     if($CloudNoisePairs){& (Join-Path $PSScriptRoot 'Enable-QaCloudNoisePairs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) -PerturbVolume:$CloudNoisePairsPerturb | Out-Null}
+    if($CloudEnvironmentInputs){& (Join-Path $PSScriptRoot 'Enable-QaCloudEnvironmentInputs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
     if($CloudAmbientComparison) {
         $path=Join-Path $qaPath ('shaders/'+$packName+'/sulkan.json')
         $manifest=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
@@ -724,7 +727,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; cloudNoisePairs = [bool]$CloudNoisePairs; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; cloudNoisePairs = [bool]$CloudNoisePairs; cloudEnvironmentInputs = [bool]$CloudEnvironmentInputs; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison
