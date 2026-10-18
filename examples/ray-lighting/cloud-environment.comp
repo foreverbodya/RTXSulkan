@@ -5,6 +5,15 @@
 void main() {
     ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
     if(any(greaterThanEqual(p,size)))return;
+#if REALTIME_CLOUDS == 1
+    vec4 oldState=texelFetch(PreviousCloudState,ivec2(0),0);
+    bool refresh=CameraDeltaAndHistoryValid.w<0.5 || length(CameraDeltaAndHistoryValid.xyz)>2.0
+        || length(oldState.xyz-cinematicKeyDirection())>0.003 || abs(oldState.w-WorldTimeWeatherDimension.y)>0.02;
+    uint index=uint(p.x+size.x*p.y);
+    if(!refresh && (index&7u)!=(RaySceneState.w&7u)) {
+        imageStore(Output0,p,texelFetch(PreviousSky,p,0));return;
+    }
+#endif
     vec3 direction=atmLutDirection((vec2(p)+0.5)/vec2(size)),clear=atmSky(ClearSky,direction);
     vec4 transport=vec4(0,0,0,1);float proxy;
     float blend=atmBlend();

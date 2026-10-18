@@ -45,6 +45,9 @@ if($Step -ge 5){
     foreach($name in @('cloud.view','cloud.accum')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';scale=0.5;history=$true}}
     $manifest.resources['cloud.geometry'].scale=0.5;$manifest.resources['cloud.geometry'].history=$true
     $manifest.resources['cloud.environment'].size=@(128,64,1)
+    $environmentPass=$manifest.passes|Where-Object{$_.name -eq 'cloud.environment'}
+    $environmentPass.reads['PreviousSky']='cloud.environment@previous'
+    $environmentPass.reads['PreviousCloudState']='cloud.source.state@previous'
     $manifest.passes+=@{name='cloud.temporal';compute='shaders/realtime-cloud-temporal.comp';localSize=@(8,8,1);
         reads=@{Current='cloud.view';Geometry='cloud.geometry';Previous='cloud.accum@previous';PreviousGeometry='cloud.geometry@previous'};writes=@('cloud.accum')}
     ($manifest.passes|Where-Object{$_.name -eq 'cloud.composite'}).reads.CloudView='cloud.accum'
