@@ -6,6 +6,12 @@
 void main() {
     ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
     if(any(greaterThanEqual(pixel,size))) return;
+#if REALTIME_ATMOSPHERE_CACHE == 1
+    // This table spans observer height and solar zenith. Its integrand uses
+    // only shader constants, not current weather, camera or time of day.
+    vec4 previous=texelFetch(PreviousMultiple,pixel,0);
+    if(CameraDeltaAndHistoryValid.w>0.5 && previous.a==1.0){imageStore(Output0,pixel,previous);return;}
+#endif
     vec2 uv=vec2(pixel)/vec2(size-1);
     float height=0.001+59.999*uv.y*uv.y,muSun=uv.x*2.0-1.0;
     vec3 sun=vec3(sqrt(max(1.0-muSun*muSun,0.0)),muSun,0);

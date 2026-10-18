@@ -11,7 +11,7 @@ void main() {
     vec4 oldState=texelFetch(PreviousState,ivec2(0),0);
     float rain=WorldTimeWeatherDimension.y;
     bool reset=CameraDeltaAndHistoryValid.w<0.5 || length(oldState.xyz-sun)>0.003 || abs(oldState.w-rain)>0.02;
-    uint index=uint(cell.x+size.x*(cell.y+size.y*cell.z));
+    uint index=gl_WorkGroupID.x+gl_NumWorkGroups.x*(gl_WorkGroupID.y+gl_NumWorkGroups.y*gl_WorkGroupID.z);
     if(!reset && (index&7u)!=(RaySceneState.w&7u)) {
         imageStore(Output0,cell,texelFetch(PreviousLight,cell,0));
         imageStore(Output1,cell,texelFetch(PreviousAmbient,cell,0));

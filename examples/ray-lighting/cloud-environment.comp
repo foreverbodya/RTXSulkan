@@ -9,7 +9,7 @@ void main() {
     vec4 oldState=texelFetch(PreviousCloudState,ivec2(0),0);
     bool refresh=CameraDeltaAndHistoryValid.w<0.5 || length(CameraDeltaAndHistoryValid.xyz)>2.0
         || length(oldState.xyz-cinematicKeyDirection())>0.003 || abs(oldState.w-WorldTimeWeatherDimension.y)>0.02;
-    uint index=uint(p.x+size.x*p.y);
+    uint index=gl_WorkGroupID.x+gl_NumWorkGroups.x*gl_WorkGroupID.y;
     if(!refresh && (index&7u)!=(RaySceneState.w&7u)) {
         imageStore(Output0,p,texelFetch(PreviousSky,p,0));return;
     }

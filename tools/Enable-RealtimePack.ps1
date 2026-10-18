@@ -28,6 +28,8 @@ if($Step -ge 3){
     foreach($pass in $manifest.passes|Where-Object{$_.name -eq 'indirect.trace'}){$pass.reads['AtmosphereSky']='atmosphere.sky'}
 }
 if($Step -ge 5){
+    $manifest.options['REALTIME_ATMOSPHERE_CACHE']=@{default=1;values=@(1)}
+    ($manifest.passes|Where-Object{$_.name -eq 'atmosphere.multiple'}).reads['PreviousMultiple']='atmosphere.multiple@previous'
     $manifest.options['REALTIME_CLOUDS']=@{default=1;values=@(1)}
     $manifest.options['CLOUD_LIGHTING_VOLUME']=@{default=1;values=@(1)}
     $manifest.resources['cloud.source.light']=@{format='RGBA16_FLOAT';size=@(96,32,96);history=$true}
