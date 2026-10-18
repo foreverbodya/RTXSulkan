@@ -70,7 +70,8 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $WorkgroupExperiment,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d")][string] $ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env")][string] $ComputeExperiment = "workgroup",
+    [ValidateSet(3000,12600,18000)][int] $ProfileTime = 3000,
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
     [switch] $CloudLightingComparison,
@@ -108,7 +109,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
-if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
+if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
 if($EmissiveComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $EmissiveSampling -ne 0)){throw 'EmissiveComparison requires separate interior night 0/1/0 with display/cost capture'}
@@ -274,6 +275,7 @@ if ($RayVisibility -or $RayLighting) {
     if($CloudDiagnostic) {$createArguments.CloudDiagnostic=$true}
     if($CloudPreview) {$createArguments.CloudPreview=$true}
     if($ComputeExperiment -eq "cloud-3d"){$createArguments.CloudExactVolume=$true}
+    if($ComputeExperiment -eq "cloud-3d-env"){$createArguments.CloudExactEnvironment=$true}
     if($SolidShadowComparison){$createArguments.SolidShadowComparison=$true}
     if($CloudLightingComparison){$createArguments.CloudLightingComparison=$true}
     if($CloudLightingVolume){$createArguments.CloudLightingVolume=$true}
@@ -388,7 +390,7 @@ if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotio
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")}
-if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
+if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfileTime=$ProfileTime");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
 if($SolidShadowComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSolidShadowComparison=true')}
 if($CloudSourceComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudSourceComparison=true')}
 if($NightOnly){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaNightOnly=true')}

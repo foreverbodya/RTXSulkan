@@ -44,19 +44,24 @@ final class QaPerformanceProfile {
         configure();
     }
     private String phase(){return plan.get(phaseIndex);}
+    private int phaseFrames(){return path().equals("travel")?2048:FRAMES;}
     private String path(){return phase().replace("narrow-","").replace("-repeat","");}
-    private void configure(){
+    private void configure()throws Exception{
         System.setProperty("sulkan.qaProfilePhase",phase());
         System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
         System.setProperty("sulkan.qaProfileDisabled",group);
+        if(path().equals("reload"))NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),NativePackRuntime.diagnosticOptions());
+        if(path().equals("resize"))Minecraft.getInstance().getWindow().setWindowed(1920,1080);
         LogUtils.getLogger().info("SULKAN_PROFILE_PHASE_CONFIG phase={} disabled={}",phase(),group);
     }
     double[] pose() {
         double[] pose=base.clone();int n=verificationFrame>0?verificationFrame*16:frame<0?Math.floorMod(frame,FRAMES):Math.min(FRAMES-1,frame);
+        if(frame<0 && !path().equals("motion"))n=0;
         if(path().equals("motion")) {
             double s=Math.sin(n*2*Math.PI/FRAMES);pose[0]+=4*s;pose[2]+=2*s;pose[3]+=12*s;
-        } else if(path().equals("stream") || path().equals("settled"))pose[0]+=path().equals("stream")?n*4:508;
+        } else if(path().equals("travel"))pose[0]+=Math.max(0,frame)*4;
+        else if(path().equals("stream") || path().equals("settled"))pose[0]+=path().equals("stream")?n*4:508;
         return pose;
     }
     boolean observe()throws Exception {
@@ -69,9 +74,9 @@ final class QaPerformanceProfile {
             }
             frame=-WARMUP;verificationFrame=0;measuring=false;configure();return false;
         }
-        if(frame<0){frame++;return false;}
+        if(frame<0){if(path().equals("resize") && frame==-WARMUP+64)Minecraft.getInstance().getWindow().setWindowed(2560,1440);frame++;return false;}
         if(!measuring) {
-            if(!path().equals("stream") && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
+            if(!java.util.Set.of("stream","travel").contains(path()) && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
             startEpochMs=System.currentTimeMillis();
             geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
             countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
@@ -80,7 +85,7 @@ final class QaPerformanceProfile {
             NativePackRuntime.diagnosticBeginGpuTimings("profile-"+phase(),directory);
             measuring=true;return false; // first timestamped frame is the following rendered frame
         }
-        if(frame<FRAMES) {
+        if(frame<phaseFrames()) {
             long now=System.nanoTime(),active=thread.isCurrentThreadCpuTimeSupported()?thread.getCurrentThreadCpuTime():-1;
             if(previousTime!=0)wall.add((now-previousTime)*1e-6);
             if(previousCpu>0 && active>=0)cpu.add((active-previousCpu)*1e-6);
@@ -90,7 +95,7 @@ final class QaPerformanceProfile {
                 "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",TerrainGeometryCache.statistics().revision(),
                 "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"vulkanMemory",NativePackRuntime.diagnosticMemoryBudget(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
             frame++;
-            if(frame==FRAMES) {
+            if(frame==phaseFrames()) {
                 endEpochMs=System.currentTimeMillis();rayEnd=NativePackRuntime.diagnosticRayScene();memoryEnd=NativeBuffer.statistics();
                 countersEnd=com.sulkan.shaders.graph.ProfileCounters.snapshot();geometryEnd=NaturalSceneFingerprint.capture();
             }
@@ -100,9 +105,12 @@ final class QaPerformanceProfile {
         if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && (phase().equals("static") || phase().equals("motion"))) {
             if(verificationFrame<9) {System.setProperty("sulkan.qaProfileVerify",verificationFrame<8?"true":"false");verificationFrame++;return false;}
             if(!com.sulkan.shaders.graph.WorkgroupVerification.ready())return false;
-            write("workgroup-verification.json",com.sulkan.shaders.graph.WorkgroupVerification.snapshot());
+            var verification=com.sulkan.shaders.graph.WorkgroupVerification.snapshot();
+            write("workgroup-verification.json",verification);
+            if("cloud-3d-env".equals(System.getProperty("sulkan.qaComputeExperiment")) && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
         }
         var report=new LinkedHashMap<String,Object>(scene);
+        report.put("gpuTimingPrefixFrames",FRAMES);report.put("stressOnly",path().equals("travel"));
         report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
         report.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));
         report.put("candidateSelected",phase().startsWith("narrow-"));
@@ -113,6 +121,7 @@ final class QaPerformanceProfile {
         report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",memoryEnd);
         report.put("vulkanMemoryEnd",NativePackRuntime.diagnosticMemoryBudget());
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
+        report.put("worldTime",Minecraft.getInstance().level.getDefaultClockTime());
         report.put("sourceRevisionUnchanged",perFrame.stream().map(row->((Map<?,?>)row).get("geometryRevision")).distinct().count()==1);
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
         report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",List.copyOf(perFrame));
@@ -133,7 +142,7 @@ final class QaPerformanceProfile {
     private static Map<String,Object> statistics(List<Double> values) {
         if(values.isEmpty())return Map.of("available",false);
         var sorted=values.stream().sorted().toList();double mean=sorted.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
-        return Map.of("samples",List.copyOf(values),"mean",mean,"fpsFromWallOnly",1000/mean,"p50",sorted.get(sorted.size()/2),"p95",sorted.get((int)((sorted.size()-1)*.95)),"max",sorted.getLast());
+        return Map.of("samples",List.copyOf(values),"mean",mean,"p50",sorted.get(sorted.size()/2),"p95",sorted.get((int)((sorted.size()-1)*.95)),"max",sorted.getLast());
     }
     private void write(String name,Object report)throws Exception {Files.writeString(directory.resolve(name),new GsonBuilder().setPrettyPrinting().create().toJson(report));}
 }

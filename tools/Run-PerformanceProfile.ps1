@@ -3,9 +3,10 @@
 param(
     [Parameter(Mandatory)][string]$QaDirectory,
     [string]$InstanceMods = 'work/qa-world-dlss-5/mods',
+    [ValidateSet(3000,12600,18000)][int]$ProfileTime = 3000,
     [string]$ProfilePlan = 'static,motion,off-clouds,off-gi,off-reflections,off-water,off-shadows,off-denoising,static-repeat,stream,settled',
     [switch]$WorkgroupExperiment,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d")][string]$ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6
 )
 $ErrorActionPreference='Stop'
@@ -20,7 +21,7 @@ $gpuInfo=$target+'-gpu-info.txt'
 $monitor=Start-Process -FilePath (Get-Command nvidia-smi).Source -ArgumentList @('--query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,clocks.gr,clocks.mem','--format=csv,noheader,nounits','-lms','500','-f',('"'+$telemetry+'"')) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `

@@ -15,10 +15,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class VulkanFeatureSetsMixin {
     @Inject(method = "optionalFeatureSets", at = @At("RETURN"), cancellable = true)
     private static void sulkan$negotiateRayQueries(CallbackInfoReturnable<Set<FeatureSet>> callback) {
-        if (RayTracingFeatures.requested() || DlssFeatures.requested()) {
+        if (RayTracingFeatures.requested() || DlssFeatures.requested() || Boolean.getBoolean("sulkan.qaGpuTimings")) {
             Set<FeatureSet> optional = new HashSet<>(callback.getReturnValue());
             if (RayTracingFeatures.requested()) optional.add(RayTracingFeatures.RAY_QUERIES);
             if (DlssFeatures.requested()) optional.add(DlssFeatures.SUPER_RESOLUTION);
+            if(Boolean.getBoolean("sulkan.qaGpuTimings"))optional.add(com.sulkan.shaders.platform.vulkan.GpuMemorySnapshot.OPTIONAL_FEATURE);
             callback.setReturnValue(optional);
         }
     }

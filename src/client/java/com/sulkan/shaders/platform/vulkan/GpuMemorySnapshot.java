@@ -6,6 +6,7 @@ import org.lwjgl.vulkan.*;
 
 /** Driver estimate, separate from NativeBuffer ownership and sampled device-wide NVIDIA VRAM. */
 public final class GpuMemorySnapshot {
+    public static final com.mojang.renderpearl.backend.vulkan.init.FeatureSet OPTIONAL_FEATURE = new com.mojang.renderpearl.backend.vulkan.init.FeatureSet("Sulkan profiling memory budget",Set.of("VK_EXT_memory_budget"),Set.of());
     public static Map<String,Object> capture(VkDevice device) {
         if(!device.getCapabilities().VK_EXT_memory_budget)
             return Map.of("available",false,"reason","VK_EXT_memory_budget is not enabled; no unsupported query issued");

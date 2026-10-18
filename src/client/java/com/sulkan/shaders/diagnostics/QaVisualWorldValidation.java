@@ -242,7 +242,7 @@ final class QaVisualWorldValidation {
                             server.getCommands().performPrefixedCommand(source,"tick freeze");
                             if(!server.tickRateManager().isFrozen())throw new IllegalStateException("Comparison server did not freeze");
                         }
-                        for(var command:new String[]{"weather clear",Boolean.getBoolean("sulkan.qaNightOnly")?"time set 18000":"time set 3000","gamerule minecraft:advance_time false","gamemode spectator @p",
+                        for(var command:new String[]{"weather clear",Boolean.getBoolean("sulkan.qaPerformanceProfile")?"time set "+Integer.getInteger("sulkan.qaProfileTime",3000):Boolean.getBoolean("sulkan.qaNightOnly")?"time set 18000":"time set 3000","gamerule minecraft:advance_time false","gamemode spectator @p",
                             String.format(Locale.ROOT,"tp @p %.5f %.5f %.5f %.5f %.5f",x,y,z,yaw,(double)cameraPitch())})
                             server.getCommands().performPrefixedCommand(source,command);
                         int waterColumns=0;

@@ -162,6 +162,8 @@ final class ComputeProgram implements AutoCloseable {
                this.layout = handle.get(0);
 
                var shaderDefines = new java.util.LinkedHashMap<>(graph.options());
+               for(String binding:pass.reads().keySet())shaderDefines.put("SULKAN_HAS_BINDING_"+binding,1d);
+               if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d"))shaderDefines.put("SULKAN_CLOUD_NOISE_EXACT_3D",0d);
                if (pass.rayAttributes()) {
                   shaderDefines.put("SULKAN_RAY_SUBTEXEL_SCALE", Math.scalb(1.0,
                           -net.caffeinemc.mods.sodium.client.gpu.GPULimits.getSubTexelPrecisionBits()));
@@ -190,7 +192,7 @@ final class ComputeProgram implements AutoCloseable {
                   }
                }
                boolean cloudCell="cloud-cell".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"));
-               boolean exactVolume="cloud-3d".equals(System.getProperty("sulkan.qaComputeExperiment"));
+               boolean exactVolume=System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d");
                boolean target=exactVolume ? pass.reads().containsKey("CloudExactNoise") : cloudCell ? java.util.Set.of("cloud.view","cloud.environment","cloud.composite","cloud.shadow").contains(pass.name()) : PROFILE_GROUP_TARGETS.contains(pass.name());
                if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && target && pass.localSize().equals(java.util.List.of(8,8,1))) {
                   String variantSource;

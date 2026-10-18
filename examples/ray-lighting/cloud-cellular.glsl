@@ -1,5 +1,12 @@
 #ifndef SULKAN_CINEMATIC_CLOUD_CELLULAR
 #define SULKAN_CINEMATIC_CLOUD_CELLULAR
+#ifndef SULKAN_CLOUD_NOISE_EXACT_3D
+#ifdef SULKAN_HAS_BINDING_CloudExactNoise
+#define SULKAN_CLOUD_NOISE_EXACT_3D 1
+#else
+#define SULKAN_CLOUD_NOISE_EXACT_3D 0
+#endif
+#endif
 // 128^3 RGBA8 volume in 16x8 slices, sampled at voxel centers. Explicit fetches
 // preserve 3D periodic interpolation at slice/tile edges in the 2D texture API.
 vec4 cinematicCloudCellularScale(sampler2D layoutTexture,sampler2D noiseTexture,vec3 p,float scale) {
