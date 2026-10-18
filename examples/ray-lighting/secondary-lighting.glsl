@@ -57,7 +57,7 @@ vec3 secondaryVisibility(sampler2D atlas,vec3 position,vec3 n,bool leaf,vec3 lig
     return secondaryVisibilityImpl(atlas,position,n,leaf,light,maximum,-1);
 }
 vec3 secondaryAirHitImpl(SulkanRaySurface hit,vec3 position,vec3 incident,sampler2D atlas,int sunIndex) {
-    vec3 base=foliageLinear((textureLod(atlas,hit.uv,0.0)*hit.color).rgb),n=secondaryNormal(hit,incident);
+    vec3 base=foliageLinear((sulkanRayTexture(atlas,hit,position,incident)*hit.color).rgb),n=secondaryNormal(hit,incident);
     vec3 light=cinematicKeyDirection(),visibility=vec3(0);
     float nl=dot(n,light);bool leaf=secondaryLeaf(hit);
     if((nl>0.0 || (leaf && nl<0.0)) && light.y>0.0)visibility=secondaryVisibilityImpl(atlas,position,n,leaf,light,128.0,sunIndex);

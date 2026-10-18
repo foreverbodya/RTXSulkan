@@ -6,5 +6,8 @@ float sulkanMaterialAlphaCutoff(uint material) {
 vec4 sulkanSampleTerrainMaterial(sampler2D atlas, vec2 uv, uint material) {
     
     vec2 dx = dFdx(uv), dy = dFdy(uv);
+#if REALTIME_RAY_LOD == 1
+    dx*=exp2(RayCameraPosition.w);dy*=exp2(RayCameraPosition.w);
+#endif
     return (material & 1u) != 0u ? textureGrad(atlas, uv, dx, dy) : textureLod(atlas, uv, 0.0);
 }

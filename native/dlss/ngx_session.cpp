@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <nvsdk_ngx_helpers.h>
 #include <nvsdk_ngx_helpers_vk.h>
+#include <nvsdk_ngx_helpers_dlssd_vk.h>
 #include "ngx_common.h"
 #include <map>
 #include <memory>
@@ -39,6 +40,7 @@ struct Context {
     std::shared_ptr<Sdk> sdk;
     NVSDK_NGX_Parameter* parameters = nullptr;
     NVSDK_NGX_Handle* feature = nullptr;
+    bool rayReconstruction = false;
     int iw = 0, ih = 0, ow = 0, oh = 0;
     unsigned releaseResult = 1, destroyResult = 1;
     void close() {
@@ -97,6 +99,19 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_
     } catch (const std::exception& failure) { report(env, failure); return 0; }
 }
 
+extern "C" JNIEXPORT void JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_DlssSession_rayReconstructionNative(
+        JNIEnv* env, jclass, jlong id) {
+    try {
+        std::lock_guard<std::mutex> lock(sulkan_ngx::calls);
+        auto& context=get(id);
+        if(context.feature)throw std::invalid_argument("Cannot change a live NGX feature mode");
+        int available=0;
+        require(context.sdk->capabilities->Get(NVSDK_NGX_Parameter_SuperSamplingDenoising_Available,&available),"RR availability");
+        if(available!=1)throw std::runtime_error("DLSS Ray Reconstruction unavailable");
+        context.rayReconstruction=true;
+    } catch(const std::exception& failure){report(env,failure);}
+}
+
 extern "C" JNIEXPORT jintArray JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_DlssSession_qualityNative(
         JNIEnv* env, jclass, jlong id, jint width, jint height) {
     try {
@@ -104,7 +119,17 @@ extern "C" JNIEXPORT jintArray JNICALL Java_com_sulkan_shaders_platform_vulkan_d
         if (width <= 0 || height <= 0) throw std::invalid_argument("Invalid output dimensions");
         auto& context = get(id);
         unsigned iw=0, ih=0, maxw=0, maxh=0, minw=0, minh=0; float sharpness=0;
-        require(NGX_DLSS_GET_OPTIMAL_SETTINGS(context.sdk->capabilities, unsigned(width), unsigned(height),
+        if(context.rayReconstruction){
+            void* callback=nullptr;
+            require(context.sdk->capabilities->Get(NVSDK_NGX_Parameter_DLSSDOptimalSettingsCallback,&callback),"RR optimal settings callback");
+            if(!callback)throw std::runtime_error("Missing RR optimal settings callback");
+            auto* p=context.sdk->capabilities;
+            p->Set(NVSDK_NGX_Parameter_Width,unsigned(width));p->Set(NVSDK_NGX_Parameter_Height,unsigned(height));
+            p->Set(NVSDK_NGX_Parameter_PerfQualityValue,int(NVSDK_NGX_PerfQuality_Value_MaxQuality));
+            p->Set(NVSDK_NGX_Parameter_RTXValue,0);
+            require(reinterpret_cast<PFN_NVSDK_NGX_DLSS_GetOptimalSettingsCallback>(callback)(p),"RR optimal settings");
+            require(p->Get(NVSDK_NGX_Parameter_OutWidth,&iw),"RR input width");require(p->Get(NVSDK_NGX_Parameter_OutHeight,&ih),"RR input height");
+        }else require(NGX_DLSS_GET_OPTIMAL_SETTINGS(context.sdk->capabilities, unsigned(width), unsigned(height),
             NVSDK_NGX_PerfQuality_Value_MaxQuality, &iw, &ih, &maxw, &maxh, &minw, &minh, &sharpness), "Quality dimensions");
         jint values[] = {jint(iw), jint(ih)};
         auto result = env->NewIntArray(2);
@@ -119,6 +144,18 @@ extern "C" JNIEXPORT void JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_D
         std::lock_guard<std::mutex> lock(sulkan_ngx::calls);
         auto& context = get(id);
         if (!commands || iw <= 0 || ih <= 0 || ow < iw || oh < ih || context.feature) throw std::invalid_argument("Invalid feature creation state");
+        if(context.rayReconstruction) {
+            NVSDK_NGX_DLSSD_Create_Params creation{};
+            creation.InWidth=unsigned(iw);creation.InHeight=unsigned(ih);
+            creation.InTargetWidth=unsigned(ow);creation.InTargetHeight=unsigned(oh);
+            creation.InPerfQualityValue=NVSDK_NGX_PerfQuality_Value_MaxQuality;
+            creation.InDenoiseMode=NVSDK_NGX_DLSS_Denoise_Mode_DLUnified;
+            creation.InRoughnessMode=NVSDK_NGX_DLSS_Roughness_Mode_Packed;
+            creation.InUseHWDepth=NVSDK_NGX_DLSS_Depth_Type_HW;
+            creation.InFeatureCreateFlags=NVSDK_NGX_DLSS_Feature_Flags_IsHDR|NVSDK_NGX_DLSS_Feature_Flags_MVLowRes|NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
+            require(NGX_VULKAN_CREATE_DLSSD_EXT1(context.sdk->device,reinterpret_cast<VkCommandBuffer>(commands),1,1,
+                &context.feature,context.parameters,&creation),"create DLSS Ray Reconstruction");
+        } else {
         NVSDK_NGX_DLSS_Create_Params creation{};
         creation.Feature.InWidth = unsigned(iw); creation.Feature.InHeight = unsigned(ih);
         creation.Feature.InTargetWidth = unsigned(ow); creation.Feature.InTargetHeight = unsigned(oh);
@@ -126,6 +163,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_D
         creation.InFeatureCreateFlags = NVSDK_NGX_DLSS_Feature_Flags_IsHDR | NVSDK_NGX_DLSS_Feature_Flags_MVLowRes | NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
         require(NGX_VULKAN_CREATE_DLSS_EXT1(context.sdk->device, reinterpret_cast<VkCommandBuffer>(commands),
             1, 1, &context.feature, context.parameters, &creation), "create DLSS feature");
+        }
         if (!context.feature) throw std::runtime_error("Successful creation returned no feature");
         context.iw=iw; context.ih=ih; context.ow=ow; context.oh=oh;
     } catch (const std::exception& failure) { report(env, failure); }
@@ -164,6 +202,45 @@ extern "C" JNIEXPORT void JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_D
         evaluation.InPreExposure = 1; evaluation.InExposureScale = 1;
         require(NGX_VULKAN_EVALUATE_DLSS_EXT(reinterpret_cast<VkCommandBuffer>(commands), context.feature, context.parameters, &evaluation), "evaluate DLSS");
     } catch (const std::exception& failure) { report(env, failure); }
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_DlssSession_evaluateRrNative(
+        JNIEnv* env,jclass,jlong id,jlong commands,jlongArray resources,jfloatArray camera,
+        jfloat jitterX,jfloat jitterY,jboolean reset,jfloat milliseconds) {
+    try {
+        std::lock_guard<std::mutex> lock(sulkan_ngx::calls);
+        auto& context=get(id);
+        if(!commands || !context.feature || !context.rayReconstruction || !resources || env->GetArrayLength(resources)!=54
+            || !camera || env->GetArrayLength(camera)!=32 || !std::isfinite(milliseconds) || milliseconds<=0
+            || !std::isfinite(jitterX) || !std::isfinite(jitterY))throw std::invalid_argument("Invalid RR frame");
+        std::array<jlong,54> values{};std::array<float,32> matrices{};
+        env->GetLongArrayRegion(resources,0,54,values.data());env->GetFloatArrayRegion(camera,0,32,matrices.data());
+        if(env->ExceptionCheck())return;
+        for(float v:matrices)if(!std::isfinite(v))throw std::invalid_argument("Nonfinite RR matrix");
+        std::array<NVSDK_NGX_Resource_VK,9> images{};
+        const VkFormat formats[]={VK_FORMAT_R16G16B16A16_SFLOAT,VK_FORMAT_R32_SFLOAT,VK_FORMAT_R16G16_SFLOAT,
+            VK_FORMAT_R32_SFLOAT,VK_FORMAT_R16G16B16A16_SFLOAT,VK_FORMAT_R16G16B16A16_SFLOAT,
+            VK_FORMAT_R16G16B16A16_SFLOAT,VK_FORMAT_R16G16B16A16_SFLOAT,VK_FORMAT_R32_SFLOAT};
+        for(size_t i=0;i<images.size();++i){
+            const auto* v=values.data()+i*6;
+            int w=i==3?1:i==4?context.ow:context.iw,h=i==3?1:i==4?context.oh:context.ih;
+            if(!v[0] || !v[1] || v[2]!=formats[i] || v[3]!=w || v[4]!=h || v[5]!=VK_IMAGE_ASPECT_COLOR_BIT)
+                throw std::invalid_argument("RR image format/extent mismatch");
+            VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};
+            images[i]=NVSDK_NGX_Create_ImageView_Resource_VK(VkImageView(v[1]),VkImage(v[0]),range,formats[i],unsigned(w),unsigned(h),i==4);
+        }
+        NVSDK_NGX_VK_DLSSD_Eval_Params evaluation{};
+        evaluation.pInColor=&images[0];evaluation.pInDepth=&images[1];evaluation.pInMotionVectors=&images[2];
+        evaluation.pInExposureTexture=&images[3];evaluation.pInOutput=&images[4];
+        evaluation.pInDiffuseAlbedo=&images[5];evaluation.pInSpecularAlbedo=&images[6];
+        evaluation.pInNormals=&images[7];evaluation.pInSpecularHitDistance=&images[8];
+        evaluation.pInWorldToViewMatrix=matrices.data();evaluation.pInViewToClipMatrix=matrices.data()+16;
+        evaluation.InRenderSubrectDimensions={unsigned(context.iw),unsigned(context.ih)};
+        evaluation.InJitterOffsetX=jitterX;evaluation.InJitterOffsetY=jitterY;
+        evaluation.InMVScaleX=1;evaluation.InMVScaleY=1;evaluation.InReset=reset?1:0;
+        evaluation.InPreExposure=1;evaluation.InExposureScale=1;evaluation.InFrameTimeDeltaInMsec=milliseconds;
+        require(NGX_VULKAN_EVALUATE_DLSSD_EXT(reinterpret_cast<VkCommandBuffer>(commands),context.feature,context.parameters,&evaluation),"evaluate DLSS Ray Reconstruction");
+    }catch(const std::exception& failure){report(env,failure);}
 }
 
 extern "C" JNIEXPORT jstring JNICALL Java_com_sulkan_shaders_platform_vulkan_dlss_DlssSession_closeNative(JNIEnv* env, jclass, jlong id) {

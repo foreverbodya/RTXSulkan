@@ -16,6 +16,8 @@ param(
     [switch]$CloudNoisePairsPerturb,
     [switch]$CloudEnvironmentInputs,
     [switch]$TemporalProfile,
+    [switch]$RayReconstruction,
+    [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material","indirect-lazy-sky")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
@@ -31,7 +33,7 @@ if(Test-Path -LiteralPath $target){throw 'Use a fresh disposable profiling direc
 $telemetry=$target+'-gpu.csv'
 $gpuInfo=$target+'-gpu-info.txt'
 $sourceInfo=$target+'-source.json'
-@{realtimeStep=$RealtimeStep;commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
+@{rayReconstruction=[bool]$RayReconstruction;foliageSequence=$FoliageSequence;realtimeStep=$RealtimeStep;commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
   profilePlan=$ProfilePlan;profileTime=$ProfileTime;renderDistance=$RenderDistance;experiment=$ComputeExperiment;
   alternatePipeline=[bool]$WorkgroupExperiment;canonicalPackComparison=[bool]$CanonicalPackComparison;rayQueryCounts=[bool]$RayQueryCounts;temporalProfile=[bool]$TemporalProfile;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;prepareGeometry=[bool]$PrepareGeometry;
   timeoutSeconds=$TimeoutSeconds;cloudNoisePairs=[bool]$CloudNoisePairs;cloudNoisePairsPerturb=[bool]$CloudNoisePairsPerturb;cloudEnvironmentInputs=[bool]$CloudEnvironmentInputs} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
@@ -41,7 +43,7 @@ $stopFile=$target+'-gpu.stop'
 $monitor=Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile','-File',('"'+(Join-Path $PSScriptRoot 'Sample-Gpu.ps1')+'"'),'-OutputPath',('"'+$telemetry+'"'),'-StopFile',('"'+$stopFile+'"'),'-ParentPid',$PID) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -RealtimeStep $RealtimeStep -CloudEnvironmentInputs:$CloudEnvironmentInputs -CloudNoisePairs:$CloudNoisePairs -CloudNoisePairsPerturb:$CloudNoisePairsPerturb -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `

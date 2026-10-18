@@ -55,7 +55,7 @@ vec3 indirectPathContinuation(SulkanRaySurface hit,vec3 position,vec3 incident,u
     for(int bounce=1;bounce<INDIRECT_BOUNCES;bounce++) {
         if(hit.material==1u || hit.material==6u) break;
         vec3 n=secondaryNormal(hit,incident),v=-incident;
-        vec3 base=foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb);
+        vec3 base=foliageLinear((sulkanRayTexture(Atlas,hit,position,incident)*hit.color).rgb);
         bool leaf=secondaryLeaf(hit);
         uint seed=indirectHash(pathSeed^0xd1b54a35u^(uint(bounce-1)*0x632be59bu));
         bool back=leaf && ((indirectHash(seed^0x94d049bbu)&1u)!=0u);

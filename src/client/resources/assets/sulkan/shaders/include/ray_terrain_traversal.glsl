@@ -22,7 +22,7 @@ uint sulkanTraceTerrain(rayQueryEXT query, sampler2D atlas,
         if (rayQueryGetIntersectionTypeEXT(query, false) != gl_RayQueryCandidateIntersectionTriangleEXT) continue;
         SulkanRaySurface candidate = sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query, false),
             rayQueryGetIntersectionPrimitiveIndexEXT(query, false), rayQueryGetIntersectionBarycentricsEXT(query, false), shrink);
-        float alpha = textureLod(atlas, candidate.uv, 0.0).a * candidate.color.a;
+        float alpha = sulkanRayTexture(atlas,candidate,origin+direction*rayQueryGetIntersectionTEXT(query,false),direction).a * candidate.color.a;
         if (alpha >= sulkanRayAlphaCutoff(candidate.flags)) rayQueryConfirmIntersectionEXT(query);
         else rejected++;
     }

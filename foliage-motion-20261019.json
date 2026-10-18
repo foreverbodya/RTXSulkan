@@ -1,0 +1,1598 @@
+{
+  "baseCommit": "eaf698f2cac7cb64cee6684b93d75be0e01c5868",
+  "scope": "Foliage motion diagnosis and RR preview, no global graphics-quality or universal 60 FPS claim",
+  "configuration": {
+    "minecraft": "26.3",
+    "sodium": "0.9.2",
+    "gpu": "RTX 5070",
+    "driver": "596.21",
+    "output": [
+      2560,
+      1440
+    ],
+    "srAndRrInput": [
+      1707,
+      960
+    ],
+    "nativeInput": [
+      2560,
+      1440
+    ],
+    "renderDistance": 6,
+    "seed": 672026,
+    "worldTime": 3000,
+    "wind": 0,
+    "diffusePaths": 1,
+    "diffuseBounces": 2,
+    "sunQueries": 1,
+    "cloudDimensions": [
+      427,
+      240
+    ],
+    "jitterNative": [
+      0,
+      0
+    ]
+  },
+  "isolation": {
+    "nativeNoDlss": "Confirmed full 2560x1440 target, no NGX create/evaluate, no jitter; texture/lighting temporal variation persists",
+    "nativeDirectOnlyLeaves": "Foliage direct composition excludes GI, sky fill and local emission, retains stochastic direct sunlight and camera aerial. Variation only partially reduced, so GI alone does not explain artifact. Other materials keep GI. Raw GI still calculated but not composed onto leaves.",
+    "originalMotion": "0% valid on visible leaves, GI history always 1",
+    "fix": "Visible alpha-tested raster layer authorizes camera reprojection only when foliage wind is zero. 100% valid in capture, independently checked against captured first-visible depth/matrices.",
+    "mip": "World-space triangle UV gradients and camera pixel footprint, incidence correction, atlas-level/sprite-bound clamping. This is an initial camera-sized ray-footprint estimate, not full accumulated BSDF cone propagation. Shadow, diffuse, rough, mirror and water hit sampling use it in realtime mode. Explicit diagnostic/emitter point samples retain their existing policy.",
+    "lodBias": "RayCameraPosition.w carries log2(actual input/output width), approximately -0.58468 for 1707/2560 and zero at native; applied to raster derivatives and ray footprint. No extra -1 sharpening offset."
+  },
+  "pairedQuality": {
+    "sameSourceGeometry": true,
+    "sourceGeometrySha256": "7c56912a03c4c69ce96b184399eb7e8c29a9388f583bf1a7c45a993fcd360536",
+    "logicalFrames": [
+      128,
+      129,
+      130,
+      131,
+      132,
+      133,
+      134,
+      135
+    ],
+    "adjacentFramesPerSide": 8,
+    "physicalUniformsByteExact": true,
+    "excludedIdentityBytes": [
+      [
+        1120,
+        1132
+      ],
+      [
+        1144,
+        1152
+      ]
+    ],
+    "before": {
+      "name": "qa-foliage-rr-pair-2-temporal-motion-reference",
+      "reconstruction": {
+        "exposureResource": "reconstruction.exposure",
+        "displayFormat": "RGBA8_UNORM",
+        "mode": "dlss-super-resolution",
+        "colorResource": "distant.world.hdr",
+        "inputHeight": 960,
+        "outputHeight": 1440,
+        "displayToneMapper": 2,
+        "depthResource": "cloud.reconstruction.depth",
+        "evaluations": 2190,
+        "motionResource": "cloud.reconstruction.motion",
+        "outputWidth": 2560,
+        "inputWidth": 1707
+      },
+      "sourceGeometrySha256": "7c56912a03c4c69ce96b184399eb7e8c29a9388f583bf1a7c45a993fcd360536",
+      "leafPixels": 333794,
+      "leafValidFraction": 0.0,
+      "leafHistoryCountMean": 1.0,
+      "pairs": [
+        {
+          "displayRgbMae": 0.017684627690286468,
+          "displayRgbP95": 0.06780946618606662,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 1,
+          "matchedLeaves": 246158,
+          "hdrRgbMae": 0.004497218411415815,
+          "hdrRgbP95": 0.025421142578125,
+          "hdrMean": 0.05536861717700958,
+          "relativeMae": 0.08122324198484421
+        },
+        {
+          "displayRgbMae": 0.016885794617310355,
+          "displayRgbP95": 0.06461541864672223,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 2,
+          "matchedLeaves": 250179,
+          "hdrRgbMae": 0.0043763527646660805,
+          "hdrRgbP95": 0.024814605712890625,
+          "hdrMean": 0.05700785294175148,
+          "relativeMae": 0.07676754146814346
+        },
+        {
+          "displayRgbMae": 0.016891135867922055,
+          "displayRgbP95": 0.06470091646530246,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 3,
+          "matchedLeaves": 247109,
+          "hdrRgbMae": 0.004389733541756868,
+          "hdrRgbP95": 0.024863600730895996,
+          "hdrMean": 0.057651419192552567,
+          "relativeMae": 0.07614267617464066
+        },
+        {
+          "displayRgbMae": 0.01698270437485698,
+          "displayRgbP95": 0.06541870770891879,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 4,
+          "matchedLeaves": 246068,
+          "hdrRgbMae": 0.004415480885654688,
+          "hdrRgbP95": 0.024930596351623535,
+          "hdrMean": 0.05847090110182762,
+          "relativeMae": 0.07551586627960205
+        },
+        {
+          "displayRgbMae": 0.01687641888303831,
+          "displayRgbP95": 0.06492532493824027,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 5,
+          "matchedLeaves": 244853,
+          "hdrRgbMae": 0.004469733219593763,
+          "hdrRgbP95": 0.025234222412109375,
+          "hdrMean": 0.059090934693813324,
+          "relativeMae": 0.07564160972833633
+        },
+        {
+          "displayRgbMae": 0.01692484610973468,
+          "displayRgbP95": 0.06468425182237,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 6,
+          "matchedLeaves": 242905,
+          "hdrRgbMae": 0.004420388489961624,
+          "hdrRgbP95": 0.02495574951171875,
+          "hdrMean": 0.059012509882450104,
+          "relativeMae": 0.07490595430135727
+        },
+        {
+          "displayRgbMae": 0.01689842682135993,
+          "displayRgbP95": 0.06430384887081181,
+          "motionErrorPixelsMax": null,
+          "motionErrorPixelsMean": null,
+          "frame": 7,
+          "matchedLeaves": 243267,
+          "hdrRgbMae": 0.004382136277854443,
+          "hdrRgbP95": 0.02496337890625,
+          "hdrMean": 0.05882696434855461,
+          "relativeMae": 0.0744919702410698
+        }
+      ],
+      "meanRelativeMae": 0.07638412288257054,
+      "meanDisplayMae": 0.01702056490921554
+    },
+    "after": {
+      "name": "qa-foliage-rr-pair-2-temporal-motion-candidate",
+      "reconstruction": {
+        "exposureResource": "reconstruction.exposure",
+        "displayFormat": "RGBA8_UNORM",
+        "mode": "dlss-ray-reconstruction",
+        "colorResource": "distant.world.hdr",
+        "inputHeight": 960,
+        "outputHeight": 1440,
+        "displayToneMapper": 2,
+        "depthResource": "cloud.reconstruction.depth",
+        "evaluations": 2213,
+        "motionResource": "cloud.reconstruction.motion",
+        "outputWidth": 2560,
+        "inputWidth": 1707
+      },
+      "sourceGeometrySha256": "7c56912a03c4c69ce96b184399eb7e8c29a9388f583bf1a7c45a993fcd360536",
+      "leafPixels": 333794,
+      "leafValidFraction": 1.0,
+      "leafHistoryCountMean": null,
+      "pairs": [
+        {
+          "displayRgbMae": 0.0043494137108860955,
+          "displayRgbP95": 0.015895565136263216,
+          "motionErrorPixelsMax": 0.015971971808953336,
+          "motionErrorPixelsMean": 0.004205369165450664,
+          "frame": 1,
+          "matchedLeaves": 246158,
+          "hdrRgbMae": 0.006880306173115969,
+          "hdrRgbP95": 0.030792236328125,
+          "hdrMean": 0.055272992700338364,
+          "relativeMae": 0.12447862327098846
+        },
+        {
+          "displayRgbMae": 0.0038617320045030165,
+          "displayRgbP95": 0.013931928424729435,
+          "motionErrorPixelsMax": 0.01594951179519559,
+          "motionErrorPixelsMean": 0.004244776263967948,
+          "frame": 2,
+          "matchedLeaves": 250179,
+          "hdrRgbMae": 0.006718646269291639,
+          "hdrRgbP95": 0.02978515625,
+          "hdrMean": 0.05691177025437355,
+          "relativeMae": 0.11805371940135956
+        },
+        {
+          "displayRgbMae": 0.0038811411354761623,
+          "displayRgbP95": 0.01401493512637968,
+          "motionErrorPixelsMax": 0.01585597831110666,
+          "motionErrorPixelsMean": 0.004213299127442397,
+          "frame": 3,
+          "matchedLeaves": 247109,
+          "hdrRgbMae": 0.006716097705066204,
+          "hdrRgbP95": 0.0298614501953125,
+          "hdrMean": 0.057566553354263306,
+          "relativeMae": 0.11666665971279144
+        },
+        {
+          "displayRgbMae": 0.003828919286139913,
+          "displayRgbP95": 0.013783897936258081,
+          "motionErrorPixelsMax": 0.015890704090415573,
+          "motionErrorPixelsMean": 0.004163308461616237,
+          "frame": 4,
+          "matchedLeaves": 246068,
+          "hdrRgbMae": 0.006709360983222723,
+          "hdrRgbP95": 0.0299072265625,
+          "hdrMean": 0.05838360637426376,
+          "relativeMae": 0.11491857469081879
+        },
+        {
+          "displayRgbMae": 0.0037573726889528767,
+          "displayRgbP95": 0.013545189489332745,
+          "motionErrorPixelsMax": 0.015829266184200146,
+          "motionErrorPixelsMean": 0.004080504870592893,
+          "frame": 5,
+          "matchedLeaves": 244853,
+          "hdrRgbMae": 0.006767650600522757,
+          "hdrRgbP95": 0.03055572509765625,
+          "hdrMean": 0.059016209095716476,
+          "relativeMae": 0.11467444151639938
+        },
+        {
+          "displayRgbMae": 0.0038671777943661777,
+          "displayRgbP95": 0.013905806779468144,
+          "motionErrorPixelsMax": 0.015796643736028036,
+          "motionErrorPixelsMean": 0.003988336094470227,
+          "frame": 6,
+          "matchedLeaves": 242905,
+          "hdrRgbMae": 0.006694065406918526,
+          "hdrRgbP95": 0.0299530029296875,
+          "hdrMean": 0.05896656960248947,
+          "relativeMae": 0.11352305859327316
+        },
+        {
+          "displayRgbMae": 0.0037725940811680738,
+          "displayRgbP95": 0.013543899424361183,
+          "motionErrorPixelsMax": 0.01587832127254546,
+          "motionErrorPixelsMean": 0.0038540665638691412,
+          "frame": 7,
+          "matchedLeaves": 243267,
+          "hdrRgbMae": 0.006641370709985495,
+          "hdrRgbP95": 0.0296630859375,
+          "hdrMean": 0.05877426266670227,
+          "relativeMae": 0.11299794167280197
+        }
+      ],
+      "meanRelativeMae": 0.11647328840834754,
+      "meanDisplayMae": 0.003902621528784616
+    },
+    "displayTemporalMaeReduction": 0.7707113982643667,
+    "interpretation": "Reprojected absolute RGB differences, includes residual texture aliasing and moving visibility. Not a pure noise variance, ghosting-length or perceptual score. Visual strips and actual PNG frames retained.",
+    "comparisonStrip": "evidence/foliage-20261019/comparison/foliage-before-after-8.png",
+    "slowMotionGif": "evidence/foliage-20261019/comparison/foliage-before-after-8.gif"
+  },
+  "rr": {
+    "type": "dlss_rr_quality",
+    "sdkCommit": "374959484e79a640feaba44c93ac8cfb0a03f5b5",
+    "runtimeSha256": "4bc7ea5fcb2f32cf86bc2cb072e8d2860914a0be511cbdcb2fc206c1d9d83b80",
+    "adapterSha256": "336b169e246ae54206af25a79aa361d9ea2d12564935073c95a2e790a25c97b7",
+    "guides": [
+      "diffuse albedo linear",
+      "integrated approximate specular albedo linear",
+      "world normal + linear roughness",
+      "same depth as motion",
+      "motion input pixels excluding jitter",
+      "specular hit distance and actual jitter-free camera matrices"
+    ],
+    "guideValidation": "All 8 buffers finite; leaf normal unit-length max error 0.0004883 at fp16. Albedo range 0..1; specular hit distance 0..128.",
+    "customFilters": "Diffuse spatial/temporal, rough specular filters and sun temporal filter culled by raw bindings; independent cloud cache remains.",
+    "limitations": [
+      "Animated wind and per-object entity vectors are not implemented; qualified foliage is undeformed.",
+      "Cloud/water-specific guide fidelity and long-session temporal stability are outside this eight-frame foliage qualification.",
+      "Specular guide uses approximate current material model; not calibrated resource-pack PBR."
+    ],
+    "guideDistanceSource": "Actual rough first hit for rough materials, actual mirror hit for smooth metals; miss uses traced maximum 128. Mirror-specific image quality not qualified by the foliage scene."
+  },
+  "performance": [
+    {
+      "phase": "motion",
+      "wallMeanMs": 16.763644094488185,
+      "fps": 59.65290090647986,
+      "renderThreadActiveCpuMs": 2.3375984251968505,
+      "gpuMeanMs": 16.682085999999998,
+      "passes": {
+        "cloud.ambient.diagnostic": {
+          "mean": 0.06736425,
+          "median": 0.06643199999999999,
+          "events": 128,
+          "p95": 0.066912,
+          "min": 0.064256,
+          "max": 0.197824
+        },
+        "atmosphere.multiple": {
+          "mean": 0.008161,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.00848,
+          "min": 0.006144,
+          "max": 0.008768
+        },
+        "atmosphere.sky": {
+          "mean": 0.07422275,
+          "median": 0.071616,
+          "events": 128,
+          "p95": 0.071936,
+          "min": 0.069408,
+          "max": 0.20521599999999998
+        },
+        "atmosphere.lighting": {
+          "mean": 0.12036799999999999,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.11888,
+          "min": 0.11631999999999999,
+          "max": 0.250048
+        },
+        "cloud.shadow": {
+          "mean": 0.89409575,
+          "median": 0.872208,
+          "events": 128,
+          "p95": 1.0438079999999998,
+          "min": 0.841824,
+          "max": 1.0984639999999999
+        },
+        "cloud.shadow.diagnostic": {
+          "mean": 0.28602774999999997,
+          "median": 0.27648,
+          "events": 128,
+          "p95": 0.406368,
+          "min": 0.2744,
+          "max": 0.40809599999999996
+        },
+        "motion.camera": {
+          "mean": 0.03276725,
+          "median": 0.03272,
+          "events": 128,
+          "p95": 0.033024,
+          "min": 0.03232,
+          "max": 0.034783999999999995
+        },
+        "indirect.trace": {
+          "mean": 3.46698,
+          "median": 3.494688,
+          "events": 128,
+          "p95": 3.8619519999999996,
+          "min": 2.919616,
+          "max": 4.184896
+        },
+        "sun.trace": {
+          "mean": 0.38646549999999996,
+          "median": 0.368208,
+          "events": 128,
+          "p95": 0.551808,
+          "min": 0.290272,
+          "max": 0.639968
+        },
+        "ray.direct": {
+          "mean": 0.10874225,
+          "median": 0.104448,
+          "events": 128,
+          "p95": 0.11216,
+          "min": 0.10198399999999999,
+          "max": 0.288288
+        },
+        "ray.reflection": {
+          "mean": 0.043019249999999995,
+          "median": 0.038848,
+          "events": 128,
+          "p95": 0.039296,
+          "min": 0.03648,
+          "max": 0.218528
+        },
+        "ray.composite": {
+          "mean": 0.02203925,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020704,
+          "min": 0.019776,
+          "max": 0.200928
+        },
+        "rough.reflection": {
+          "mean": 1.600987,
+          "median": 1.5964,
+          "events": 128,
+          "p95": 1.76816,
+          "min": 1.349664,
+          "max": 1.8055999999999999
+        },
+        "rough.composite": {
+          "mean": 0.030380749999999998,
+          "median": 0.028687999999999998,
+          "events": 128,
+          "p95": 0.032896,
+          "min": 0.026624,
+          "max": 0.159296
+        },
+        "water.trace": {
+          "mean": 0.19025424999999999,
+          "median": 0.185216,
+          "events": 128,
+          "p95": 0.21103999999999998,
+          "min": 0.155392,
+          "max": 0.426016
+        },
+        "water.composite": {
+          "mean": 0.02072025,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.022112,
+          "min": 0.020096,
+          "max": 0.030784
+        },
+        "cloud.source.state": {
+          "mean": 0.007032,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0072959999999999995,
+          "min": 0.006144,
+          "max": 0.00752
+        },
+        "cloud.source.light": {
+          "mean": 0.12042425,
+          "median": 0.11484799999999999,
+          "events": 128,
+          "p95": 0.11881599999999999,
+          "min": 0.112608,
+          "max": 0.300832
+        },
+        "cloud.view": {
+          "mean": 4.289386749999999,
+          "median": 4.26328,
+          "events": 128,
+          "p95": 4.5984,
+          "min": 3.864576,
+          "max": 4.867999999999999
+        },
+        "cloud.temporal": {
+          "mean": 0.010138,
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010496,
+          "min": 0.009504,
+          "max": 0.012064
+        },
+        "cloud.scattering.diagnostic": {
+          "mean": 0.0123685,
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.012672,
+          "min": 0.011935999999999999,
+          "max": 0.014655999999999999
+        },
+        "cloud.composite": {
+          "mean": 0.1305085,
+          "median": 0.129376,
+          "events": 128,
+          "p95": 0.13913599999999998,
+          "min": 0.12486399999999999,
+          "max": 0.14336
+        },
+        "distant.world": {
+          "mean": 0.05444375,
+          "median": 0.0552,
+          "events": 128,
+          "p95": 0.055456,
+          "min": 0.05296,
+          "max": 0.055616
+        },
+        "reconstruction.inputs": {
+          "mean": 0.020401,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020672,
+          "min": 0.019776,
+          "max": 0.021504
+        },
+        "cloud.reconstruction": {
+          "mean": 0.12252824999999999,
+          "median": 0.122848,
+          "events": 128,
+          "p95": 0.12495999999999999,
+          "min": 0.119808,
+          "max": 0.129056
+        },
+        "reconstruction.exposure": {
+          "mean": 0.00715875,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007391999999999999,
+          "min": 0.006144,
+          "max": 0.00752
+        },
+        "display.histogram": {
+          "mean": 0.09234075,
+          "median": 0.09110399999999999,
+          "events": 128,
+          "p95": 0.09225599999999999,
+          "min": 0.089056,
+          "max": 0.23664
+        },
+        "display.meter": {
+          "mean": 0.011158749999999999,
+          "median": 0.010416,
+          "events": 128,
+          "p95": 0.012352,
+          "min": 0.010144,
+          "max": 0.012544
+        },
+        "display.exposure": {
+          "mean": 0.037863,
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038112,
+          "min": 0.036864,
+          "max": 0.039807999999999996
+        },
+        "rr.guides": {
+          "mean": 0.0946495,
+          "median": 0.094384,
+          "events": 128,
+          "p95": 0.09852799999999999,
+          "min": 0.089184,
+          "max": 0.10041599999999999
+        },
+        "native.dlss": {
+          "mean": 3.7967364999999997,
+          "median": 3.779616,
+          "events": 128,
+          "p95": 3.9219199999999996,
+          "min": 3.7159679999999997,
+          "max": 4.146432
+        },
+        "world.total": {
+          "mean": 16.682085999999998,
+          "median": 16.730432,
+          "events": 128,
+          "p95": 17.117663999999998,
+          "min": 15.943168,
+          "max": 17.722752
+        },
+        "composition.present": {
+          "mean": 0.053717499999999994,
+          "median": 0.053663999999999996,
+          "events": 128,
+          "p95": 0.05424,
+          "min": 0.053087999999999996,
+          "max": 0.054624
+        },
+        "geometry.upload": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "blas.build": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "tlas.build": {
+          "mean": 0.0,
+          "events": 0
+        }
+      },
+      "rayStart": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 57,
+        "recordedBuilds": 1021,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 966,
+        "tlasBuilds": 55,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 1722,
+        "syncCpuNanoseconds": 1228335600
+      },
+      "rayEnd": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 57,
+        "recordedBuilds": 1021,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 966,
+        "tlasBuilds": 55,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 1850,
+        "syncCpuNanoseconds": 1228374200
+      },
+      "workCountersStart": {
+        "computeBarriers": 102916,
+        "descriptorPoolAllocations": 60,
+        "liveDescriptorPools": 60,
+        "asBarriers": 2156,
+        "dispatches": 51450,
+        "descriptorPoolFrees": 0
+      },
+      "workCountersEnd": {
+        "computeBarriers": 110596,
+        "descriptorPoolAllocations": 60,
+        "liveDescriptorPools": 60,
+        "asBarriers": 2156,
+        "dispatches": 55290,
+        "descriptorPoolFrees": 0
+      },
+      "nativeMemoryEnd": {
+        "liveBuffers": 953,
+        "liveLogicalBytes": 152225568,
+        "peakLogicalBytes": 157411012,
+        "liveAllocations": 953,
+        "liveAllocationBytes": 152283552,
+        "peakAllocationBytes": 157484240,
+        "liveDeviceLocalAllocationBytes": 152168960,
+        "peakDeviceLocalAllocationBytes": 152867840,
+        "liveHostVisibleAllocationBytes": 114592,
+        "peakHostVisibleAllocationBytes": 10479760,
+        "allocations": 5039,
+        "allocatedBytes": 284435056,
+        "frees": 4086,
+        "freedBytes": 132151504,
+        "allocationFailures": 0,
+        "failedAllocationBytes": 0,
+        "uploadCalls": 2995,
+        "uploadBytes": 103486072,
+        "readbackCalls": 0,
+        "readbackBytes": 0,
+        "successfulMaps": 2995
+      },
+      "vulkanMemoryEnd": {
+        "deviceLocalEstimatedUsage": 2028699648,
+        "deviceLocalBudget": 11717836800,
+        "heaps": [
+          {
+            "index": 0,
+            "budget": 11717836800,
+            "deviceLocal": true,
+            "size": 12523143168,
+            "usage": 2028699648
+          },
+          {
+            "index": 1,
+            "budget": 16335785984,
+            "deviceLocal": false,
+            "size": 17141092352,
+            "usage": 138305536
+          }
+        ],
+        "scope": "VK_EXT_memory_budget driver estimate of current-process heap allocations, not an exact residency/instantaneous peak guarantee",
+        "available": true
+      },
+      "reconstruction": {
+        "displayToneMapper": 2,
+        "outputHeight": 1440,
+        "inputHeight": 960,
+        "colorResource": "distant.world.hdr",
+        "mode": "dlss-ray-reconstruction",
+        "displayFormat": "RGBA8_UNORM",
+        "exposureResource": "reconstruction.exposure",
+        "inputWidth": 1707,
+        "outputWidth": 2560,
+        "motionResource": "cloud.reconstruction.motion",
+        "evaluations": 1852,
+        "depthResource": "cloud.reconstruction.depth"
+      }
+    },
+    {
+      "phase": "reload",
+      "wallMeanMs": 16.902125196850392,
+      "fps": 59.164157663815196,
+      "renderThreadActiveCpuMs": 2.4606299212598426,
+      "gpuMeanMs": 16.805847,
+      "passes": {
+        "cloud.ambient.diagnostic": {
+          "mean": 0.06744375,
+          "median": 0.066464,
+          "events": 128,
+          "p95": 0.066912,
+          "min": 0.064256,
+          "max": 0.19916799999999998
+        },
+        "atmosphere.multiple": {
+          "mean": 0.0082165,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.00848,
+          "min": 0.00784,
+          "max": 0.008544
+        },
+        "atmosphere.sky": {
+          "mean": 0.07241249999999999,
+          "median": 0.071648,
+          "events": 128,
+          "p95": 0.071936,
+          "min": 0.069536,
+          "max": 0.20396799999999998
+        },
+        "atmosphere.lighting": {
+          "mean": 0.11915524999999999,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.11881599999999999,
+          "min": 0.11631999999999999,
+          "max": 0.247744
+        },
+        "cloud.shadow": {
+          "mean": 0.6987757499999999,
+          "median": 0.681824,
+          "events": 128,
+          "p95": 0.847264,
+          "min": 0.6686719999999999,
+          "max": 0.8561599999999999
+        },
+        "cloud.shadow.diagnostic": {
+          "mean": 0.18057674999999998,
+          "median": 0.17407999999999998,
+          "events": 128,
+          "p95": 0.176192,
+          "min": 0.173088,
+          "max": 0.306496
+        },
+        "motion.camera": {
+          "mean": 0.033915,
+          "median": 0.032736,
+          "events": 128,
+          "p95": 0.034496,
+          "min": 0.032448,
+          "max": 0.166272
+        },
+        "indirect.trace": {
+          "mean": 3.88337175,
+          "median": 3.827056,
+          "events": 128,
+          "p95": 4.152704,
+          "min": 3.4766719999999998,
+          "max": 4.346432
+        },
+        "sun.trace": {
+          "mean": 0.37078675,
+          "median": 0.345728,
+          "events": 128,
+          "p95": 0.51056,
+          "min": 0.33977599999999997,
+          "max": 0.567264
+        },
+        "ray.direct": {
+          "mean": 0.11932675,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.24009599999999998,
+          "min": 0.104416,
+          "max": 0.30153599999999997
+        },
+        "ray.reflection": {
+          "mean": 0.04192525,
+          "median": 0.038592,
+          "events": 128,
+          "p95": 0.039008,
+          "min": 0.036736,
+          "max": 0.22047999999999998
+        },
+        "ray.composite": {
+          "mean": 0.0233325,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020768,
+          "min": 0.020096,
+          "max": 0.19984
+        },
+        "rough.reflection": {
+          "mean": 1.613032,
+          "median": 1.657312,
+          "events": 128,
+          "p95": 1.7227519999999998,
+          "min": 1.463616,
+          "max": 1.8702079999999999
+        },
+        "rough.composite": {
+          "mean": 0.030896999999999997,
+          "median": 0.028783999999999997,
+          "events": 128,
+          "p95": 0.034592,
+          "min": 0.028287999999999997,
+          "max": 0.16380799999999998
+        },
+        "water.trace": {
+          "mean": 0.18730975,
+          "median": 0.178112,
+          "events": 128,
+          "p95": 0.187296,
+          "min": 0.169632,
+          "max": 0.383488
+        },
+        "water.composite": {
+          "mean": 0.0218795,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.021952,
+          "min": 0.020128,
+          "max": 0.155168
+        },
+        "cloud.source.state": {
+          "mean": 0.00705975,
+          "median": 0.007136,
+          "events": 128,
+          "p95": 0.007359999999999999,
+          "min": 0.006111999999999999,
+          "max": 0.007744
+        },
+        "cloud.source.light": {
+          "mean": 0.124111,
+          "median": 0.11668799999999999,
+          "events": 128,
+          "p95": 0.119712,
+          "min": 0.112512,
+          "max": 0.399968
+        },
+        "cloud.view": {
+          "mean": 4.352697,
+          "median": 4.323919999999999,
+          "events": 128,
+          "p95": 4.6708799999999995,
+          "min": 4.013408,
+          "max": 4.787872
+        },
+        "cloud.temporal": {
+          "mean": 0.010097499999999999,
+          "median": 0.010159999999999999,
+          "events": 128,
+          "p95": 0.010464,
+          "min": 0.009439999999999999,
+          "max": 0.013375999999999999
+        },
+        "cloud.scattering.diagnostic": {
+          "mean": 0.0127355,
+          "median": 0.01232,
+          "events": 128,
+          "p95": 0.014367999999999999,
+          "min": 0.011744,
+          "max": 0.014624
+        },
+        "cloud.composite": {
+          "mean": 0.12691375,
+          "median": 0.126896,
+          "events": 128,
+          "p95": 0.132992,
+          "min": 0.12259199999999999,
+          "max": 0.137504
+        },
+        "distant.world": {
+          "mean": 0.055411499999999995,
+          "median": 0.055327999999999995,
+          "events": 128,
+          "p95": 0.057248,
+          "min": 0.050367999999999996,
+          "max": 0.057471999999999995
+        },
+        "reconstruction.inputs": {
+          "mean": 0.020431249999999998,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020735999999999997,
+          "min": 0.019936,
+          "max": 0.020895999999999998
+        },
+        "cloud.reconstruction": {
+          "mean": 0.12754,
+          "median": 0.12700799999999998,
+          "events": 128,
+          "p95": 0.12908799999999998,
+          "min": 0.124896,
+          "max": 0.144096
+        },
+        "reconstruction.exposure": {
+          "mean": 0.007114,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007391999999999999,
+          "min": 0.006144,
+          "max": 0.007584
+        },
+        "display.histogram": {
+          "mean": 0.09156225,
+          "median": 0.091168,
+          "events": 128,
+          "p95": 0.09318399999999999,
+          "min": 0.09024,
+          "max": 0.10019199999999999
+        },
+        "display.meter": {
+          "mean": 0.0115795,
+          "median": 0.012176,
+          "events": 128,
+          "p95": 0.01232,
+          "min": 0.010176,
+          "max": 0.01248
+        },
+        "display.exposure": {
+          "mean": 0.037933999999999996,
+          "median": 0.037888,
+          "events": 128,
+          "p95": 0.038079999999999996,
+          "min": 0.0376,
+          "max": 0.040864
+        },
+        "rr.guides": {
+          "mean": 0.0948905,
+          "median": 0.094496,
+          "events": 128,
+          "p95": 0.096416,
+          "min": 0.070912,
+          "max": 0.098272
+        },
+        "native.dlss": {
+          "mean": 3.734245,
+          "median": 3.71896,
+          "events": 128,
+          "p95": 3.7473919999999996,
+          "min": 3.700736,
+          "max": 4.1149759999999995
+        },
+        "world.total": {
+          "mean": 16.805847,
+          "median": 16.791184,
+          "events": 128,
+          "p95": 17.196192,
+          "min": 16.04656,
+          "max": 17.607903999999998
+        },
+        "composition.present": {
+          "mean": 0.053649999999999996,
+          "median": 0.053472,
+          "events": 128,
+          "p95": 0.053984,
+          "min": 0.052767999999999995,
+          "max": 0.07542399999999999
+        },
+        "geometry.upload": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "blas.build": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "tlas.build": {
+          "mean": 0.0,
+          "events": 0
+        }
+      },
+      "rayStart": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 8,
+        "recordedBuilds": 957,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 949,
+        "tlasBuilds": 8,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 514,
+        "syncCpuNanoseconds": 653403900
+      },
+      "rayEnd": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 8,
+        "recordedBuilds": 957,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 949,
+        "tlasBuilds": 8,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 642,
+        "syncCpuNanoseconds": 653525000
+      },
+      "workCountersStart": {
+        "computeBarriers": 141684,
+        "descriptorPoolAllocations": 120,
+        "liveDescriptorPools": 60,
+        "asBarriers": 4086,
+        "dispatches": 70830,
+        "descriptorPoolFrees": 60
+      },
+      "workCountersEnd": {
+        "computeBarriers": 149364,
+        "descriptorPoolAllocations": 120,
+        "liveDescriptorPools": 60,
+        "asBarriers": 4086,
+        "dispatches": 74670,
+        "descriptorPoolFrees": 60
+      },
+      "nativeMemoryEnd": {
+        "liveBuffers": 953,
+        "liveLogicalBytes": 152225568,
+        "peakLogicalBytes": 296325958,
+        "liveAllocations": 953,
+        "liveAllocationBytes": 152283552,
+        "peakAllocationBytes": 296471184,
+        "liveDeviceLocalAllocationBytes": 152168960,
+        "peakDeviceLocalAllocationBytes": 268499072,
+        "liveHostVisibleAllocationBytes": 114592,
+        "peakHostVisibleAllocationBytes": 28701024,
+        "allocations": 9818,
+        "allocatedBytes": 551533712,
+        "frees": 8865,
+        "freedBytes": 399250160,
+        "allocationFailures": 0,
+        "failedAllocationBytes": 0,
+        "uploadCalls": 5858,
+        "uploadBytes": 200502744,
+        "readbackCalls": 0,
+        "readbackBytes": 0,
+        "successfulMaps": 5858
+      },
+      "vulkanMemoryEnd": {
+        "deviceLocalEstimatedUsage": 2037088256,
+        "deviceLocalBudget": 11717836800,
+        "heaps": [
+          {
+            "index": 0,
+            "budget": 11717836800,
+            "deviceLocal": true,
+            "size": 12523143168,
+            "usage": 2037088256
+          },
+          {
+            "index": 1,
+            "budget": 16335785984,
+            "deviceLocal": false,
+            "size": 17141092352,
+            "usage": 140402688
+          }
+        ],
+        "scope": "VK_EXT_memory_budget driver estimate of current-process heap allocations, not an exact residency/instantaneous peak guarantee",
+        "available": true
+      },
+      "reconstruction": {
+        "displayToneMapper": 2,
+        "outputHeight": 1440,
+        "inputHeight": 960,
+        "colorResource": "distant.world.hdr",
+        "mode": "dlss-ray-reconstruction",
+        "displayFormat": "RGBA8_UNORM",
+        "exposureResource": "reconstruction.exposure",
+        "inputWidth": 1707,
+        "outputWidth": 2560,
+        "motionResource": "cloud.reconstruction.motion",
+        "evaluations": 644,
+        "depthResource": "cloud.reconstruction.depth"
+      }
+    },
+    {
+      "phase": "resize",
+      "wallMeanMs": 16.88246771653543,
+      "fps": 59.23304677908882,
+      "renderThreadActiveCpuMs": 2.4606299212598426,
+      "gpuMeanMs": 16.79192725,
+      "passes": {
+        "cloud.ambient.diagnostic": {
+          "mean": 0.06636575,
+          "median": 0.066384,
+          "events": 128,
+          "p95": 0.06688,
+          "min": 0.064672,
+          "max": 0.06790399999999999
+        },
+        "atmosphere.multiple": {
+          "mean": 0.00821175,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008447999999999999,
+          "min": 0.007871999999999999,
+          "max": 0.008512
+        },
+        "atmosphere.sky": {
+          "mean": 0.07336275,
+          "median": 0.071648,
+          "events": 128,
+          "p95": 0.072,
+          "min": 0.069536,
+          "max": 0.202816
+        },
+        "atmosphere.lighting": {
+          "mean": 0.12039575,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.118848,
+          "min": 0.11628799999999999,
+          "max": 0.25952
+        },
+        "cloud.shadow": {
+          "mean": 0.6999592499999999,
+          "median": 0.68008,
+          "events": 128,
+          "p95": 0.84224,
+          "min": 0.6696,
+          "max": 0.950816
+        },
+        "cloud.shadow.diagnostic": {
+          "mean": 0.18264424999999998,
+          "median": 0.174112,
+          "events": 128,
+          "p95": 0.304224,
+          "min": 0.172032,
+          "max": 0.308512
+        },
+        "motion.camera": {
+          "mean": 0.032769,
+          "median": 0.032736,
+          "events": 128,
+          "p95": 0.032992,
+          "min": 0.032448,
+          "max": 0.035488
+        },
+        "indirect.trace": {
+          "mean": 3.8832829999999996,
+          "median": 3.828336,
+          "events": 128,
+          "p95": 4.1487359999999995,
+          "min": 3.4766719999999998,
+          "max": 4.2428159999999995
+        },
+        "sun.trace": {
+          "mean": 0.38175925,
+          "median": 0.345728,
+          "events": 128,
+          "p95": 0.54848,
+          "min": 0.341504,
+          "max": 0.617216
+        },
+        "ray.direct": {
+          "mean": 0.12004274999999999,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.23910399999999998,
+          "min": 0.10595199999999999,
+          "max": 0.296352
+        },
+        "ray.reflection": {
+          "mean": 0.042970499999999995,
+          "median": 0.038911999999999995,
+          "events": 128,
+          "p95": 0.039104,
+          "min": 0.036864,
+          "max": 0.22547199999999998
+        },
+        "ray.composite": {
+          "mean": 0.023028749999999997,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.0208,
+          "min": 0.020031999999999998,
+          "max": 0.198144
+        },
+        "rough.reflection": {
+          "mean": 1.60322825,
+          "median": 1.6543839999999999,
+          "events": 128,
+          "p95": 1.7278399999999998,
+          "min": 1.470624,
+          "max": 1.9820799999999998
+        },
+        "rough.composite": {
+          "mean": 0.02985525,
+          "median": 0.028816,
+          "events": 128,
+          "p95": 0.034592,
+          "min": 0.028256,
+          "max": 0.03648
+        },
+        "water.trace": {
+          "mean": 0.19278199999999998,
+          "median": 0.17819200000000002,
+          "events": 128,
+          "p95": 0.35110399999999997,
+          "min": 0.17174399999999998,
+          "max": 0.422464
+        },
+        "water.composite": {
+          "mean": 0.023691249999999997,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.022496,
+          "min": 0.020191999999999998,
+          "max": 0.198208
+        },
+        "cloud.source.state": {
+          "mean": 0.008234749999999999,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0072959999999999995,
+          "min": 0.006111999999999999,
+          "max": 0.161984
+        },
+        "cloud.source.light": {
+          "mean": 0.11902325,
+          "median": 0.11611199999999999,
+          "events": 128,
+          "p95": 0.11900799999999999,
+          "min": 0.11263999999999999,
+          "max": 0.25030399999999997
+        },
+        "cloud.view": {
+          "mean": 4.322452999999999,
+          "median": 4.3100000000000005,
+          "events": 128,
+          "p95": 4.653728,
+          "min": 3.9751999999999996,
+          "max": 4.888256
+        },
+        "cloud.temporal": {
+          "mean": 0.01006875,
+          "median": 0.010144,
+          "events": 128,
+          "p95": 0.0104,
+          "min": 0.009472,
+          "max": 0.011392
+        },
+        "cloud.scattering.diagnostic": {
+          "mean": 0.012525999999999999,
+          "median": 0.01232,
+          "events": 128,
+          "p95": 0.014079999999999999,
+          "min": 0.012,
+          "max": 0.014783999999999999
+        },
+        "cloud.composite": {
+          "mean": 0.127639,
+          "median": 0.126976,
+          "events": 128,
+          "p95": 0.13104,
+          "min": 0.12287999999999999,
+          "max": 0.13824
+        },
+        "distant.world": {
+          "mean": 0.056022249999999996,
+          "median": 0.055471999999999994,
+          "events": 128,
+          "p95": 0.057408,
+          "min": 0.055071999999999996,
+          "max": 0.059424
+        },
+        "reconstruction.inputs": {
+          "mean": 0.02042575,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.02064,
+          "min": 0.019872,
+          "max": 0.020928
+        },
+        "cloud.reconstruction": {
+          "mean": 0.12662525,
+          "median": 0.126944,
+          "events": 128,
+          "p95": 0.128992,
+          "min": 0.124608,
+          "max": 0.129248
+        },
+        "reconstruction.exposure": {
+          "mean": 0.007075,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0073279999999999994,
+          "min": 0.006111999999999999,
+          "max": 0.00752
+        },
+        "display.histogram": {
+          "mean": 0.09164499999999999,
+          "median": 0.091168,
+          "events": 128,
+          "p95": 0.093216,
+          "min": 0.090144,
+          "max": 0.093536
+        },
+        "display.meter": {
+          "mean": 0.011367,
+          "median": 0.012064,
+          "events": 128,
+          "p95": 0.01232,
+          "min": 0.010144,
+          "max": 0.01248
+        },
+        "display.exposure": {
+          "mean": 0.03792375,
+          "median": 0.037888,
+          "events": 128,
+          "p95": 0.038239999999999996,
+          "min": 0.037472,
+          "max": 0.038944
+        },
+        "rr.guides": {
+          "mean": 0.09661225,
+          "median": 0.096288,
+          "events": 128,
+          "p95": 0.098304,
+          "min": 0.094176,
+          "max": 0.09935999999999999
+        },
+        "native.dlss": {
+          "mean": 3.7390725,
+          "median": 3.719184,
+          "events": 128,
+          "p95": 3.8553919999999997,
+          "min": 3.696768,
+          "max": 4.18672
+        },
+        "world.total": {
+          "mean": 16.79192725,
+          "median": 16.767184,
+          "events": 128,
+          "p95": 17.149407999999998,
+          "min": 15.955872,
+          "max": 17.655776
+        },
+        "composition.present": {
+          "mean": 0.055243,
+          "median": 0.053568,
+          "events": 128,
+          "p95": 0.054208,
+          "min": 0.052927999999999996,
+          "max": 0.26633599999999996
+        },
+        "geometry.upload": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "blas.build": {
+          "mean": 0.0,
+          "events": 0
+        },
+        "tlas.build": {
+          "mean": 0.0,
+          "events": 0
+        }
+      },
+      "rayStart": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 8,
+        "recordedBuilds": 957,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 949,
+        "tlasBuilds": 8,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 903,
+        "syncCpuNanoseconds": 653780000
+      },
+      "rayEnd": {
+        "sections": 481,
+        "meshes": 949,
+        "pendingSections": 0,
+        "storageBytes": 68224896,
+        "generation": 8,
+        "recordedBuilds": 957,
+        "attributeBytes": 58583120,
+        "attributeCapacity": 67108864,
+        "attributePageBudget": {
+          "reservedBytes": 67108864,
+          "limitBytes": 3087007744,
+          "arenas": 1
+        },
+        "budgetWaits": 0,
+        "retirementOnlyBuilds": 0,
+        "triangles": 1045856,
+        "blasBuilds": 949,
+        "tlasBuilds": 8,
+        "blasUpdates": 0,
+        "tlasUpdates": 0,
+        "synchronizations": 1031,
+        "syncCpuNanoseconds": 653907500
+      },
+      "workCountersStart": {
+        "computeBarriers": 165040,
+        "descriptorPoolAllocations": 120,
+        "liveDescriptorPools": 60,
+        "asBarriers": 4086,
+        "dispatches": 82500,
+        "descriptorPoolFrees": 60
+      },
+      "workCountersEnd": {
+        "computeBarriers": 172720,
+        "descriptorPoolAllocations": 120,
+        "liveDescriptorPools": 60,
+        "asBarriers": 4086,
+        "dispatches": 86340,
+        "descriptorPoolFrees": 60
+      },
+      "nativeMemoryEnd": {
+        "liveBuffers": 953,
+        "liveLogicalBytes": 152225568,
+        "peakLogicalBytes": 296325958,
+        "liveAllocations": 953,
+        "liveAllocationBytes": 152283552,
+        "peakAllocationBytes": 296471184,
+        "liveDeviceLocalAllocationBytes": 152168960,
+        "peakDeviceLocalAllocationBytes": 268499072,
+        "liveHostVisibleAllocationBytes": 114592,
+        "peakHostVisibleAllocationBytes": 28701024,
+        "allocations": 9818,
+        "allocatedBytes": 551533712,
+        "frees": 8865,
+        "freedBytes": 399250160,
+        "allocationFailures": 0,
+        "failedAllocationBytes": 0,
+        "uploadCalls": 5858,
+        "uploadBytes": 200502744,
+        "readbackCalls": 0,
+        "readbackBytes": 0,
+        "successfulMaps": 5858
+      },
+      "vulkanMemoryEnd": {
+        "deviceLocalEstimatedUsage": 2173206528,
+        "deviceLocalBudget": 11717836800,
+        "heaps": [
+          {
+            "index": 0,
+            "budget": 11717836800,
+            "deviceLocal": true,
+            "size": 12523143168,
+            "usage": 2173206528
+          },
+          {
+            "index": 1,
+            "budget": 16335785984,
+            "deviceLocal": false,
+            "size": 17141092352,
+            "usage": 143798272
+          }
+        ],
+        "scope": "VK_EXT_memory_budget driver estimate of current-process heap allocations, not an exact residency/instantaneous peak guarantee",
+        "available": true
+      },
+      "reconstruction": {
+        "displayToneMapper": 2,
+        "outputHeight": 1440,
+        "inputHeight": 960,
+        "colorResource": "distant.world.hdr",
+        "mode": "dlss-ray-reconstruction",
+        "displayFormat": "RGBA8_UNORM",
+        "exposureResource": "reconstruction.exposure",
+        "inputWidth": 1707,
+        "outputWidth": 2560,
+        "motionResource": "cloud.reconstruction.motion",
+        "evaluations": 322,
+        "depthResource": "cloud.reconstruction.depth"
+      }
+    }
+  ],
+  "runs": {
+    "qa-foliage-sr-before-1": "prelaunch rejected: realtime one-sun compatibility guard fixed",
+    "qa-foliage-sr-before-2": true,
+    "qa-foliage-native-before-1": true,
+    "qa-foliage-native-direct-1": true,
+    "qa-foliage-fixed-sr-1": true,
+    "qa-foliage-rr-pair-1": false,
+    "qa-foliage-rr-pair-2": true,
+    "qa-foliage-rr-performance-1": true
+  },
+  "rejectedEvidence": "First paired run stopped on physical uniform comparison: tiny post-reload fog/sky interpolation drift. Foliage diagnostic now freezes actual environment constants consistently, not by loosening physical comparisons; only AS identity and GPU address are excluded. Failed run retained.",
+  "commands": [
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -QaDirectory work/qa-foliage-native-before-1 -ProfileTime 3000 -ProfilePlan motion -FoliageSequence native -PrepareGeometry -TimeoutSeconds 900",
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -QaDirectory work/qa-foliage-native-direct-1 -ProfileTime 3000 -ProfilePlan motion -FoliageSequence native-direct -PrepareGeometry -TimeoutSeconds 900",
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -QaDirectory work/qa-foliage-rr-pair-2 -ProfileTime 3000 -ProfilePlan motion -FoliageSequence rr -PrepareGeometry -TimeoutSeconds 900",
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -RayReconstruction -QaDirectory work/qa-foliage-rr-performance-1 -ProfileTime 3000 -ProfilePlan 'motion,reload,resize' -PrepareGeometry -TimeoutSeconds 900"
+  ],
+  "reproduceNote": "Use fresh QA directories. Build current jar with Gradle and native adapter using Build-NgxProbe.ps1 and the pinned external SDK before launching. All launches muted and sequential. Evidence captures are untimed; performance launch excludes captures from measured intervals.",
+  "artifacts": {
+    "qa-foliage-sr-before-2": {
+      "jarSha256": "103EE21A44836E2C283524361C18BE8A39A9723A6210DAEB25B3E6050B273F45",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-native-before-1": {
+      "jarSha256": "103EE21A44836E2C283524361C18BE8A39A9723A6210DAEB25B3E6050B273F45",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-native-direct-1": {
+      "jarSha256": "103EE21A44836E2C283524361C18BE8A39A9723A6210DAEB25B3E6050B273F45",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-fixed-sr-1": {
+      "jarSha256": "4D9471E85C4AD6914EA1110581AB33BBE868BEA30FC92E786B7F25FA817CFA6D",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-rr-pair-1": {
+      "jarSha256": "FCB818540D56551CF0E6BCE33BAC7013BEAB450E205AB1F170A44F331B075F4D",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-rr-pair-2": {
+      "jarSha256": "B5E108AF6A2AAA66D89E05259745CF085CD372A2A11B8F07A7DB1065A5F6F3FC",
+      "otherModsUnchanged": true
+    },
+    "qa-foliage-rr-performance-1": {
+      "jarSha256": "B5E108AF6A2AAA66D89E05259745CF085CD372A2A11B8F07A7DB1065A5F6F3FC",
+      "otherModsUnchanged": true
+    }
+  },
+  "finalSmoke": {
+    "passed": true,
+    "jarSha256": "8313B8E450CC25460DB6E13871F9A1393DA7A35AFAB7C93201EA57A309BF4EAC",
+    "wallMs": 16.779930708661418,
+    "gpuMs": 16.68637275,
+    "rrMs": 3.78554325,
+    "scope": "Final diagnostic metadata and mirror-hit guide source correction; same foliage rendering path. Prior paired PNGs and reload/resize timings retained under their actual artifact hashes."
+  },
+  "userConfirmation": "2026-10-19: user reports foliage no longer shakes."
+}

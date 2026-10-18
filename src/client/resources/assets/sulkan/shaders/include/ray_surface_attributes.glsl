@@ -19,6 +19,11 @@ struct SulkanRaySurface {
     uint material;
     uint flags;
     uint opacity;
+#if REALTIME_RAY_LOD == 1
+    vec2 uvGradientLength;
+    vec2 uvMinimum;
+    vec2 uvMaximum;
+#endif
 };
 vec3 sulkanRayVertexPosition(SulkanRayMeshData mesh, uint vertex) {
     if(mesh.words[3]==28u) {
@@ -56,6 +61,9 @@ SulkanRaySurface sulkanRayAttributes(uint header, uint primitive, vec2 bary, vec
     result.opacity=mesh.words[2];
     result.position = vec3(0); result.uv = vec2(0); result.color = vec4(0);
     result.light = vec2(0); result.wind = 0; result.occlusion = 0;
+#if REALTIME_RAY_LOD == 1
+    vec2 coordinates[3];
+#endif
     for (uint i = 0u; i < 3u; i++) {
         uint vertexWord=4u+indices[i]*(compact?7u:8u);
         uint word = vertexWord+(compact?2u:4u);
@@ -65,6 +73,9 @@ SulkanRaySurface sulkanRayAttributes(uint header, uint primitive, vec2 bary, vec
         uint material = mesh.words[word+3u];
         uvec2 tex = uvec2(uv & 65535u, uv >> 16u);
         vec2 coordinate = vec2(tex & 32767u) / 32768.0 + (vec2(tex >> 15u) * 2.0 - 1.0) * shrink;
+#if REALTIME_RAY_LOD == 1
+        coordinates[i]=coordinate;
+#endif
         result.position += sulkanRayVertexPosition(mesh, indices[i]) * weights[i];
         result.uv += coordinate * weights[i];
         result.color += unpackUnorm4x8(color) * weights[i];
@@ -75,5 +86,37 @@ SulkanRaySurface sulkanRayAttributes(uint header, uint primitive, vec2 bary, vec
     }
     result.normal = normalize(cross(sulkanRayVertexPosition(mesh, indices.y) - sulkanRayVertexPosition(mesh, indices.x),
         sulkanRayVertexPosition(mesh, indices.z) - sulkanRayVertexPosition(mesh, indices.x)));
+#if REALTIME_RAY_LOD == 1
+    vec3 e1=sulkanRayVertexPosition(mesh,indices.y)-sulkanRayVertexPosition(mesh,indices.x);
+    vec3 e2=sulkanRayVertexPosition(mesh,indices.z)-sulkanRayVertexPosition(mesh,indices.x);
+    float area=max(length(cross(e1,e2)),1e-10);
+    vec3 a=cross(e2,result.normal)/area,b=cross(result.normal,e1)/area;
+    vec2 t1=coordinates[1]-coordinates[0],t2=coordinates[2]-coordinates[0];
+    result.uvGradientLength=vec2(length(t1.x*a+t2.x*b),length(t1.y*a+t2.y*b));
+    result.uvMinimum=min(coordinates[0],min(coordinates[1],coordinates[2]));
+    result.uvMaximum=max(coordinates[0],max(coordinates[1],coordinates[2]));
+#endif
     return result;
+}
+
+// Pixel cone at the hit surface. Atlas mip count and sprite footprint cap the
+// lookup; no sampling beyond a sprite's available texel footprint.
+vec4 sulkanRayTexture(sampler2D atlas,SulkanRaySurface hit,vec3 position,vec3 incident){
+#if REALTIME_RAY_LOD == 1
+    if((hit.flags&1u)==0u)return textureLod(atlas,hit.uv,0.0);
+    vec2 texels=vec2(textureSize(atlas,0));
+    float cone=2.0*length(position-RayCameraPosition.xyz)/(max(abs(Projection[1][1]),.01)*ViewSizeAndInverse.y);
+    cone*=exp2(RayCameraPosition.w); // Dynamic input/output ratio, zero at native.
+    float footprint=max(hit.uvGradientLength.x*texels.x,hit.uvGradientLength.y*texels.y)*cone;
+    footprint/=max(abs(dot(hit.normal,incident)),.15);
+    vec2 extent=(hit.uvMaximum-hit.uvMinimum)*texels;
+    float maximum=min(float(textureQueryLevels(atlas)-1),max(0.0,log2(max(min(extent.x,extent.y),1.0))));
+    float lod=clamp(log2(max(footprint,1e-8)),0.0,maximum);
+    vec2 inset=.5*exp2(ceil(lod))/texels;
+    vec2 centre=(hit.uvMinimum+hit.uvMaximum)*.5;
+    vec2 coordinate=clamp(hit.uv,min(hit.uvMinimum+inset,centre),max(hit.uvMaximum-inset,centre));
+    return textureLod(atlas,coordinate,lod);
+#else
+    return textureLod(atlas,hit.uv,0.0);
+#endif
 }

@@ -27,9 +27,10 @@ import java.util.zip.GZIPOutputStream;
 
 /** Untimed sequential real-world A/A/B/A, with independent graph and native histories. */
 public final class QaTemporalProfile {
-    private static final int WARMUP=256,FRAMES=128,PREPARE_STABLE_FRAMES=16;
+    private static final boolean FOLIAGE=Boolean.getBoolean("sulkan.qaFoliageSequence");
+    private static final int WARMUP=FOLIAGE?128:256,FRAMES=FOLIAGE?8:128,PREPARE_STABLE_FRAMES=16;
     private static final float STEP=1.0f/60.0f;
-    private static final List<String> PHASES=List.of("reference-1","reference-2","candidate","reference-3");
+    private static final List<String> PHASES=FOLIAGE?(Boolean.getBoolean("sulkan.qaFoliageComparison")?List.of("reference","candidate"):List.of("candidate")):List.of("reference-1","reference-2","candidate","reference-3");
     private static volatile FrameClock currentClock;
     private static final Executor WRITER=Executors.newSingleThreadExecutor(task->{
         var thread=new Thread(task,"Sulkan independent temporal evidence");thread.setDaemon(true);return thread;
@@ -69,6 +70,7 @@ public final class QaTemporalProfile {
         manifestPath=directory.getParent().resolve("shaders/RayLighting/sulkan.json");
         candidateManifest=Files.readString(manifestPath);
         var candidate=JsonParser.parseString(candidateManifest).getAsJsonObject();
+        if(!FOLIAGE) {
         int environmentBindings=0;
         for(var element:candidate.getAsJsonArray("passes")) {
             var pass=element.getAsJsonObject();
@@ -90,9 +92,15 @@ public final class QaTemporalProfile {
             passes.add(pass);
         }
         reference.add("passes",passes);referenceManifest=json(reference);
+        } else referenceManifest=Boolean.getBoolean("sulkan.qaFoliageComparison")?Files.readString(directory.getParent().resolve("foliage-reference.json")):candidateManifest;
         var reconstruction=candidate.getAsJsonObject("reconstruction");
         for(String slot:List.of("color","depth","motion","exposure"))addInput(candidate,reconstruction.get(slot).getAsString());
         if(reconstruction.has("displayReads"))for(var entry:reconstruction.getAsJsonObject("displayReads").entrySet())addInput(candidate,entry.getValue().getAsString());
+        if(FOLIAGE){
+            for(String resource:List.of("gbuffer.material","motion.valid","indirect.raw","gbuffer.normal"))addInput(candidate,resource);
+            if(reconstruction.has("guides"))for(var entry:reconstruction.getAsJsonObject("guides").entrySet())addInput(candidate,entry.getValue().getAsString());
+            addInput(candidate,"indirect.accum");
+        }
         Files.createDirectories(directory);
         Files.writeString(directory.resolve("temporal-manifest-reference.json"),referenceManifest);
         Files.writeString(directory.resolve("temporal-manifest-candidate.json"),candidateManifest);
@@ -100,7 +108,7 @@ public final class QaTemporalProfile {
             "phases",PHASES,"sequence",sequence,"warmupFrames",WARMUP,"captureFrames",FRAMES,
             "preparationMotionFramesPerPhase",prepMotionTarget(),
             "logicalSecondsPerFrame",STEP,"sparseInputCaptureIndices",List.of(0,63,127),"inputFormats",inputFormats,
-            "scope","Untimed independent complete graph/native history sequences in the same frozen world. One normal graph and native evaluation per logical frame; full native displays and actual uniforms on every adjacent capture frame. Logical QA time deliberately replaces wall cadence; this is not FPS or production-memory evidence."));
+            "scope","Untimed independent complete graph/reconstruction histories in the same frozen world. One graph/reconstruction record per logical frame (native bypass performs zero NGX evaluations); full output displays and actual uniforms on every adjacent capture frame. Logical QA time deliberately replaces wall cadence; this is not FPS or production-memory evidence."));
         configurePhase();
     }
 
@@ -109,7 +117,7 @@ public final class QaTemporalProfile {
     }
 
     private String phase() { return PHASES.get(phaseIndex); }
-    private int prepMotionTarget() { return sequence.equals("motion")?2*FRAMES:0; }
+    private int prepMotionTarget() { return sequence.equals("motion")?256:0; }
 
     private void configurePhase()throws Exception {
         currentClock=null;logicalIndex=-1;draining=false;stableFrames=0;prepareRevision=-1;prepMotionFrames=0;
@@ -119,7 +127,12 @@ public final class QaTemporalProfile {
         System.clearProperty("sulkan.qaProfileVerify");System.clearProperty("sulkan.qaProfileDisabled");
         System.setProperty("sulkan.qaProfileGroupY","8");
         Files.writeString(manifestPath,phase().equals("candidate")?candidateManifest:referenceManifest);
-        try { NativePackRuntime.applyOptions(ShaderRuntime.config().selectedPackId(),options); }
+        var phaseOptions=new LinkedHashMap<>(options);
+        if(Boolean.getBoolean("sulkan.qaFoliageComparison")){
+            phaseOptions.put("QA_FOLIAGE_MOTION_FIX",phase().equals("candidate")?1d:0d);
+            phaseOptions.put("REALTIME_RAY_LOD",phase().equals("candidate")?1d:0d);
+        }
+        try { NativePackRuntime.applyOptions(ShaderRuntime.config().selectedPackId(),phaseOptions); }
         catch(Exception failure) { recordFailure(failure);throw failure; }
         LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_PREPARE phase={} sequence={} graphReloadOrdinal={}",phase(),sequence,phaseIndex+1);
     }
@@ -128,7 +141,7 @@ public final class QaTemporalProfile {
     public double[] pose() {
         var pose=base.clone();int index=logicalIndex<0?(prepMotionFrames<prepMotionTarget()?prepMotionFrames:0):logicalIndex;
         if(sequence.equals("motion")) {
-            double s=Math.sin(Math.floorMod(index,FRAMES)*2.0*Math.PI/FRAMES);
+            double s=Math.sin(Math.floorMod(index,FOLIAGE?128:FRAMES)*2.0*Math.PI/(FOLIAGE?128:FRAMES));
             pose[0]+=2*s;pose[2]+=s;pose[3]+=12*s;
         }
         return pose;
@@ -151,7 +164,7 @@ public final class QaTemporalProfile {
                 writeJson(directory.resolve("temporal-profile.json"),Map.of(
                     "complete",true,"scene",scene,"sequence",sequence,"phases",reports,
                     "sourceGeometrySha256",referenceGeometry,"options",options,
-                    "scope","Execution and matching-input witness only; independent histories and adjacent logical frames. Image-quality acceptance requires analysis of all paired native frames, including A/A controls. Includes asynchronous readbacks and encoding; no performance claim."));
+                    "scope","Execution and matching-input witness only; independent histories and adjacent logical frames. Native bypass has no NGX evaluations. Image-quality acceptance requires analysis of all paired output frames and available controls. Includes asynchronous readbacks and encoding; no performance claim."));
                 LogUtils.getLogger().info("SULKAN_TEMPORAL_PROFILE_PASS sequence={} phases={} captureFrames={}",sequence,PHASES.size(),FRAMES);
                 return true;
             }
@@ -213,7 +226,7 @@ public final class QaTemporalProfile {
             // AS generation is local to a newly created graph. Its identity is
             // independently checked by the exact source hash and pending=0 above.
             byte[] reference=referenceUniforms[index];
-            for(int p=0;p<uniform.length;p++)if((p<1120 || p>=1132) && uniform[p]!=reference[p]) {firstMismatch=p;break;}
+            for(int p=0;p<uniform.length;p++)if((p<1120 || p>=1132) && (!FOLIAGE || p<1144) && uniform[p]!=reference[p]) {firstMismatch=p;break;}
             if(firstMismatch!=-1) {
                 // Preserve the small witness before aborting; normal captures stay asynchronous.
                 String prefix=String.format(Locale.ROOT,"%03d",index);
@@ -226,7 +239,7 @@ public final class QaTemporalProfile {
         String prefix=String.format(Locale.ROOT,"%03d",index);Path output=phaseDirectory;
         var record=new LinkedHashMap<String,Object>();
         record.put("index",index);record.put("logicalFrame",logicalIndex);record.put("historyValid",true);
-        record.put("pose",pose());record.put("nativeEvaluations",evaluations);record.put("uniformSha256",sha256(uniform));
+        record.put("pose",pose());record.put("reconstructionFramesRecorded",evaluations);record.put("nativeEvaluations",dimensions.getOrDefault("nativeEvaluations",evaluations));record.put("uniformSha256",sha256(uniform));
         record.put("uniformsMatchReferenceOutsideAsIdentity",firstMismatch==-1);
         record.put("currentPreviousJitter",List.of(frame.getFloat(1072),frame.getFloat(1076),frame.getFloat(1080),frame.getFloat(1084)));
         frames.add(record);
@@ -243,8 +256,13 @@ public final class QaTemporalProfile {
                 }
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         },WRITER));
-        if(index==0 || index==63 || index==127)for(var input:inputFormats.entrySet()) {
-            String resource=input.getKey();var copied=NativePackRuntime.diagnosticReadback(resource);
+        if(FOLIAGE || index==0 || index==63 || index==127)for(var input:inputFormats.entrySet()) {
+            String resource=input.getKey();
+            if(FOLIAGE){
+                boolean rr=NativePackRuntime.diagnosticReconstruction().get("mode").equals("dlss-ray-reconstruction");
+                if(rr && resource.equals("indirect.accum") || !rr && resource.startsWith("rr."))continue;
+            }
+            var copied=NativePackRuntime.diagnosticReadback(resource);
             writes.add(copied.thenAcceptAsync(pixels->{
                 try(var compressed=new GZIPOutputStream(Files.newOutputStream(output.resolve(prefix+"-"+resource+".bin.gz")))) {
                     compressed.write(bytes(pixels));
@@ -261,8 +279,8 @@ public final class QaTemporalProfile {
         report.put("prepMotionFrames",prepMotionFrames);report.put("preparationStableFrames",stableFrames);
         report.put("captureFrames",FRAMES);report.put("frames",List.copyOf(frames));report.put("inputFormats",inputFormats);
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());
-        report.put("uniformComparisonExcludedByteRange",List.of(1120,1132));
-        report.put("uniformComparisonScope","All 1152 actual uniform bytes except graph-local AS generation/pending words; pending is required zero and exact geometry is checked independently. Raw uniforms are retained without modification.");
+        report.put("uniformComparisonExcludedByteRanges",FOLIAGE?List.of(List.of(1120,1132),List.of(1144,1152)):List.of(List.of(1120,1132)));
+        report.put("uniformComparisonScope","All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification.");
         writeJson(phaseDirectory.resolve("sequence.json"),report);reports.add(report);
         LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_PASS phase={} sequence={} captures={} adjacent=true",phase(),sequence,frames.size());
     }

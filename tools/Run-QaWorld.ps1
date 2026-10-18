@@ -75,6 +75,7 @@ param(
     [switch] $CloudNoisePairsPerturb,
     [switch] $CloudEnvironmentInputs,
     [switch] $TemporalProfile,
+    [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
     [switch] $WorkgroupExperiment,
@@ -111,6 +112,7 @@ param(
     [switch] $TemporalInputs,
     [switch] $TemporalJitter,
     [switch] $WorldDlss,
+    [switch] $RayReconstruction,
     [string] $NativeLibrary,
     [string] $RuntimeDirectory,
     [ValidateRange(10,260)][int] $MaxFps = 60,
@@ -118,6 +120,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($FoliageSequence -ne 'none'){$TemporalProfile=$true}
 if($RealtimeStep -ge 2){$EmissiveSampling=1;$EmissiveMaterials=$true;$SunShadowSamples=1;$SunIndirectSamples=1}
 if($RealtimeStep -ge 3){$IndirectBounces=2;$IndirectSamples=1;$LeafIndirect=$false}
 
@@ -126,7 +129,7 @@ if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb
 if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
-if($TemporalProfile -and (!$PerformanceProfile -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
+if($TemporalProfile -and (!$PerformanceProfile -or ($ComputeExperiment -ne 'cloud-3d-env' -and $FoliageSequence -eq 'none') -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
 if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
@@ -267,6 +270,7 @@ if ($RayVisibility -or $RayLighting) {
     if ($RayHitMaterials) { $createArguments.HitMaterials = $true }
     if ($TemporalInputs) { $createArguments.TemporalInputs = $true }
     if ($WorldDlss) { $createArguments.DlssReconstruction = $true }
+    if($RayReconstruction){$createArguments.RayReconstruction=$true}
     if ($Reflections) { $createArguments.Reflections = $true }
     if($RayLighting){$createArguments.RealtimeStep=$RealtimeStep}
     if($RoughReflections){$createArguments.RoughReflections=$true}
@@ -415,6 +419,21 @@ if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
 if($CloudNoisePairs){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudNoisePairs=true')}
 if($TemporalProfile){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaTemporalProfile=true')}
+if($FoliageSequence -ne 'none'){
+ $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaFoliageSequence=true')
+ if($FoliageSequence.StartsWith('native')){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaFoliageNative=true')}
+ $foliageManifest=Join-Path $qaPath 'shaders/RayLighting/sulkan.json'
+ $fm=Get-Content -LiteralPath $foliageManifest -Raw|ConvertFrom-Json -AsHashtable
+ $fm.options['QA_FOLIAGE_DIRECT_ONLY']=@{default=[int]($FoliageSequence -eq 'native-direct');values=@(0,1)}
+ $fm.options['QA_FOLIAGE_MOTION_FIX']=@{default=[int]($FoliageSequence -in @('fixed-sr','rr'));values=@(0,1)}
+ $fm.options['REALTIME_RAY_LOD']=@{default=[int]($FoliageSequence -in @('fixed-sr','rr'));values=@(0,1)}
+ $fm|ConvertTo-Json -Depth 32|Set-Content -LiteralPath $foliageManifest
+ if($FoliageSequence -eq 'rr'){
+  Copy-Item -LiteralPath $foliageManifest -Destination (Join-Path $qaPath 'foliage-reference.json')
+  $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaFoliageComparison=true')
+  & (Join-Path $PSScriptRoot 'Enable-RayReconstructionPack.ps1') -PackDirectory (Split-Path $foliageManifest -Parent)
+ }
+}
 if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
 if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
 $startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")
@@ -491,7 +510,8 @@ if($RaySurfaceProbe) {
     if($combined.Contains('SULKAN_RAY_SURFACE_GPU_FAIL')) {$missing+='Ray surface GPU diagnostic failed'}
 } elseif($PerformanceProfile) {
     $profileMarker=if($TemporalProfile){'SULKAN_TEMPORAL_PROFILE_PASS'}else{'SULKAN_PERFORMANCE_PROFILE_PASS'}
-    $required=@($profileMarker,'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
+    $required=@($profileMarker,'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true')
+    if(!$FoliageSequence.StartsWith('native')){$required+='SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0'}
     $missing=@($required | Where-Object{!$combined.Contains($_)})
     foreach($phase in $(if($TemporalProfile){@()}else{$ProfilePlan.Split(',')})){
         $marker=if($CloudNoisePairs){"SULKAN_CLOUD_NOISE_PAIRS_PASS phase=$phase"}elseif($RayQueryCounts){"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase=$phase"}else{"SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase "}

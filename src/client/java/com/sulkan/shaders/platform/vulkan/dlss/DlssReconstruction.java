@@ -17,9 +17,13 @@ import static com.sulkan.shaders.platform.vulkan.VulkanChecks.requireSuccess;
 /** One immutable output-size generation. The host replaces and retires generations on resize. */
 public final class DlssReconstruction {
     public record Extent(int inputWidth,int inputHeight,int outputWidth,int outputHeight) {}
+    public record Guides(GpuTextureView diffuse,GpuTextureView specular,GpuTextureView normalRoughness,GpuTextureView specularDistance,float[] camera,float milliseconds) {}
     public record Frame(GpuTextureView color,GpuTextureView depth,GpuTextureView motion,
-                        GpuTextureView exposure,float jitterX,float jitterY,boolean reset) {}
+                        GpuTextureView exposure,float jitterX,float jitterY,boolean reset,Guides guides) {
+        public Frame(GpuTextureView color,GpuTextureView depth,GpuTextureView motion,GpuTextureView exposure,float jitterX,float jitterY,boolean reset){this(color,depth,motion,exposure,jitterX,jitterY,reset,null);}
+    }
     private final DlssSession session;
+    private final boolean rayReconstruction;
     private final GpuTexture output;
     private final GpuTextureView outputView;
     private final Extent extent;
@@ -28,10 +32,15 @@ public final class DlssReconstruction {
     private long evaluations;
 
     public DlssReconstruction(VulkanDevice device,VulkanCommandEncoder encoder,Path cache,Path runtime,int width,int height) {
+        this(device,encoder,cache,runtime,width,height,false);
+    }
+    public DlssReconstruction(VulkanDevice device,VulkanCommandEncoder encoder,Path cache,Path runtime,int width,int height,boolean rr) {
         if(width<=0 || height<=0) throw new IllegalArgumentException("Invalid DLSS output extent");
+        rayReconstruction=rr;
         session=new DlssSession(device,cache,runtime);
         GpuTexture texture=null; GpuTextureView view=null;
         try {
+            if(rr)session.enableRayReconstruction();
             int[] input=session.qualityDimensions(width,height);
             if(input[0]<=0 || input[1]<=0 || input[0]>width || input[1]>height)
                 throw new IllegalStateException("Invalid DLSS Quality extent");
@@ -64,15 +73,24 @@ public final class DlssReconstruction {
         require(frame.motion(),GpuFormat.RG16_FLOAT,extent.inputWidth(),extent.inputHeight());
         require(frame.exposure(),GpuFormat.R32_FLOAT,1,1);
         if(!Float.isFinite(frame.jitterX()) || !Float.isFinite(frame.jitterY())) throw new IllegalArgumentException("Invalid DLSS jitter");
+        if(rayReconstruction!=(frame.guides()!=null))throw new IllegalArgumentException("RR feature/guide contract mismatch");
+        if(rayReconstruction){
+            var g=frame.guides();
+            require(g.diffuse(),GpuFormat.RGBA16_FLOAT,extent.inputWidth(),extent.inputHeight());
+            require(g.specular(),GpuFormat.RGBA16_FLOAT,extent.inputWidth(),extent.inputHeight());
+            require(g.normalRoughness(),GpuFormat.RGBA16_FLOAT,extent.inputWidth(),extent.inputHeight());
+            require(g.specularDistance(),GpuFormat.R32_FLOAT,extent.inputWidth(),extent.inputHeight());
+        }
         var commands=encoder.allocateAndBeginTransientCommandBuffer();
         try(MemoryStack stack=MemoryStack.stackPush()) {
             barrier(commands,stack);
             if(!featureCreated) {
                 session.create(commands,extent.inputWidth(),extent.inputHeight(),extent.outputWidth(),extent.outputHeight());
                 featureCreated=true;
+                com.mojang.logging.LogUtils.getLogger().info("SULKAN_NGX_FEATURE_CREATED mode={} input={}x{} output={}x{}",rayReconstruction?"RR":"SR",extent.inputWidth(),extent.inputHeight(),extent.outputWidth(),extent.outputHeight());
             }
-            session.evaluate(commands,frame.color(),frame.depth(),frame.motion(),frame.exposure(),outputView,
-                    frame.jitterX(),frame.jitterY(),frame.reset() || evaluations==0);
+            session.evaluateFrame(commands,frame.color(),frame.depth(),frame.motion(),frame.exposure(),outputView,
+                    frame.jitterX(),frame.jitterY(),frame.reset() || evaluations==0,frame.guides());
             barrier(commands,stack);
             requireSuccess(VK10.vkEndCommandBuffer(commands),"end DLSS reconstruction");
             encoder.execute(commands);

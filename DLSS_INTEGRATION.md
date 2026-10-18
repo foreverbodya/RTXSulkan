@@ -10,6 +10,20 @@ output before rendering the hand and UI. A guarded 1707x960-to-2560x1440 world
 run and 1280x720-to-1920x1080 replacement pass basic checks. Complete object
 motion, temporal reconstruction quality and production performance are unfinished.
 
+## Foliage/RR preview (2026-10-19)
+
+The realtime pack now supports `dlss_rr_quality` on the same device, using
+`nvngx_dlssd.dll` from the pinned external SDK. Linear diffuse/specular albedo,
+normal plus roughness, first-layer depth/motion, specular hit distance and camera
+matrices are bound explicitly. Raw diffuse/specular/sun lighting replaces their
+custom filters in this mode. `foliage-motion-20261019.json` records eight paired
+turning frames, native/SR/direct-only controls and a separate RR timing run.
+
+Undeformed leaves (`VEGETATION_WIND=0`) now authorize camera motion from the
+alpha-tested raster layer. Animated wind and entity motion still need previous
+object positions. Water/cloud guide fidelity remains unqualified. Ray hit mip
+selection uses a camera pixel footprint with dynamic input/output LOD bias.
+
 ## Vulkan adapter
 
 The official SDK exposes creation and evaluation on an existing VkDevice and

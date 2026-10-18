@@ -7,17 +7,17 @@ import java.util.Map;
 import java.util.Set;
 
 /** Pack-owned HDR reconstruction boundary; display mapping is applied after reconstruction. */
-public record Reconstruction(String color,String depth,String motion,String exposure,String display,Map<String,String> displayReads) {
+public record Reconstruction(String color,String depth,String motion,String exposure,String display,Map<String,String> displayReads,Map<String,String> guides,boolean rayReconstruction) {
     public List<String> inputs() { return List.of(color,depth,motion,exposure); }
     public List<String> graphInputs() {
-        var all=new java.util.ArrayList<>(inputs());all.addAll(displayReads.values());return List.copyOf(all);
+        var all=new java.util.ArrayList<>(inputs());all.addAll(displayReads.values());all.addAll(guides.values());return List.copyOf(all);
     }
     static Reconstruction parse(JsonElement value,Map<String,PackGraph.Resource> resources,String present) {
         if(value==null) return null;
         if(!value.isJsonObject()) throw new IllegalArgumentException("Reconstruction must be an object");
         var json=value.getAsJsonObject();
         var keys=Set.of("type","color","depth","motion","exposure","display");
-        if(!json.keySet().containsAll(keys) || json.keySet().stream().anyMatch(key->!keys.contains(key) && !key.equals("displayReads")) || !json.get("type").getAsString().equals("dlss_quality"))
+        if(!json.keySet().containsAll(keys) || json.keySet().stream().anyMatch(key->!keys.contains(key) && !key.equals("displayReads") && !key.equals("guides")) || !Set.of("dlss_quality","dlss_rr_quality").contains(json.get("type").getAsString()))
             throw new IllegalArgumentException("Reconstruction requires dlss_quality and all image/display bindings");
         var displayReads=new java.util.TreeMap<String,String>();
         if(json.has("displayReads")) {
@@ -31,8 +31,21 @@ public record Reconstruction(String color,String depth,String motion,String expo
                 displayReads.put(entry.getKey(),name);
             }
         }
+        boolean rr=json.get("type").getAsString().equals("dlss_rr_quality");
+        var guides=new java.util.TreeMap<String,String>();
+        if(rr){
+            if(!json.has("guides") || !json.get("guides").isJsonObject() || !json.getAsJsonObject("guides").keySet().equals(Set.of("diffuse","specular","normalRoughness","specularDistance")))
+                throw new IllegalArgumentException("RR needs diffuse/specular albedo, normal+roughness and hit distance");
+            for(var entry:json.getAsJsonObject("guides").entrySet()){
+                String name=entry.getValue().getAsString();var resource=resources.get(name);
+                GpuFormat format=entry.getKey().equals("specularDistance")?GpuFormat.R32_FLOAT:GpuFormat.RGBA16_FLOAT;
+                if(resource==null || resource.format()!=format || resource.depth()!=1 || resource.mipmaps() || resource.fixedWidth()!=0 || resource.fixedHeight()!=0 || resource.scale()!=1)
+                    throw new IllegalArgumentException("Invalid RR guide "+name);
+                guides.put(entry.getKey(),name);
+            }
+        }else if(json.has("guides"))throw new IllegalArgumentException("SR does not consume RR guides");
         var result=new Reconstruction(json.get("color").getAsString(),json.get("depth").getAsString(),
-                json.get("motion").getAsString(),json.get("exposure").getAsString(),json.get("display").getAsString(),java.util.Collections.unmodifiableMap(displayReads));
+                json.get("motion").getAsString(),json.get("exposure").getAsString(),json.get("display").getAsString(),java.util.Collections.unmodifiableMap(displayReads),Map.copyOf(guides),rr);
         if(!result.color.equals(present) || !PackFiles.safe(result.display) || Set.copyOf(result.inputs()).size()!=4)
             throw new IllegalArgumentException("Reconstruction color must be the distinct HDR present resource with a safe display shader");
         GpuFormat[] formats={GpuFormat.RGBA16_FLOAT,GpuFormat.R32_FLOAT,GpuFormat.RG16_FLOAT,GpuFormat.R32_FLOAT};

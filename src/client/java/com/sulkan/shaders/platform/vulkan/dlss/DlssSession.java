@@ -22,6 +22,8 @@ public final class DlssSession {
     private int inputWidth, inputHeight, outputWidth, outputHeight;
 
     private static native long openNative(long instance, long physical, long device, long gipa, long gdpa, String data, String runtime);
+    private static native void rayReconstructionNative(long context);
+    private static native void evaluateRrNative(long context,long commands,long[] resources,float[] camera,float jitterX,float jitterY,boolean reset,float milliseconds);
     private static native int[] qualityNative(long context, int width, int height);
     private static native void createNative(long context, long commands, int iw, int ih, int ow, int oh);
     private static native void evaluateNative(long context, long commands, long[] resources, float jitterX, float jitterY, boolean reset);
@@ -35,6 +37,8 @@ public final class DlssSession {
                 dataDirectory.toString(), runtimeDirectory.toString());
         if (handle == 0) throw new IllegalStateException("NGX returned no context");
     }
+
+    public void enableRayReconstruction(){checkOpen();rayReconstructionNative(handle);}
 
     public int[] qualityDimensions(int outputWidth, int outputHeight) {
         checkOpen();
@@ -52,10 +56,14 @@ public final class DlssSession {
     /** Motion is previous-minus-current displacement in input pixels; depth is reversed, color is linear HDR. */
     public void evaluate(VkCommandBuffer commands, GpuTextureView color, GpuTextureView depth,
             GpuTextureView motion, GpuTextureView exposure, GpuTextureView output, float jitterX, float jitterY, boolean reset) {
+        evaluateFrame(commands,color,depth,motion,exposure,output,jitterX,jitterY,reset,null);
+    }
+    public void evaluateFrame(VkCommandBuffer commands,GpuTextureView color,GpuTextureView depth,
+            GpuTextureView motion,GpuTextureView exposure,GpuTextureView output,float jitterX,float jitterY,boolean reset,DlssReconstruction.Guides guides) {
         checkOpen();
         if (!created) throw new IllegalStateException("DLSS feature has not been created");
-        var views = new GpuTextureView[]{color, depth, motion, exposure, output};
-        long[] resources = new long[30];
+        var views = guides==null?new GpuTextureView[]{color,depth,motion,exposure,output}:new GpuTextureView[]{color,depth,motion,exposure,output,guides.diffuse(),guides.specular(),guides.normalRoughness(),guides.specularDistance()};
+        long[] resources = new long[views.length*6];
         for (int i=0; i<views.length; i++) {
             var texture = views[i].texture();
             if (texture.isClosed() || texture.getMipLevels() != 1 || texture.getDepthOrLayers() != 1) throw new IllegalArgumentException("NGX inputs require live single-mip 2D textures");
@@ -68,7 +76,8 @@ public final class DlssSession {
             resources[offset+2]=VulkanConst.toVk(texture.getFormat());
             resources[offset+3]=w; resources[offset+4]=h; resources[offset+5]=1;
         }
-        evaluateNative(handle, commands.address(), resources, jitterX, jitterY, reset);
+        if(guides==null)evaluateNative(handle, commands.address(), resources, jitterX, jitterY, reset);
+        else evaluateRrNative(handle,commands.address(),resources,guides.camera(),jitterX,jitterY,reset,guides.milliseconds());
     }
 
     public CompletableFuture<JsonObject> retire(VulkanCommandEncoder encoder) {

@@ -1,0 +1,31 @@
+#version 460
+// First visible raster layer: alpha discard precedes all G-buffer writes.
+void main(){
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    uvec2 surface=texelFetch(Surface,p,0).rg;
+    float depth=texelFetch(Depth,p,0).r;uint bits=floatBitsToUint(depth);
+    bool valid=depth>1e-7 && (surface.x&0xc0000000u)==0x40000000u && max(bits,surface.y)-min(bits,surface.y)<=2u;
+    vec3 diffuse=vec3(0),specular=vec3(0);vec4 geometry=vec4(0,0,1,1);float hitDistance=0;
+    if(valid){
+        vec3 base=clamp(texelFetch(Albedo,p,0).rgb,vec3(0),vec3(1));
+        float metal=clamp(texelFetch(EmissionMetal,p,0).a,0,1);
+        geometry=texelFetch(NormalRoughness,p,0);geometry.xyz=normalize(geometry.xyz);
+        // Match current dielectric/metal material presets; split-sum Schlick
+        // integrated specular guide approximation, rather than lit color.
+        vec2 uv=(vec2(p)+.5)/vec2(size);
+        vec4 eye=InverseProjection*vec4(uv*2-1,depth,1);
+        vec3 v=normalize(-mat3(InverseView)*(eye.xyz/eye.w));
+        float nv=max(dot(geometry.xyz,v),0.0),r=geometry.w;
+        vec4 c=r*vec4(-1,-.0275,-.572,.022)+vec4(1,.0425,1.04,-.04);
+        float a004=min(c.x*c.x,exp2(-9.28*nv))*c.x+c.y;
+        vec2 ab=vec2(-1.04,1.04)*a004+c.zw;
+        vec3 f0=mix(vec3(.04),base,metal);
+        specular=clamp(f0*ab.x+ab.y,vec3(0),vec3(1));
+        diffuse=base*(1-metal);
+        float distance=metal>=.99?texelFetch(MirrorHit,p,0).w:texelFetch(SpecularHit,p,0).w;
+        hitDistance=distance<0?128:distance;
+    }
+    imageStore(Output0,p,vec4(diffuse,1));imageStore(Output1,p,vec4(specular,1));
+    imageStore(Output2,p,geometry);imageStore(Output3,p,vec4(hitDistance));
+}

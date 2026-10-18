@@ -1,4 +1,7 @@
 #version 450
+#ifndef QA_FOLIAGE_MOTION_FIX
+#define QA_FOLIAGE_MOTION_FIX 1
+#endif
 #include "shaders/common.glsl"
 #include "shaders/terrain-globals.glsl"
 #include "shaders/include/terrain_material.glsl"
@@ -70,7 +73,7 @@ void main() {
 #ifdef CAMERA_MOTION_DIAGNOSTIC
     // Wind-deformed vegetation needs previous geometry positions, not static reprojection.
     motionSource=uvec2(floatBitsToUint(gl_FragCoord.z),materialId>=2u && materialId<=5u ? 0u : 1u);
-#ifdef LEAF_INDIRECT
+#if defined(LEAF_INDIRECT) || (REALTIME_DIFFUSE == 1 && QA_FOLIAGE_MOTION_FIX != 0)
     // This experimental mode pins wind off. Never authorize static motion for
     // deformed leaves if a pack later re-enables the runtime wind option.
     if(materialId==5u && VEGETATION_WIND==0.0) motionSource.y=1u;

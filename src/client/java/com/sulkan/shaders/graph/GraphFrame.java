@@ -39,7 +39,8 @@ final class GraphFrame {
    void raySceneState(long generation,int pending,boolean available) { this.raySceneGeneration=generation;this.rayScenePending=pending;this.raySceneAvailable=available; }
    private com.sulkan.shaders.render.raytracing.RayOrigin rayOrigin=com.sulkan.shaders.render.raytracing.RayOrigin.WORLD;
    void rayOrigin(com.sulkan.shaders.render.raytracing.RayOrigin origin) { this.rayOrigin=origin; }
-   private float jitterX,jitterY,previousJitterX,previousJitterY;
+   private float jitterX,jitterY,previousJitterX,previousJitterY,textureLodBias;
+   void reconstructionScale(float ratio){textureLodBias=(float)(Math.log(ratio)/Math.log(2));}
    float jitterX() { return this.jitterX; }
    float jitterY() { return this.jitterY; }
    private final float[] environment = new float[36];
@@ -175,6 +176,18 @@ final class GraphFrame {
       this.start = System.nanoTime();
    }
 
+   float reconstructionMilliseconds(){return Math.max(.001f,Math.min(1000,bytes.getFloat(404)*1000));}
+   float[] reconstructionCamera(){
+      // NGX left-multiplied column-major world-to-view and jitter-free projection.
+      float[] values=new float[32];
+      new Matrix4f(bytes.getFloat(64),bytes.getFloat(68),bytes.getFloat(72),bytes.getFloat(76),
+         bytes.getFloat(80),bytes.getFloat(84),bytes.getFloat(88),bytes.getFloat(92),
+         bytes.getFloat(96),bytes.getFloat(100),bytes.getFloat(104),bytes.getFloat(108),
+         bytes.getFloat(112),bytes.getFloat(116),bytes.getFloat(120),bytes.getFloat(124)).get(values);
+      var p=new Matrix4f().set(0,bytes);
+      var clean=new Matrix4f().translation(-2*jitterX/bytes.getFloat(416),-2*jitterY/bytes.getFloat(420),0).mul(p);
+      float[] projection=clean.get(new float[16]);System.arraycopy(projection,0,values,16,16);return values;
+   }
    ByteBuffer diagnosticSnapshot() {
       if (!Boolean.getBoolean("sulkan.qaReadback")) throw new IllegalStateException("Diagnostic readback is disabled");
       ByteBuffer snapshot = ByteBuffer.allocate(this.bytes.capacity()).order(ByteOrder.nativeOrder());
@@ -275,6 +288,7 @@ final class GraphFrame {
             if(qaFixedEnvironment==null)qaFixedEnvironment=this.environment.clone();
             System.arraycopy(qaFixedEnvironment,0,this.environment,0,12);
             System.arraycopy(qaFixedEnvironment,31,this.environment,31,3);
+            if(Boolean.getBoolean("sulkan.qaFoliageSequence"))System.arraycopy(qaFixedEnvironment,20,this.environment,20,16);
          }
          for (float value : this.environment) {
             this.bytes.putFloat(value);
@@ -290,7 +304,7 @@ final class GraphFrame {
          this.bytes.putFloat(this.rayOrigin.x()).putFloat(this.rayOrigin.y()).putFloat(this.rayOrigin.z()).putFloat(0);
          Vec3 rayCamera=camera!=null && camera.pos!=null ? camera.pos : Vec3.ZERO;
          this.bytes.putFloat((float)(rayCamera.x-this.rayOrigin.x())).putFloat((float)(rayCamera.y-this.rayOrigin.y()))
-            .putFloat((float)(rayCamera.z-this.rayOrigin.z())).putFloat(0);
+            .putFloat((float)(rayCamera.z-this.rayOrigin.z())).putFloat(textureLodBias);
          this.bytes.putInt((int)this.raySceneGeneration).putInt((int)(this.raySceneGeneration>>>32))
             .putInt(this.rayScenePending).putInt(qa!=null?qa.index():reset?0:this.frame);
          this.bytes.putInt(this.raySceneAvailable?1:0).putInt(emissionTriangles).putInt((int)emissionAddress).putInt((int)(emissionAddress>>>32));

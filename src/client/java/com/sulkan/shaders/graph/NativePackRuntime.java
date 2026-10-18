@@ -96,7 +96,7 @@ public final class NativePackRuntime {
    public static Matrix4f captureWorldProjection(Matrix4f projection) {
       worldJitterX=worldJitterY=0;
       Matrix4f effective=projection;
-      if (sceneScope && active!=null && !ShaderRuntime.resourceReloading() && (active.reconstructsWorld() || Boolean.getBoolean("sulkan.temporalJitter"))) {
+      if (sceneScope && active!=null && !ShaderRuntime.resourceReloading() && !Boolean.getBoolean("sulkan.qaFoliageNative") && (active.reconstructsWorld() || Boolean.getBoolean("sulkan.temporalJitter"))) {
          var target=Minecraft.getInstance().gameRenderer.mainRenderTarget();
          var qa=GraphFrame.qaClock();
          var jitter=TemporalMath.jitter(qa!=null?qa.index()%32:(int)(active.renderedFrames()%32));

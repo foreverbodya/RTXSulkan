@@ -116,6 +116,9 @@ void main() {
         localEmission=sulkanSurfaceEmission(albedo.rgb,materialData.y);
     }
 #endif
+    #if QA_FOLIAGE_DIRECT_ONLY == 1
+    if(leaf){skyFill=vec3(0);localEmission=vec3(0);}
+#endif
     vec3 result = direct + skyFill + localEmission;
 #ifdef LIGHTING_AUDIT
     // Actual pre-camera-aerial terms, with exact material/supported-path labels.

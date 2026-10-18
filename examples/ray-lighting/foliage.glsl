@@ -28,7 +28,7 @@ uint foliageTraceRadiance(rayQueryEXT query,sampler2D atlas,vec3 origin,float mi
         SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query,false),
             rayQueryGetIntersectionPrimitiveIndexEXT(query,false),rayQueryGetIntersectionBarycentricsEXT(query,false),shrink);
         if(hit.material==5u && dot(hit.normal,direction)>0.0) {rejected++;continue;}
-        float alpha=textureLod(atlas,hit.uv,0.0).a*hit.color.a;
+        float alpha=sulkanRayTexture(atlas,hit,origin+direction*rayQueryGetIntersectionTEXT(query,false),direction).a*hit.color.a;
         if(hit.opacity==0u || alpha>=sulkanRayAlphaCutoff(hit.flags))rayQueryConfirmIntersectionEXT(query);
         else rejected++;
     }
@@ -80,7 +80,7 @@ vec3 foliageShadow(sampler2D atlas,vec3 origin,vec3 direction,float maximum) {
         SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(query,false),
             rayQueryGetIntersectionPrimitiveIndexEXT(query,false),rayQueryGetIntersectionBarycentricsEXT(query,false),
             sulkanRayAtlasShrink(textureSize(atlas,0)));
-        vec4 sampled=textureLod(atlas,hit.uv,0.0)*hit.color;
+        vec4 sampled=sulkanRayTexture(atlas,hit,origin+direction*rayQueryGetIntersectionTEXT(query,false),direction)*hit.color;
         if(hit.opacity!=0u && sampled.a<sulkanRayAlphaCutoff(hit.flags)) continue;
         if(hit.material!=5u) {rayQueryTerminateEXT(query);return vec3(0);}
         if(dot(hit.normal,direction)<0.0) {

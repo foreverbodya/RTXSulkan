@@ -131,8 +131,9 @@ public final class GraphRenderer implements AutoCloseable {
    private GpuPassTimings.Measurement worldTiming;
    public RenderTarget beginWorldFrame(RenderTarget output) {
       if(this.gpuTimings!=null)worldTiming=this.gpuTimings.start(((VulkanDevice)((GraphDeviceAccessor)RenderSystem.getDevice()).sulkan$backend()).createCommandEncoder(),"world.total");
-      if(this.reconstruction==null) return output;
+      if(this.reconstruction==null){this.frame.reconstructionScale(1);return output;}
       this.reconstruction.prepare(output);
+      this.frame.reconstructionScale((float)this.reconstruction.world().width/output.width);
       this.reconstruction.beginFrame();
       return this.reconstruction.world();
    }
@@ -147,6 +148,13 @@ public final class GraphRenderer implements AutoCloseable {
       result.put("displayToneMapper",this.graph.options().getOrDefault("DISPLAY_TONEMAPPER",0.0).intValue());
       if(this.diagnosticDisplay!=null)result.put("displayFormat",this.diagnosticDisplay.getFormat().name());
       return Map.copyOf(result);
+   }
+   private com.sulkan.shaders.platform.vulkan.dlss.DlssReconstruction.Guides rrGuides(){
+      var bindings=this.graph.reconstruction();if(!bindings.rayReconstruction())return null;
+      var g=bindings.guides();
+      return new com.sulkan.shaders.platform.vulkan.dlss.DlssReconstruction.Guides(
+         image(g.get("diffuse")).view,image(g.get("specular")).view,image(g.get("normalRoughness")).view,
+         image(g.get("specularDistance")).view,this.frame.reconstructionCamera(),this.frame.reconstructionMilliseconds());
    }
    private long rayDispatches;
 
@@ -324,7 +332,7 @@ public final class GraphRenderer implements AutoCloseable {
             }
          }
          this.loadTextures(files);
-         if(graph.reconstruction()!=null) this.reconstruction=new WorldReconstruction((VulkanDevice)((GraphDeviceAccessor)device).sulkan$backend(),main);
+         if(graph.reconstruction()!=null) this.reconstruction=new WorldReconstruction((VulkanDevice)((GraphDeviceAccessor)device).sulkan$backend(),main,graph.reconstruction().rayReconstruction());
          RenderTarget initial=this.reconstruction==null ? main : this.reconstruction.world();
          this.allocate(initial.width, initial.height);
          this.buffers = new GraphBuffers(graph);
@@ -610,7 +618,7 @@ public final class GraphRenderer implements AutoCloseable {
                this.reconstruction.record(nativeEncoder,new com.sulkan.shaders.platform.vulkan.dlss.DlssReconstruction.Frame(
                     this.image(bindings.color()).view,this.image(bindings.depth()).view,
                     this.image(bindings.motion()).view,this.image(bindings.exposure()).view,
-                    this.frame.jitterX(),this.frame.jitterY(),reset));
+                    this.frame.jitterX(),this.frame.jitterY(),reset,rrGuides()));
                submitted=true;
             } finally {if(measurement!=null)measurement.finish(submitted);}
          }
@@ -688,10 +696,11 @@ public final class GraphRenderer implements AutoCloseable {
       }catch(java.io.IOException failure){throw new IllegalStateException("QA reconstruction creation",failure);}
    }
    private void qaReconstruct(WorldReconstruction context,boolean reset) {
+      if(this.graph.reconstruction().rayReconstruction())throw new IllegalStateException("SR replay diagnostics do not support RR");
       var binding=this.graph.reconstruction();
       context.record(this.rayDevice.createCommandEncoder(),new com.sulkan.shaders.platform.vulkan.dlss.DlssReconstruction.Frame(
          this.image(binding.color()).view,this.image(binding.depth()).view,this.image(binding.motion()).view,this.image(binding.exposure()).view,
-         this.frame.jitterX(),this.frame.jitterY(),reset));
+         this.frame.jitterX(),this.frame.jitterY(),reset,rrGuides()));
    }
    private java.util.concurrent.CompletableFuture<ByteBuffer> qaPresent(GpuTextureView source,String label) {
       var encoder=RenderSystem.getDevice().createCommandEncoder();

@@ -45,7 +45,7 @@ void main() {
     if(rayQueryGetIntersectionTypeEXT(transmitted,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
         transmissionDistance=rayQueryGetIntersectionTEXT(transmitted,true);transmissionPoint=position-n*0.005+t*transmissionDistance;
         SulkanRaySurface hit=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(transmitted,true),rayQueryGetIntersectionPrimitiveIndexEXT(transmitted,true),rayQueryGetIntersectionBarycentricsEXT(transmitted,true),sulkanRayAtlasShrink(textureSize(Atlas,0)));
-        vec3 hn=secondaryNormal(hit,t),base=foliageLinear((textureLod(Atlas,hit.uv,0.0)*hit.color).rgb);
+        vec3 hn=secondaryNormal(hit,t),base=foliageLinear((sulkanRayTexture(Atlas,hit,transmissionPoint,t)*hit.color).rgb);
         float side=secondaryLeaf(hit) && dot(hn,waterLight)<0.0?-0.005:0.005;
         vec3 shadowStart=transmissionPoint+hn*side;
         float solarDistance=max(dot(position-shadowStart,n),0.0)/waterCos;

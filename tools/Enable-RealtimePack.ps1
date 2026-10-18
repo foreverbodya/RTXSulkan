@@ -24,6 +24,7 @@ if($Step -ge 2){
 }
 if($Step -ge 3){
     $manifest.options['REALTIME_DIFFUSE']=@{default=1;values=@(1)}
+    $manifest.options['REALTIME_RAY_LOD']=@{default=1;values=@(0,1)}
     $manifest.options['VEGETATION_WIND'].default=0
     foreach($pass in $manifest.passes|Where-Object{$_.name -eq 'indirect.trace'}){$pass.reads['AtmosphereSky']='atmosphere.sky'}
 }
