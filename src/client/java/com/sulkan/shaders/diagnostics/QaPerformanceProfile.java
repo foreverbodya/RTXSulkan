@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 
 /** Real-world profiling, with deterministic frame-index camera paths and no timed readbacks. */
 final class QaPerformanceProfile {
-    private static final int FRAMES=128,WARMUP=64;
+    private static final int FRAMES=128,WARMUP=256;
     private final Path directory;
     private final double[] base;
     private final List<String> plan;
@@ -25,9 +25,13 @@ final class QaPerformanceProfile {
     private final java.lang.management.ThreadMXBean thread=ManagementFactory.getThreadMXBean();
     private int phaseIndex,frame=-WARMUP;
     private long previousTime,previousCpu;
-    private Object rayStart,memoryStart,countersStart;
+    private Object rayStart,memoryStart,countersStart,rayEnd,memoryEnd,countersEnd;
+    private String geometryEnd;
+    private long endEpochMs;
     private String geometryStart;
+    private long startEpochMs;
     private boolean measuring;
+    private int verificationFrame;
     private CompletableFuture<Void> image;
 
     QaPerformanceProfile(Path directory,double[] pose,Map<String,Object> scene)throws Exception {
@@ -40,16 +44,19 @@ final class QaPerformanceProfile {
         configure();
     }
     private String phase(){return plan.get(phaseIndex);}
+    private String path(){return phase().replace("narrow-","").replace("-repeat","");}
     private void configure(){
+        System.setProperty("sulkan.qaProfilePhase",phase());
+        System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
         System.setProperty("sulkan.qaProfileDisabled",group);
         LogUtils.getLogger().info("SULKAN_PROFILE_PHASE_CONFIG phase={} disabled={}",phase(),group);
     }
     double[] pose() {
-        double[] pose=base.clone();int n=Math.max(0,Math.min(FRAMES-1,frame));
-        if(phase().equals("motion")) {
+        double[] pose=base.clone();int n=verificationFrame>0?verificationFrame*16:frame<0?Math.floorMod(frame,FRAMES):Math.min(FRAMES-1,frame);
+        if(path().equals("motion")) {
             double s=Math.sin(n*2*Math.PI/FRAMES);pose[0]+=4*s;pose[2]+=2*s;pose[3]+=12*s;
-        } else if(phase().equals("stream") || phase().equals("settled"))pose[0]+=phase().equals("stream")?n*4:508;
+        } else if(path().equals("stream") || path().equals("settled"))pose[0]+=path().equals("stream")?n*4:508;
         return pose;
     }
     boolean observe()throws Exception {
@@ -60,11 +67,12 @@ final class QaPerformanceProfile {
                     "scope","Profiling execution only. Pass-off images are not quality-preserving optimizations. No claim of long-travel leak freedom or final renderer acceptance."));
                 LogUtils.getLogger().info("SULKAN_PERFORMANCE_PROFILE_PASS phases={}",reports.size());return true;
             }
-            frame=-WARMUP;measuring=false;configure();return false;
+            frame=-WARMUP;verificationFrame=0;measuring=false;configure();return false;
         }
         if(frame<0){frame++;return false;}
         if(!measuring) {
-            if(!phase().equals("stream") && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
+            if(!path().equals("stream") && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
+            startEpochMs=System.currentTimeMillis();
             geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
             countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
             wall.clear();cpu.clear();perFrame.clear();previousTime=previousCpu=0;
@@ -81,18 +89,29 @@ final class QaPerformanceProfile {
             perFrame.add(Map.of("index",frame,"pose",pose(),"pendingSections",rays.pendingSections(),
                 "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",TerrainGeometryCache.statistics().revision(),
                 "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
-            frame++;return false;
+            frame++;
+            if(frame==FRAMES) {
+                endEpochMs=System.currentTimeMillis();rayEnd=NativePackRuntime.diagnosticRayScene();memoryEnd=NativeBuffer.statistics();
+                countersEnd=com.sulkan.shaders.graph.ProfileCounters.snapshot();geometryEnd=NaturalSceneFingerprint.capture();
+            }
+            return false;
         }
         if(!NativePackRuntime.diagnosticGpuTimingsReady())return false;
+        if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && (phase().equals("static") || phase().equals("motion"))) {
+            if(verificationFrame<9) {System.setProperty("sulkan.qaProfileVerify",verificationFrame<8?"true":"false");verificationFrame++;return false;}
+            if(!com.sulkan.shaders.graph.WorkgroupVerification.ready())return false;
+            write("workgroup-verification.json",com.sulkan.shaders.graph.WorkgroupVerification.snapshot());
+        }
         var report=new LinkedHashMap<String,Object>(scene);
-        report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
-        report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",NaturalSceneFingerprint.capture());
-        report.put("rayStart",rayStart);report.put("rayEnd",NativePackRuntime.diagnosticRayScene());
-        report.put("workCountersStart",countersStart);report.put("workCountersEnd",com.sulkan.shaders.graph.ProfileCounters.snapshot());
-        report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",NativeBuffer.statistics());
+        report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
+        report.put("workgroupY",System.getProperty("sulkan.qaProfileGroupY"));report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
+        report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",geometryEnd);
+        report.put("rayStart",rayStart);report.put("rayEnd",rayEnd);
+        report.put("workCountersStart",countersStart);report.put("workCountersEnd",countersEnd);
+        report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",memoryEnd);
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
-        report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",perFrame);
+        report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",List.copyOf(perFrame));
         reports.add(report);write("profile-"+phase()+".json",report);
         var dimensions=NativePackRuntime.diagnosticReconstruction();int w=((Number)dimensions.get("outputWidth")).intValue(),h=((Number)dimensions.get("outputHeight")).intValue();
         String name=phase();
@@ -104,13 +123,13 @@ final class QaPerformanceProfile {
                 png.writeToFile(directory.resolve("profile-"+name+".png"));
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         });
-        LogUtils.getLogger().info("SULKAN_PERFORMANCE_PHASE_PASS phase={} frames={} wall={}",phase(),frame,statistics(wall));
+        LogUtils.getLogger().info("SULKAN_PERFORMANCE_PHASE_PASS phase={} frames={} wallMeanMs={}",phase(),frame,statistics(wall).get("mean"));
         return false;
     }
     private static Map<String,Object> statistics(List<Double> values) {
         if(values.isEmpty())return Map.of("available",false);
         var sorted=values.stream().sorted().toList();double mean=sorted.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
-        return Map.of("samples",values,"mean",mean,"fpsFromWallOnly",1000/mean,"p50",sorted.get(sorted.size()/2),"p95",sorted.get((int)((sorted.size()-1)*.95)),"max",sorted.getLast());
+        return Map.of("samples",List.copyOf(values),"mean",mean,"fpsFromWallOnly",1000/mean,"p50",sorted.get(sorted.size()/2),"p95",sorted.get((int)((sorted.size()-1)*.95)),"max",sorted.getLast());
     }
     private void write(String name,Object report)throws Exception {Files.writeString(directory.resolve(name),new GsonBuilder().setPrettyPrinting().create().toJson(report));}
 }

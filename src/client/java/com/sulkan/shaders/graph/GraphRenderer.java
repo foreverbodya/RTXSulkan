@@ -574,7 +574,7 @@ public final class GraphRenderer implements AutoCloseable {
          if (node.isCompute()) {
             if(profileDisabled(node.name())) {
                var m=this.gpuTimings==null?null:this.gpuTimings.start(this.rayDevice.createCommandEncoder(),node.name());
-               node.writes().forEach(output->encoder.clearColorTexture(this.image(output).texture,new Vector4f(0)));
+               // Attribution only: replay the warmed output so downstream fallback does not replace skipped work.
                if(m!=null)m.finish(true);continue;
             }
             if (node.rayScene() && rayHandle == 0) {
@@ -585,14 +585,20 @@ public final class GraphRenderer implements AutoCloseable {
                if(emptyTiming!=null)emptyTiming.finish(true);
                continue;
             }
-            this.computePipelines
-               .get(node)
-               .dispatch(
-                  uniforms,
-                  resource -> node.writes().contains(resource) ? this.image(resource).attachment : this.resolve(resource, main),
-                  this::sampler,
-                  this.buffers, rayHandle, rayAttributes, this.gpuTimings, this.linearSampler
-               );
+            var program=this.computePipelines.get(node);
+            if(Boolean.getBoolean("sulkan.qaProfileVerify") && program.profileVariant()) {
+               String restore=System.getProperty("sulkan.qaProfileGroupY","8");
+               try {
+                  System.setProperty("sulkan.qaProfileGroupY","8");
+                  dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
+                  var originals=new java.util.LinkedHashMap<String,java.util.concurrent.CompletableFuture<ByteBuffer>>();
+                  for(String output:node.writes())originals.put(output,readbackTexture(this.image(output).texture,output+"/8x8"));
+                  System.setProperty("sulkan.qaProfileGroupY","4");
+                  dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
+                  var actualFrame=this.diagnosticFrame();
+                  for(String output:node.writes())WorkgroupVerification.compare(node.name(),output,actualFrame,originals.get(output),readbackTexture(this.image(output).texture,output+"/8x4"));
+               } finally {System.setProperty("sulkan.qaProfileGroupY",restore);}
+            } else dispatchNode(node,uniforms,main,rayHandle,rayAttributes,this.gpuTimings);
             if (node.rayScene()) this.rayDispatches++;
             node.writes().forEach(this::generateMipmaps);
          } else {
@@ -698,6 +704,12 @@ public final class GraphRenderer implements AutoCloseable {
       if(Boolean.getBoolean("sulkan.qaReadback"))this.diagnosticDisplay=destination.getColorTexture();
       this.frame.commit(camera, view, world);
       this.renderedFrames++;
+   }
+
+   private void dispatchNode(PackGraph.Pass node,GpuBufferSlice uniforms,RenderTarget main,long rayHandle,com.sulkan.shaders.platform.vulkan.NativeBuffer attributes,GpuPassTimings timings) {
+      this.computePipelines.get(node).dispatch(uniforms,
+         resource->node.writes().contains(resource)?this.image(resource).attachment:this.resolve(resource,main),
+         this::sampler,this.buffers,rayHandle,attributes,timings,this.linearSampler);
    }
 
    static boolean canPresentDirectly(PackGraph graph, PackGraph.Pass last, GpuFormat format, int width, int height) {

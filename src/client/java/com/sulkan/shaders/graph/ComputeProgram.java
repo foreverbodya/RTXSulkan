@@ -54,6 +54,9 @@ final class ComputeProgram implements AutoCloseable {
    private long setLayout;
    private long layout;
    private long pipeline;
+   private long profilePipeline;
+   private static final java.util.Set<String> PROFILE_GROUP_TARGETS=java.util.Set.of("indirect.trace","leaf.indirect.trace","cloud.view","cloud.environment","cloud.composite","rough.reflection");
+   boolean profileVariant(){return this.profilePipeline!=0;}
    private final Deque<ComputeProgram.Descriptors> availableDescriptors = new ArrayDeque<>();
    private boolean closed;
    private final int[] groupLimits = new int[3];
@@ -185,6 +188,10 @@ final class ComputeProgram implements AutoCloseable {
                      VK10.vkDestroyShaderModule(this.device.vkDevice(), module, null);
                   }
                }
+               if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && PROFILE_GROUP_TARGETS.contains(pass.name()) && pass.localSize().equals(java.util.List.of(8,8,1))) {
+                  String variantSource=source(graph,pass,files.shader(pass.compute(),shaderDefines)).replace("local_size_y=8,","local_size_y=4,");
+                  this.profilePipeline=compileProfilePipeline(pass.name()+"/8x4",variantSource);
+               }
             } catch (Throwable var35) {
                if (stack != null) {
                   try {
@@ -206,6 +213,19 @@ final class ComputeProgram implements AutoCloseable {
          }
       } else {
          throw new IOException("Compute requires the Vulkan backend");
+      }
+   }
+
+   private long compileProfilePipeline(String name,String source) throws Exception {
+      try(var stack=MemoryStack.stackPush();var compiler=new NativeShaderCompiler();var code=compiler.compileCompute(name,source)) {
+         var handle=stack.mallocLong(1);
+         check(VK10.vkCreateShaderModule(this.device.vkDevice(),VkShaderModuleCreateInfo.calloc(stack).sType$Default().pCode(code.code()),null,handle));
+         long module=handle.get(0);
+         try {
+            var info=VkComputePipelineCreateInfo.calloc(1,stack).sType$Default().layout(this.layout);
+            info.stage().sType$Default().stage(32).module(module).pName(stack.UTF8("main"));
+            check(VK10.vkCreateComputePipelines(this.device.vkDevice(),0L,info,null,handle));return handle.get(0);
+         } finally {VK10.vkDestroyShaderModule(this.device.vkDevice(),module,null);}
       }
    }
 
@@ -334,7 +354,9 @@ final class ComputeProgram implements AutoCloseable {
          int y = first == null ? this.pass.dispatch().get(1) : first.getHeight(0);
          int z = first == null ? this.pass.dispatch().get(2) : first.getDepthOrLayers();
          int groupsX = (x + this.pass.localSize().get(0) - 1) / this.pass.localSize().get(0);
-         int groupsY = (y + this.pass.localSize().get(1) - 1) / this.pass.localSize().get(1);
+         boolean narrow=this.profilePipeline!=0 && "4".equals(System.getProperty("sulkan.qaProfileGroupY"));
+         int localY=narrow?4:this.pass.localSize().get(1);
+         int groupsY = (y + localY - 1) / localY;
          int groupsZ = (z + this.pass.localSize().get(2) - 1) / this.pass.localSize().get(2);
          if (groupsX > this.groupLimits[0] || groupsY > this.groupLimits[1] || groupsZ > this.groupLimits[2]) {
             throw new IllegalArgumentException("Compute dispatch exceeds device workgroup count");
@@ -406,7 +428,7 @@ final class ComputeProgram implements AutoCloseable {
          try {
             VkCommandBuffer commands = encoder.allocateAndBeginTransientCommandBuffer();
             barrier(commands, stack, 65536, 2048, 65536, 96);
-            VK10.vkCmdBindPipeline(commands, 1, this.pipeline);
+            VK10.vkCmdBindPipeline(commands, 1, narrow?this.profilePipeline:this.pipeline);
             VK10.vkCmdBindDescriptorSets(commands, 1, this.layout, 0, stack.longs(set), null);
             ProfileCounters.dispatch();
             VK10.vkCmdDispatch(commands, groupsX, groupsY, groupsZ);
@@ -530,6 +552,7 @@ final class ComputeProgram implements AutoCloseable {
       }
 
       this.availableDescriptors.clear();
+      if(this.profilePipeline!=0){VK10.vkDestroyPipeline(this.device.vkDevice(),this.profilePipeline,null);this.profilePipeline=0;}
       if (this.pipeline != 0L) {
          VK10.vkDestroyPipeline(this.device.vkDevice(), this.pipeline, null);
       }
