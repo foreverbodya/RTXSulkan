@@ -80,6 +80,22 @@ Build 29 succeeds; its runtime JAR SHA256 is
 `FFC96A9A343A91A9A5372BBB68250825662B751E762B1F5EC06FD7E1BBAE9982`.
 That new self-control has not yet been exercised in game.
 
+Follow-up evidence retention now keeps both the first mismatch and the worst
+finite-error pair per phase/pass/resource, with the corresponding uniform buffer
+and a JSON sidecar identifying its frame, maximum component byte offset and
+reference/candidate values. Later smaller errors do not replace the worst pair.
+This addresses the missing frame-574 raw witness above; it cannot recover that
+old frame. Nonfinite components remain counted separately, not silently included
+in the finite maximum. At most one first pair and one worst pair are retained
+per key; intermediate record maxima replace only the worst files.
+
+Build 30 passes. An offline check against the actual `WorkgroupVerification`
+class sends errors 0.125, 0.5, 0.25 and an identical pair on frames 10–13. It
+verifies first-pair retention, worst frame 11/value/offset, no replacement by a
+smaller error or A/A, and seven bounded evidence files. The check source and
+outputs are archived under `evidence/worst-witness-check-1/`. This only verifies
+the writer; it establishes no real-game numerical equivalence or speedup.
+
 Independent cloud temporal run `qa-profile-temporal-cloud-motion-sunset-1`
 failed its geometry guard at warmup index 23, before image capture. The fixed
 controller prewarms the trajectory before pinning geometry; retry is still due.
