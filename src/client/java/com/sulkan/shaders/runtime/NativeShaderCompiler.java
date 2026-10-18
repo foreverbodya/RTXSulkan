@@ -4,6 +4,14 @@ import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.frontend.shaders.SPIRVModule;
 import com.mojang.renderpearl.util.ShaderCompileException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.shaderc.Shaderc;
 
@@ -11,6 +19,8 @@ public final class NativeShaderCompiler implements AutoCloseable {
    private static final int VULKAN_1_2 = 4202496;
    private static final String ENTITY_GEOMETRY_SHADER = "entity_shadow_";
    private static final String SODIUM_TERRAIN_SHADER = "sodium_terrain_";
+   private static final AtomicLong ASSEMBLY_SEQUENCE = new AtomicLong();
+   private final Path assemblyDirectory = qaAssemblyDirectory();
    private final long compiler = Shaderc.shaderc_compiler_initialize();
    private final long options;
    private boolean closed;
@@ -94,8 +104,14 @@ public final class NativeShaderCompiler implements AutoCloseable {
             ByteBuffer sourceBytes = Shaderc.shaderc_result_get_bytes(result);
             if (sourceBytes != null && sourceBytes.hasRemaining()) {
                ByteBuffer copy = MemoryUtil.memAlloc(sourceBytes.remaining());
-               copy.put(sourceBytes.duplicate()).flip();
-               return new NativeShaderCompiler.ComputeModule(copy);
+               try {
+                  copy.put(sourceBytes.duplicate()).flip();
+                  if (this.assemblyDirectory != null) dumpComputeAssembly(name, source, copy);
+                  return new NativeShaderCompiler.ComputeModule(copy);
+               } catch (Throwable failure) {
+                  MemoryUtil.memFree(copy);
+                  throw failure;
+               }
             } else {
                throw new ShaderCompileException("Empty compute module");
             }
@@ -106,6 +122,10 @@ public final class NativeShaderCompiler implements AutoCloseable {
    }
 
    private long compileSpirv(String name, String source, int kind) {
+      return compileNative(name, source, kind, false);
+   }
+
+   private long compileNative(String name, String source, int kind, boolean assembly) {
       // The CharSequence overload encodes the entire expanded shader on LWJGL's
       // small per-thread stack. Source length must not exhaust that stack.
       ByteBuffer sourceUtf8 = null, nameUtf8 = null, entryUtf8 = null;
@@ -113,12 +133,69 @@ public final class NativeShaderCompiler implements AutoCloseable {
          sourceUtf8 = MemoryUtil.memUTF8(source, false);
          nameUtf8 = MemoryUtil.memUTF8(name);
          entryUtf8 = MemoryUtil.memUTF8("main");
-         return Shaderc.shaderc_compile_into_spv(this.compiler, sourceUtf8, kind, nameUtf8, entryUtf8, this.options);
+         return assembly
+            ? Shaderc.shaderc_compile_into_spv_assembly(this.compiler, sourceUtf8, kind, nameUtf8, entryUtf8, this.options)
+            : Shaderc.shaderc_compile_into_spv(this.compiler, sourceUtf8, kind, nameUtf8, entryUtf8, this.options);
       } finally {
          if (entryUtf8 != null) MemoryUtil.memFree(entryUtf8);
          if (nameUtf8 != null) MemoryUtil.memFree(nameUtf8);
          if (sourceUtf8 != null) MemoryUtil.memFree(sourceUtf8);
       }
+   }
+
+   private static Path qaAssemblyDirectory() {
+      String directory = System.getProperty("sulkan.qaShaderAssemblyDirectory");
+      if (directory == null || directory.isBlank()) return null;
+      if (!Boolean.getBoolean("sulkan.qaReadback")) {
+         throw new IllegalStateException("Shader assembly dumping requires sulkan.qaReadback=true");
+      }
+      return Path.of(directory).toAbsolutePath().normalize();
+   }
+
+   /** Second, opt-in startup compilation only; the previously compiled binary is returned untouched. */
+   private void dumpComputeAssembly(String name, String source, ByteBuffer binary) throws ShaderCompileException {
+      long assembly = compileNative(name, source, 2, true);
+      if (assembly == 0L) throw new ShaderCompileException("Could not allocate QA assembly result for " + name);
+      try {
+         if (Shaderc.shaderc_result_get_compilation_status(assembly) != 0) {
+            throw new ShaderCompileException("QA assembly for " + name + ": " + Shaderc.shaderc_result_get_error_message(assembly));
+         }
+         ByteBuffer bytes = Shaderc.shaderc_result_get_bytes(assembly);
+         if (bytes == null || !bytes.hasRemaining()) throw new ShaderCompileException("Empty QA assembly for " + name);
+         String text = StandardCharsets.UTF_8.decode(bytes.duplicate()).toString();
+         // shaderc textual results may include their terminating NUL.
+         while (text.endsWith("\0")) text = text.substring(0, text.length() - 1);
+         String safeName = name.replaceAll("[^A-Za-z0-9._-]", "_");
+         if (safeName.isEmpty()) safeName = "compute";
+         if (safeName.length() > 96) safeName = safeName.substring(0, 96);
+         String stem = String.format(java.util.Locale.ROOT, "%06d-%s", ASSEMBLY_SEQUENCE.incrementAndGet(), safeName);
+         byte[] originalBinary = new byte[binary.remaining()];
+         binary.duplicate().get(originalBinary);
+         Files.createDirectories(this.assemblyDirectory);
+         // Do not overwrite artifacts from another launch accidentally reusing a directory.
+         Files.write(this.assemblyDirectory.resolve(stem + ".spv"), originalBinary, StandardOpenOption.CREATE_NEW);
+         Files.writeString(this.assemblyDirectory.resolve(stem + ".spvasm"), text, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+         var metadata = new LinkedHashMap<String, Object>();
+         metadata.put("passLabel", name); metadata.put("kind", "compute");
+         metadata.put("profileLabel", name.contains("/") ? name.substring(name.indexOf('/') + 1) : "normal");
+         metadata.put("optimizationLevel", 2); metadata.put("target", "Vulkan 1.2");
+         metadata.put("sourceSha256", sha256(source.getBytes(StandardCharsets.UTF_8)));
+         metadata.put("binarySha256", sha256(originalBinary));
+         metadata.put("assemblySha256", sha256(text.getBytes(StandardCharsets.UTF_8)));
+         metadata.put("scope", "Opt-in separate shaderc assembly compilation with the same compute source/options. Original production binary retained unchanged. Includes debug information: raw hashes/instruction counts are not GPU performance or machine-code measurements. Compile/dump I/O belongs outside timed profiling windows.");
+         Files.writeString(this.assemblyDirectory.resolve(stem + ".json"),
+            new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(metadata), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+      } catch (ShaderCompileException failure) {
+         throw failure;
+      } catch (Exception failure) {
+         throw new ShaderCompileException("QA assembly dump failed for " + name + ": " + failure);
+      } finally {
+         Shaderc.shaderc_result_release(assembly);
+      }
+   }
+
+   private static String sha256(byte[] bytes) throws java.security.NoSuchAlgorithmException {
+      return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
    }
 
    @Override

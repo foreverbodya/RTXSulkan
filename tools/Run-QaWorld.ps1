@@ -70,12 +70,13 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $RayQueryCounts,
+    [switch] $TemporalProfile,
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
     [switch] $WorkgroupExperiment,
     [switch] $NativeFrameComparison,
     [switch] $SkipImageComparison,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string] $ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material")][string] $ComputeExperiment = "workgroup",
     [ValidateSet(3000,12600,18000)][int] $ProfileTime = 3000,
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
@@ -115,6 +116,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
+if($TemporalProfile -and (!$PerformanceProfile -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
 if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
@@ -398,6 +400,7 @@ if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotio
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
+if($TemporalProfile){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaTemporalProfile=true')}
 if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
 if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
 $startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")
@@ -473,9 +476,10 @@ if($RaySurfaceProbe) {
     $missing=@($required | Where-Object{!$combined.Contains($_)})
     if($combined.Contains('SULKAN_RAY_SURFACE_GPU_FAIL')) {$missing+='Ray surface GPU diagnostic failed'}
 } elseif($PerformanceProfile) {
-    $required=@('SULKAN_PERFORMANCE_PROFILE_PASS','SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
+    $profileMarker=if($TemporalProfile){'SULKAN_TEMPORAL_PROFILE_PASS'}else{'SULKAN_PERFORMANCE_PROFILE_PASS'}
+    $required=@($profileMarker,'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
     $missing=@($required | Where-Object{!$combined.Contains($_)})
-    foreach($phase in $ProfilePlan.Split(',')){
+    foreach($phase in $(if($TemporalProfile){@()}else{$ProfilePlan.Split(',')})){
         $marker=if($RayQueryCounts){"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase=$phase"}else{"SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase "}
         if(!$combined.Contains($marker)){$missing+="Profile missing $phase"}
     }
@@ -714,7 +718,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison

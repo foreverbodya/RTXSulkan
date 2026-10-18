@@ -31,6 +31,19 @@ vec3 sulkanRayVertexPosition(SulkanRayMeshData mesh, uint vertex) {
     uint word = 4u + vertex * 8u;
     return uintBitsToFloat(uvec3(mesh.words[word],mesh.words[word+1u],mesh.words[word+2u]));
 }
+// The full surface decoder takes flat material from the first indexed vertex.
+// Read exactly that word when only classification is needed: no barycentric,
+// atlas-size, interpolated attributes or normal calculation participates.
+// Compact quads and legacy explicit indices follow the same paths as below.
+uint sulkanRayMaterial(uint header,uint primitive) {
+    SulkanRayMeshData mesh=SulkanRayMeshData(uvec2(SulkanRayAttributeData.words[header],SulkanRayAttributeData.words[header+1u]));
+    bool compact=mesh.words[3]==28u;
+    uint first;
+    if(compact)first=(primitive/2u)*4u+((primitive&1u)==0u?0u:2u);
+    else first=mesh.words[4u+mesh.words[0]*8u+primitive*3u];
+    uint word=4u+first*(compact?7u:8u)+(compact?5u:7u);
+    return mesh.words[word]&65535u;
+}
 SulkanRaySurface sulkanRayAttributes(uint header, uint primitive, vec2 bary, vec2 shrink) {
     SulkanRayMeshData mesh=SulkanRayMeshData(uvec2(SulkanRayAttributeData.words[header],SulkanRayAttributeData.words[header+1u]));
     bool compact=mesh.words[3]==28u;

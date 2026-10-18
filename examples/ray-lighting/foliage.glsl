@@ -40,6 +40,9 @@ vec3 foliageShadow(sampler2D atlas,vec3 origin,vec3 direction,float maximum) {
 #ifndef SULKAN_SOLID_SHADOW_PREFLIGHT
 #define SULKAN_SOLID_SHADOW_PREFLIGHT 1
 #endif
+#ifndef SULKAN_SHADOW_MATERIAL_LOOKUP
+#define SULKAN_SHADOW_MATERIAL_LOOKUP 0
+#endif
 #if SULKAN_SOLID_SHADOW_PREFLIGHT == 1
     // A solid non-leaf anywhere on this segment makes the final transmission
     // zero. Let hardware find that inexpensive case before enumerating every
@@ -49,10 +52,18 @@ vec3 foliageShadow(sampler2D atlas,vec3 origin,vec3 direction,float maximum) {
         1,origin,.002,direction,maximum);
     while(rayQueryProceedEXT(solid)) {}
     if(rayQueryGetIntersectionTypeEXT(solid,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
+#if SULKAN_SHADOW_MATERIAL_LOOKUP == 1
+        // Exact first-vertex material lookup; all ray and shadow decisions match
+        // the full decoder. This optional candidate needs measured GPU A/B:
+        // the driver may already eliminate unused full-surface calculations.
+        if(sulkanRayMaterial(rayQueryGetIntersectionInstanceCustomIndexEXT(solid,true),
+            rayQueryGetIntersectionPrimitiveIndexEXT(solid,true))!=5u)return vec3(0);
+#else
         SulkanRaySurface blocker=sulkanRayAttributes(rayQueryGetIntersectionInstanceCustomIndexEXT(solid,true),
             rayQueryGetIntersectionPrimitiveIndexEXT(solid,true),rayQueryGetIntersectionBarycentricsEXT(solid,true),
             sulkanRayAtlasShrink(textureSize(atlas,0)));
         if(blocker.material!=5u)return vec3(0);
+#endif
     }
 #endif
     vec3 transmission=vec3(1);

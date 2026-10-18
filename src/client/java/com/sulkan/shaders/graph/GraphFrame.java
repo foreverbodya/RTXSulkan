@@ -21,6 +21,11 @@ import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
 final class GraphFrame {
+   private static final boolean QA_TEMPORAL=Boolean.getBoolean("sulkan.qaTemporalProfile");
+   private static float[] qaFixedEnvironment;
+   static com.sulkan.shaders.diagnostics.QaTemporalProfile.FrameClock qaClock() {
+      return QA_TEMPORAL?com.sulkan.shaders.diagnostics.QaTemporalProfile.clock():null;
+   }
    static final String MEMBERS = "mat4 Projection; mat4 View; mat4 InverseProjection; mat4 InverseView;\nmat4 PreviousProjection; mat4 PreviousView;\nvec4 CameraDeltaAndHistoryValid; vec4 TimeDeltaFrame; vec4 ViewSizeAndInverse;\nvec4 WorldTimeWeatherDimension; vec4 SunDirectionAndRainBrightness; vec4 MoonDirectionAndPhase;\nvec4 CameraPositionHighAndFogType; vec4 CameraPositionLowAndFarPlane;\nvec4 FogColorAndStart; vec4 FogDistances; vec4 SkyColorAndStarBrightness;\nvec4 CloudOffsetAndGameTime;\nmat4 InverseHandProjection; vec4 HandProjectionValid;\n      vec4 HeldLightPositionRadius; vec4 HeldLightColor;\n      mat4 HeldLightViewProjection[6];\nvec4 CurrentAndPreviousJitter;\nvec4 RaySceneOrigin; vec4 RayCameraPosition;\nuvec4 RaySceneState;\nuvec4 RaySceneFlags;\n";
    private final Matrix4f previousProjection = new Matrix4f();
    private final Matrix4f previousView = new Matrix4f();
@@ -101,6 +106,7 @@ final class GraphFrame {
    }
 
    void environment(LevelRenderState state, ClientLevel level, float partialTick) {
+      if(qaClock()!=null)partialTick=0;
       Arrays.fill(this.environment, 0.0F);
       this.partialTick = partialTick;
       this.heldLight.update(level, partialTick, this.heldLighting);
@@ -183,15 +189,17 @@ final class GraphFrame {
    }
 
    boolean globalDiscontinuity(CameraRenderState camera, Object currentWorld) {
+      var qa=qaClock();
       return !this.valid
          || this.world != currentWorld
          || camera == null
          || camera.pos == null
          || Math.pow(camera.pos.x - this.x, 2.0) + Math.pow(camera.pos.y - this.y, 2.0) + Math.pow(camera.pos.z - this.z, 2.0) > 256.0
-         || System.nanoTime() - this.lastTime > 1000000000L;
+         || (qa!=null?qa.index()==0:System.nanoTime() - this.lastTime > 1000000000L);
    }
 
    GpuBufferSlice upload(CommandEncoder encoder, CameraRenderState camera, Matrix4fc view, int width, int height, boolean reset) {
+      var qa=qaClock();
       this.frameReset = reset;
       Matrix4f projection = camera != null && camera.projectionMatrix != null ? new Matrix4f(this.projection(camera)) : new Matrix4f();
       Matrix4f model = view == null ? new Matrix4f() : new Matrix4f(view);
@@ -209,10 +217,10 @@ final class GraphFrame {
          this.bytes.putFloat(reset ? 0.0F : 1.0F);
          long now = System.nanoTime();
          this.bytes
-            .putFloat((float)(now - this.start) * 1.0E-9F)
-            .putFloat(reset ? 0.0F : (float)(now - this.lastTime) * 1.0E-9F)
-            .putFloat(reset ? 0.0F : this.frame)
-            .putFloat(this.partialTick);
+            .putFloat(qa!=null?qa.seconds():(float)(now - this.start) * 1.0E-9F)
+            .putFloat(reset ? 0.0F : qa!=null?qa.delta():(float)(now - this.lastTime) * 1.0E-9F)
+            .putFloat(qa!=null?qa.index():reset ? 0.0F : this.frame)
+            .putFloat(qa!=null?0:this.partialTick);
          this.bytes.putFloat(width).putFloat(height).putFloat(1.0F / width).putFloat(1.0F / height);
          if (camera != null) {
             if (camera.pos != null) {
@@ -261,6 +269,13 @@ final class GraphFrame {
             }
          }
 
+         if(qa!=null) {
+            // Freeze only environment/time inputs of this already frozen QA world.
+            // Camera, local sky-light interpolation and fog remain trajectory-driven.
+            if(qaFixedEnvironment==null)qaFixedEnvironment=this.environment.clone();
+            System.arraycopy(qaFixedEnvironment,0,this.environment,0,12);
+            System.arraycopy(qaFixedEnvironment,28,this.environment,28,6);
+         }
          for (float value : this.environment) {
             this.bytes.putFloat(value);
          }
@@ -277,7 +292,7 @@ final class GraphFrame {
          this.bytes.putFloat((float)(rayCamera.x-this.rayOrigin.x())).putFloat((float)(rayCamera.y-this.rayOrigin.y()))
             .putFloat((float)(rayCamera.z-this.rayOrigin.z())).putFloat(0);
          this.bytes.putInt((int)this.raySceneGeneration).putInt((int)(this.raySceneGeneration>>>32))
-            .putInt(this.rayScenePending).putInt(reset?0:this.frame);
+            .putInt(this.rayScenePending).putInt(qa!=null?qa.index():reset?0:this.frame);
          this.bytes.putInt(this.raySceneAvailable?1:0).putInt(emissionTriangles).putInt((int)emissionAddress).putInt((int)(emissionAddress>>>32));
          this.bytes.flip();
          return encoder.transientMemory().uploadGpu(this.bytes, RenderSystem.getDevice().getDeviceInfo().limits().minUniformOffsetAlignment(), 128);

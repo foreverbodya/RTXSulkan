@@ -193,14 +193,15 @@ final class ComputeProgram implements AutoCloseable {
                }
                boolean cloudCell="cloud-cell".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"));
                boolean exactVolume=System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d");
-               boolean target=exactVolume ? pass.reads().containsKey("CloudExactNoise") : cloudCell ? java.util.Set.of("cloud.view","cloud.environment","cloud.composite","cloud.shadow").contains(pass.name()) : PROFILE_GROUP_TARGETS.contains(pass.name());
+               boolean shadowMaterial="shadow-material".equals(System.getProperty("sulkan.qaComputeExperiment"));
+               boolean target=shadowMaterial ? pass.rayScene() && pass.rayAttributes() : exactVolume ? pass.reads().containsKey("CloudExactNoise") : cloudCell ? java.util.Set.of("cloud.view","cloud.environment","cloud.composite","cloud.shadow").contains(pass.name()) : PROFILE_GROUP_TARGETS.contains(pass.name());
                if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && target && pass.localSize().equals(java.util.List.of(8,8,1))) {
                   String variantSource;
-                  if(cloudCell || exactVolume) {
-                     var alternateDefines=new java.util.LinkedHashMap<>(shaderDefines);alternateDefines.put(exactVolume?"SULKAN_CLOUD_NOISE_EXACT_3D":"SULKAN_CLOUD_CELL_FAST_PATH",1d);
+                  if(cloudCell || exactVolume || shadowMaterial) {
+                     var alternateDefines=new java.util.LinkedHashMap<>(shaderDefines);alternateDefines.put(shadowMaterial?"SULKAN_SHADOW_MATERIAL_LOOKUP":exactVolume?"SULKAN_CLOUD_NOISE_EXACT_3D":"SULKAN_CLOUD_CELL_FAST_PATH",1d);
                      variantSource=source(graph,pass,files.shader(pass.compute(),alternateDefines));this.profileLocalY=8;
                   } else variantSource=source(graph,pass,files.shader(pass.compute(),shaderDefines)).replace("local_size_y=8,","local_size_y=4,");
-                  this.profilePipeline=compileProfilePipeline(pass.name()+"/"+(exactVolume?"cloud-3d":cloudCell?"cloud-cell":"8x4"),variantSource);
+                  this.profilePipeline=compileProfilePipeline(pass.name()+"/"+(shadowMaterial?"shadow-material":exactVolume?"cloud-3d":cloudCell?"cloud-cell":"8x4"),variantSource);
                }
             } catch (Throwable var35) {
                if (stack != null) {

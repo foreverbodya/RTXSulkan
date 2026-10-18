@@ -948,7 +948,7 @@ public final class GraphRenderer implements AutoCloseable {
          .putFloat((float)(camera.pos.x - Math.floor(camera.pos.x / 4096.0) * 4096.0))
          .putFloat((float)(camera.pos.y - Math.floor(camera.pos.y / 4096.0) * 4096.0))
          .putFloat((float)(camera.pos.z - Math.floor(camera.pos.z / 4096.0) * 4096.0))
-         .putFloat((float)(System.nanoTime() - WIND_START) * 1.0E-9F);
+         .putFloat(GraphFrame.qaClock()!=null?GraphFrame.qaClock().seconds():(float)(System.nanoTime() - WIND_START) * 1.0E-9F);
       this.windBytes.putFloat(this.graph.options().getOrDefault("VEGETATION_WIND", 0.0).floatValue()).putFloat(0.0F).putFloat(0.0F).putFloat(0.0F).flip();
       this.windUniforms = encoder.transientMemory()
          .uploadGpu(this.windBytes, RenderSystem.getDevice().getDeviceInfo().limits().minUniformOffsetAlignment(), 128);

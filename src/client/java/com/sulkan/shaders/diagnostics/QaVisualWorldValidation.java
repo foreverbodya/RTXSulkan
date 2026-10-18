@@ -38,6 +38,7 @@ final class QaVisualWorldValidation {
     private static int stage;
     private static QaRoughNoiseSequence roughNoise;
     private static QaPerformanceProfile performanceProfile;
+    private static QaTemporalProfile temporalProfile;
     private static boolean pending,stopped;
     private static long started,phaseStart,previousFrame;
     private static String phase=Boolean.getBoolean("sulkan.qaNightOnly")?"night":"day";
@@ -294,7 +295,11 @@ final class QaVisualWorldValidation {
                     var reference=referenceGeometry.putIfAbsent(LIGHTING_AUDIT?"audit":phase,measuredGeometryHash);
                     if(reference!=null && !reference.equals(measuredGeometryHash))throw new IllegalStateException("Comparison geometry changed between trials phase="+phase+" expected="+reference+" actual="+measuredGeometryHash);
                 }
-                if(Boolean.getBoolean("sulkan.qaPerformanceProfile")){performanceProfile=new QaPerformanceProfile(evidence,fixedPose,scene);stage=5;return;}
+                if(Boolean.getBoolean("sulkan.qaPerformanceProfile")){
+                    if(Boolean.getBoolean("sulkan.qaTemporalProfile"))temporalProfile=new QaTemporalProfile(evidence,fixedPose,scene);
+                    else performanceProfile=new QaPerformanceProfile(evidence,fixedPose,scene);
+                    stage=5;return;
+                }
                 measuredGeometryRevision=stats.revision();measuredRayScene=rays;
                 roughNoise=Boolean.getBoolean("sulkan.qaRoughNoiseSequence")?new QaRoughNoiseSequence(evidence,captureName()):null;
                 NativePackRuntime.diagnosticBeginGpuTimings(captureName(),evidence);
@@ -307,7 +312,7 @@ final class QaVisualWorldValidation {
 
     static void frameRendered() {
         if(stopped || pending) return;
-        if(stage==5){try{validatePose(Minecraft.getInstance());if(performanceProfile.observe()){stopped=true;Minecraft.getInstance().stop();}else{fixedPose=performanceProfile.pose();applyPose(Minecraft.getInstance());}}catch(Throwable problem){fail(Minecraft.getInstance(),problem);}return;}
+        if(stage==5){try{validatePose(Minecraft.getInstance());if(temporalProfile!=null?temporalProfile.observe():performanceProfile.observe()){stopped=true;Minecraft.getInstance().stop();}else{fixedPose=temporalProfile!=null?temporalProfile.pose():performanceProfile.pose();applyPose(Minecraft.getInstance());}}catch(Throwable problem){fail(Minecraft.getInstance(),problem);}return;}
         if(stage!=3)return;
         var client=Minecraft.getInstance();
         try {
