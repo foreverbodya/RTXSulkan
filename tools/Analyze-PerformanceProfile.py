@@ -27,6 +27,11 @@ def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
     artifact = json.loads((root / "result.json").read_text(encoding="utf-8"))
+    assessment_path = root / "performance-assessment.json"
+    assessment = json.loads(assessment_path.read_text(encoding="utf-8")) if assessment_path.exists() else None
+    invalid_reasons = assessment.get("invalidReasons", []) if assessment else []
+    if not isinstance(invalid_reasons, list) or any(not isinstance(reason, str) or not reason.strip() for reason in invalid_reasons):
+        raise ValueError(f"{assessment_path}: invalidReasons must be a list of nonempty strings")
     if artifact.get("rayQueryCounts"):
         raise ValueError(f"{root}: instrumented ray-count run has no performance baseline; use ray-query-counts-*.json")
     if artifact.get("temporalProfile"):
@@ -109,7 +114,9 @@ def load_run(root):
                 row["deviceGpuUtilMeanPercent"] = sum(float(r[1]) for r in samples) / len(samples)
                 row["deviceGpuUtilSamples"] = len(samples)
         reports.append(row)
+        row["measurementInvalidReasons"] = invalid_reasons
     return {"root": str(root.resolve()), "reports": reports, "allPhasesCompleted":completed,
+            "performanceAssessment": assessment,
             "artifact": artifact,
             "scope": "GPU world excludes UI/swapchain. CPU is render-thread active CPU, not all process CPU. Native allocation bytes exclude engine/Sodium/NGX. Device VRAM/usage are WDDM device-wide 500ms samples, not isolated process residency or guaranteed instantaneous peaks."}
 
@@ -124,7 +131,7 @@ def comparisons(run):
             continue
         a,b,c = [phases[k] for k in keys]
         geometry = {r[k] for r in (a,b,c) for k in ("geometryStart", "geometryEnd")}
-        invalid=[]
+        invalid=list(dict.fromkeys(reason for r in (a,b,c) for reason in r.get("measurementInvalidReasons", [])))
         if [r["candidateSelected"] for r in (a,b,c)]!=[False,True,False]:invalid.append("selection is not reference/candidate/reference")
         if len(geometry)!=1:invalid.append("geometry differs")
         if not (a["configuration"]==b["configuration"]==c["configuration"]):invalid.append("configuration differs")
@@ -240,6 +247,9 @@ def main():
         root = Path(run)
         for f in sorted((root / "evidence").glob("*.json")):
             hashes[str(f.resolve())] = hashlib.sha256(f.read_bytes()).hexdigest()
+        assessment_path = root / "performance-assessment.json"
+        if assessment_path.exists():
+            hashes[str(assessment_path.resolve())] = hashlib.sha256(assessment_path.read_bytes()).hexdigest()
     (output / "report-sha256.json").write_text(json.dumps(hashes, indent=2))
     print("\n".join(lines))
 

@@ -726,10 +726,8 @@ public final class GraphRenderer implements AutoCloseable {
                   dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
                   var originals=new java.util.LinkedHashMap<String,java.util.concurrent.CompletableFuture<ByteBuffer>>();
                   for(String output:node.writes())originals.put(output,readbackTexture(this.image(output).texture,output+"/8x8"));
-                  if(node.name().equals("cloud.environment")) {
-                     dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
-                     for(String output:node.writes())WorkgroupVerification.compare(node.name()+".self",output,this.image(output).texture.getFormat().name(),this.diagnosticFrame(),originals.get(output),readbackTexture(this.image(output).texture,output+"/repeat"));
-                  }
+                  dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
+                  for(String output:node.writes())WorkgroupVerification.compare(node.name()+".self",output,this.image(output).texture.getFormat().name(),this.diagnosticFrame(),originals.get(output),readbackTexture(this.image(output).texture,output+"/repeat"));
                   System.setProperty("sulkan.qaProfileGroupY","4");
                   dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
                   var actualFrame=this.diagnosticFrame();
