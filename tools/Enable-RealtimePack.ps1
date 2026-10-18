@@ -51,10 +51,10 @@ if($Step -ge 5){
     }
     $manifest.passes+=@{name='cloud.source.light';compute='shaders/realtime-cloud-light.comp';localSize=@(8,4,8);
         reads=@{CloudLayout='$texture/vanilla-clouds';CloudNoise='$texture/cloud-cellular';State='cloud.source.state';PreviousLight='cloud.source.light@previous';PreviousAmbient='cloud.source.ambient@previous';PreviousState='cloud.source.state@previous'};writes=@('cloud.source.light','cloud.source.ambient')}
-    # Half width/height means one quarter of input pixels (854x480 at DLSS
-    # Quality input 1707x960). The reconstruction itself remains full output.
-    foreach($name in @('cloud.view','cloud.accum')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';scale=0.5;history=$true}}
-    $manifest.resources['cloud.geometry'].scale=0.5;$manifest.resources['cloud.geometry'].history=$true
+    # Explicit quarter width/height: 427x240 for DLSS Quality input 1707x960.
+    # Only the cloud layer uses this scale; world reconstruction stays 1440p.
+    foreach($name in @('cloud.view','cloud.accum')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';scale=0.25;history=$true}}
+    $manifest.resources['cloud.geometry'].scale=0.25;$manifest.resources['cloud.geometry'].history=$true
     $manifest.resources['cloud.environment'].size=@(128,64,1)
     $environmentPass=$manifest.passes|Where-Object{$_.name -eq 'cloud.environment'}
     $environmentPass.reads['PreviousSky']='cloud.environment@previous'
