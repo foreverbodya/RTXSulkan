@@ -72,6 +72,11 @@ public final class NativePackRuntime {
    public static boolean diagnosticGpuTimingsReady() {
       return active!=null && active.diagnosticGpuTimingsReady();
    }
+   public static Map<String,Object> diagnosticMemoryBudget() {
+      if(!Boolean.getBoolean("sulkan.qaReadback"))throw new IllegalStateException("Diagnostic memory query disabled");
+      var device=(com.mojang.renderpearl.backend.vulkan.VulkanDevice)((com.sulkan.shaders.mixin.GraphDeviceAccessor)RenderSystem.getDevice()).sulkan$backend();
+      return com.sulkan.shaders.platform.vulkan.GpuMemorySnapshot.capture(device.vkDevice());
+   }
    public static Map<String,Double> diagnosticOptions() { return active.diagnosticOptions(); }
    public static Map<String,String> diagnosticPassInputs(String name) {
       if(active==null)throw new IllegalStateException("No active pack");return active.diagnosticPassInputs(name);

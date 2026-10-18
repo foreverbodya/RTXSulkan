@@ -21,6 +21,18 @@ vec4 cinematicCloudCellularScale(sampler2D layoutTexture,sampler2D noiseTexture,
     ivec2 slice1=ivec2((b.z&15)*128,(b.z>>4)*128);
     vec3 v=1.0-w;
     precise vec4 result=vec4(0);
+#if defined(SULKAN_CLOUD_NOISE_EXACT_3D) && SULKAN_CLOUD_NOISE_EXACT_3D == 1
+    // Same eight RGBA8 texel codes, same explicit weights and accumulation order.
+    // Only texture storage/addressing changes; hardware interpolation is unused.
+    result+=texelFetch(CloudExactNoise,a+ivec3(1),0)*v.x*v.y*v.z;
+    result+=texelFetch(CloudExactNoise,ivec3(b.x,a.y,a.z)+ivec3(1),0)*w.x*v.y*v.z;
+    result+=texelFetch(CloudExactNoise,ivec3(a.x,b.y,a.z)+ivec3(1),0)*v.x*w.y*v.z;
+    result+=texelFetch(CloudExactNoise,ivec3(b.x,b.y,a.z)+ivec3(1),0)*w.x*w.y*v.z;
+    result+=texelFetch(CloudExactNoise,ivec3(a.x,a.y,b.z)+ivec3(1),0)*v.x*v.y*w.z;
+    result+=texelFetch(CloudExactNoise,ivec3(b.x,a.y,b.z)+ivec3(1),0)*w.x*v.y*w.z;
+    result+=texelFetch(CloudExactNoise,ivec3(a.x,b.y,b.z)+ivec3(1),0)*v.x*w.y*w.z;
+    result+=texelFetch(CloudExactNoise,b+ivec3(1),0)*w.x*w.y*w.z;
+#else
     result+=texelFetch(noiseTexture,slice0+ivec2(a.x,a.y),0)*v.x*v.y*v.z;
     result+=texelFetch(noiseTexture,slice0+ivec2(b.x,a.y),0)*w.x*v.y*v.z;
     result+=texelFetch(noiseTexture,slice0+ivec2(a.x,b.y),0)*v.x*w.y*v.z;
@@ -29,6 +41,7 @@ vec4 cinematicCloudCellularScale(sampler2D layoutTexture,sampler2D noiseTexture,
     result+=texelFetch(noiseTexture,slice1+ivec2(b.x,a.y),0)*w.x*v.y*w.z;
     result+=texelFetch(noiseTexture,slice1+ivec2(a.x,b.y),0)*v.x*w.y*w.z;
     result+=texelFetch(noiseTexture,slice1+ivec2(b.x,b.y),0)*w.x*w.y*w.z;
+#endif
     return result;
 }
 vec4 cinematicCloudCellular(sampler2D layoutTexture,sampler2D noiseTexture,vec3 p) {

@@ -88,7 +88,7 @@ final class QaPerformanceProfile {
             var rays=NativePackRuntime.diagnosticRayScene();
             perFrame.add(Map.of("index",frame,"pose",pose(),"pendingSections",rays.pendingSections(),
                 "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",TerrainGeometryCache.statistics().revision(),
-                "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
+                "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"vulkanMemory",NativePackRuntime.diagnosticMemoryBudget(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
             frame++;
             if(frame==FRAMES) {
                 endEpochMs=System.currentTimeMillis();rayEnd=NativePackRuntime.diagnosticRayScene();memoryEnd=NativeBuffer.statistics();
@@ -106,11 +106,12 @@ final class QaPerformanceProfile {
         report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
         report.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));
         report.put("candidateSelected",phase().startsWith("narrow-"));
-        report.put("workgroupY",phase().startsWith("narrow-") && !"cloud-cell".equals(System.getProperty("sulkan.qaComputeExperiment"))?4:8);report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
+        report.put("workgroupY",phase().startsWith("narrow-") && "workgroup".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"))?4:8);report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
         report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",geometryEnd);
         report.put("rayStart",rayStart);report.put("rayEnd",rayEnd);
         report.put("workCountersStart",countersStart);report.put("workCountersEnd",countersEnd);
         report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",memoryEnd);
+        report.put("vulkanMemoryEnd",NativePackRuntime.diagnosticMemoryBudget());
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
         report.put("sourceRevisionUnchanged",perFrame.stream().map(row->((Map<?,?>)row).get("geometryRevision")).distinct().count()==1);
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());

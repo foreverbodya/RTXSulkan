@@ -70,7 +70,7 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $WorkgroupExperiment,
-    [ValidateSet("workgroup","cloud-cell")][string] $ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d")][string] $ComputeExperiment = "workgroup",
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
     [switch] $CloudLightingComparison,
@@ -273,6 +273,7 @@ if ($RayVisibility -or $RayLighting) {
     if($DistantWorldDiagnostic){$createArguments.DistantWorldDiagnostic=$true}
     if($CloudDiagnostic) {$createArguments.CloudDiagnostic=$true}
     if($CloudPreview) {$createArguments.CloudPreview=$true}
+    if($ComputeExperiment -eq "cloud-3d"){$createArguments.CloudExactVolume=$true}
     if($SolidShadowComparison){$createArguments.SolidShadowComparison=$true}
     if($CloudLightingComparison){$createArguments.CloudLightingComparison=$true}
     if($CloudLightingVolume){$createArguments.CloudLightingVolume=$true}

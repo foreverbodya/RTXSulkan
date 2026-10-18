@@ -5,7 +5,7 @@ param(
     [string]$InstanceMods = 'work/qa-world-dlss-5/mods',
     [string]$ProfilePlan = 'static,motion,off-clouds,off-gi,off-reflections,off-water,off-shadows,off-denoising,static-repeat,stream,settled',
     [switch]$WorkgroupExperiment,
-    [ValidateSet("workgroup","cloud-cell")][string]$ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6
 )
 $ErrorActionPreference='Stop'
