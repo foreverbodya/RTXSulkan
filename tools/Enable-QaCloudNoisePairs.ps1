@@ -25,6 +25,7 @@ $paired="precise vec4 qaReference=vec4(0),qaCandidate=vec4(0);`n"+$match.Groups[
     qaCloudNoiseMetrics.w+=any(notEqual(qaReference,qaCandidate))?1.0:0.0;
     result=qaReference;
 '@
+$paired="#ifdef SULKAN_HAS_BINDING_CLOUDEXACTNOISE`n"+$paired+"`n#else`n"+$match.Value+"`n#endif"
 $source=$source.Replace($match.Value,$paired)
 $globals="vec4 qaCloudNoiseMetrics=vec4(0),qaCloudNoisePoint=vec4(0),qaCloudNoiseReference=vec4(0),qaCloudNoiseCandidate=vec4(0);`n"
 $source=$source.Replace('#define SULKAN_CINEMATIC_CLOUD_CELLULAR',"#define SULKAN_CINEMATIC_CLOUD_CELLULAR`n$globals")
