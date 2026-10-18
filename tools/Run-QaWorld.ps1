@@ -118,6 +118,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($RealtimeStep -ge 2){$EmissiveSampling=1;$EmissiveMaterials=$true;$SunShadowSamples=1;$SunIndirectSamples=1}
 if($RealtimeStep -ge 3){$IndirectBounces=2;$IndirectSamples=1;$LeafIndirect=$false}
 
 if($CloudEnvironmentInputs -and (!$PerformanceProfile -or !$CloudPreview -or !$WorkgroupExperiment -or $ComputeExperiment -ne 'cloud-3d-env' -or $CloudNoisePairs -or $RayQueryCounts -or $TemporalProfile -or $NativeFrameComparison -or $CanonicalPackComparison -or $SkipImageComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudEnvironmentInputs requires one cloud environment A/A/B probe'}
