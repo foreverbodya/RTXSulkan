@@ -578,7 +578,7 @@ public final class GraphRenderer implements AutoCloseable {
             ensureQaReconstruction(destination);
             System.setProperty("sulkan.qaProfileGroupY","8");
             renderSchedule(encoder,uniforms,main,directPresent,rayHandle,rayAttributes);
-            var hdrA=readbackTexture(this.image(this.graph.reconstruction().color()).texture,"HDR reference");
+            var inputsA=qaReconstructionReadbacks("reference");
             qaReconstruct(this.qaReference,reset || this.qaQualityFrames==0);
             var displayA=qaPresent(this.qaReference.output(),"reference");
             // Same untouched input resources, jitter/reset and independent NGX history.
@@ -587,13 +587,11 @@ public final class GraphRenderer implements AutoCloseable {
             NativeFrameComparison.capture("self",this.diagnosticFrame(),this.qaQualityFrames,destination.width,destination.height,displayA,displaySelf);
             this.buffers.beginFrame(this.parity,false);
             renderSchedule(encoder,uniforms,main,directPresent,rayHandle,rayAttributes);
-            var hdrSelf=readbackTexture(this.image(this.graph.reconstruction().color()).texture,"HDR self");
-            WorkgroupVerification.compare("frame.self",this.graph.reconstruction().color(),"RGBA16_FLOAT",this.diagnosticFrame(),hdrA,hdrSelf);
+            qaCompareReconstructionInputs("frame.self",inputsA,qaReconstructionReadbacks("self"));
             this.buffers.beginFrame(this.parity,false);
             System.setProperty("sulkan.qaProfileGroupY","4");
             renderSchedule(encoder,uniforms,main,directPresent,rayHandle,rayAttributes);
-            var hdrB=readbackTexture(this.image(this.graph.reconstruction().color()).texture,"HDR candidate");
-            WorkgroupVerification.compare("frame.candidate",this.graph.reconstruction().color(),"RGBA16_FLOAT",this.diagnosticFrame(),hdrA,hdrB);
+            qaCompareReconstructionInputs("frame.candidate",inputsA,qaReconstructionReadbacks("candidate"));
             qaReconstruct(this.qaCandidate,reset || this.qaQualityFrames==0);
             var displayB=qaPresent(this.qaCandidate.output(),"candidate");
             NativeFrameComparison.capture(this.diagnosticFrame(),this.qaQualityFrames++,destination.width,destination.height,displayA,displayB);
@@ -654,6 +652,26 @@ public final class GraphRenderer implements AutoCloseable {
    private Image qaDisplay;
    private int qaQualityFrames;
    private String qaQualityPhase;
+   private record QaInputReadback(GpuFormat format,java.util.concurrent.CompletableFuture<ByteBuffer> pixels) {}
+   private Map<String,QaInputReadback> qaReconstructionReadbacks(String label) {
+      var inputs=new LinkedHashMap<String,QaInputReadback>();
+      // Queue every copy before another schedule can overwrite its source. A display
+      // sampler can reuse a reconstruction resource; retain one witness per resource.
+      for(String resource:new java.util.LinkedHashSet<>(this.graph.reconstruction().graphInputs())) {
+         var texture=this.image(resource).texture;
+         inputs.put(resource,new QaInputReadback(texture.getFormat(),readbackTexture(texture,"QA "+label+" "+resource)));
+      }
+      return inputs;
+   }
+   private void qaCompareReconstructionInputs(String pass,Map<String,QaInputReadback> reference,Map<String,QaInputReadback> actual) {
+      if(!reference.keySet().equals(actual.keySet()))throw new IllegalStateException("QA reconstruction inputs changed");
+      var frame=this.diagnosticFrame();
+      for(var entry:reference.entrySet()) {
+         var candidate=actual.get(entry.getKey());
+         if(entry.getValue().format()!=candidate.format())throw new IllegalStateException("QA reconstruction format changed: "+entry.getKey());
+         WorkgroupVerification.compare(pass,entry.getKey(),entry.getValue().format().name(),frame,entry.getValue().pixels(),candidate.pixels());
+      }
+   }
    private void ensureQaReconstruction(RenderTarget destination) {
       try {
          String phase=System.getProperty("sulkan.qaProfilePhase");

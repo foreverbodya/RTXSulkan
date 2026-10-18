@@ -8,13 +8,19 @@ import java.util.concurrent.CompletableFuture;
 public final class WorkgroupVerification {
     private static final List<CompletableFuture<Map<String,Object>>> results=new ArrayList<>();
     private static final Set<String> saved=new HashSet<>();
+    private static final java.util.concurrent.Executor COMPARISONS=java.util.concurrent.Executors.newSingleThreadExecutor(r->{
+        var thread=new Thread(r,"Sulkan GPU comparison evidence");thread.setDaemon(true);return thread;
+    });
     static void compare(String pass,String resource,String format,ByteBuffer frame,
                         CompletableFuture<ByteBuffer> baseline,CompletableFuture<ByteBuffer> candidate) {
         String phase=System.getProperty("sulkan.qaProfilePhase");
+        String experiment=System.getProperty("sulkan.qaComputeExperiment","workgroup");
+        var directory=java.nio.file.Path.of(System.getProperty("sulkan.qaDirectory"),"evidence");
         int index=frame.getInt(1132);var motion=List.of(frame.getFloat(384),frame.getFloat(388),frame.getFloat(392));
-        results.add(baseline.thenCombine(candidate,(a,b)->{
+        results.add(baseline.thenCombineAsync(candidate,(a,b)->{
+            if(a.remaining()!=b.remaining())throw new IllegalStateException("GPU comparison input extent changed: "+resource);
             int mismatch=a.mismatch(b);
-            var row=new LinkedHashMap<String,Object>();row.put("phase",phase);row.put("pass",pass);row.put("resource",resource);row.put("format",format);row.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));row.put("frame",index);
+            var row=new LinkedHashMap<String,Object>();row.put("phase",phase);row.put("pass",pass);row.put("resource",resource);row.put("format",format);row.put("experimentKind",experiment);row.put("frame",index);
             row.put("cameraDelta",motion);row.put("bytes",a.remaining());row.put("byteIdentical",mismatch==-1);row.put("firstMismatchByte",mismatch);
             if(mismatch!=-1) {
                 int step=format.contains("16_FLOAT")?2:4,changed=0,nonfinite=0;double absolute=0,reference=0,maximum=0;
@@ -29,14 +35,13 @@ public final class WorkgroupVerification {
             if(mismatch!=-1 || resource.equals("cloud.environment")) {
                 String key=phase+"-"+pass+"-"+resource+(mismatch==-1?"-match":"-mismatch");
                 if(saved.add(key))try {
-                    var directory=java.nio.file.Path.of(System.getProperty("sulkan.qaDirectory"),"evidence");
                     byte[] bytes=new byte[a.remaining()];a.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-reference.bin"),bytes);
                     b.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-candidate.bin"),bytes);
                     byte[] uniform=new byte[frame.remaining()];frame.duplicate().get(uniform);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-frame.bin"),uniform);
                 }catch(java.io.IOException failure){throw new java.util.concurrent.CompletionException(failure);}
             }
             return (Map<String,Object>)row;
-        }));
+        },COMPARISONS));
     }
     public static boolean ready(){
         for(var f:results)if(f.isCompletedExceptionally())f.join();
