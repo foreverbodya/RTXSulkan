@@ -14,10 +14,14 @@ vec3 secondarySolar() {
     return solar;
 }
 bool secondaryLeaf(SulkanRaySurface hit) {
+#if REALTIME_DIFFUSE == 1
+    return false;
+#else
 #ifdef FOLIAGE_TRANSMISSION
     return hit.material==5u;
 #else
     return false;
+#endif
 #endif
 }
 vec3 secondaryShade(SulkanRaySurface hit,vec3 base,vec3 n,vec3 incident,vec3 light,vec3 solar,vec3 visibility) {

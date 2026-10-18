@@ -1,0 +1,23 @@
+#version 460
+#include "sulkan/ray-terrain.glsl"
+#include "shaders/foliage.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    imageStore(Output0,p,vec4(0));
+    float depth=texelFetch(Depth,p,0).r;
+    uvec2 surface=texelFetch(Surface,p,0).rg;
+    if(depth<=1e-7 || (surface.x&0xc0000000u)!=0x40000000u
+        || max(floatBitsToUint(depth),surface.y)-min(floatBitsToUint(depth),surface.y)>2u)return;
+    vec3 n=normalize(texelFetch(NormalRoughness,p,0).xyz),light=cinematicKeyDirection();
+    bool leaf=texelFetch(Material,p,0).y==5u;
+    float nl=dot(n,light);
+    vec3 visibility=vec3(0);
+    if((nl>0.0 || (leaf && nl<0.0)) && light.y>0.0) {
+        vec2 uv=(vec2(p)+0.5)/vec2(size);
+        vec4 eye=InverseProjection*vec4(uv*2.0-1.0,depth,1);
+        vec3 position=RayCameraPosition.xyz+mat3(InverseView)*(eye.xyz/eye.w);
+        visibility=foliageSolarVisibility(Atlas,position+n*(leaf && nl<0.0?-0.005:0.005),light,128.0);
+    }
+    imageStore(Output0,p,vec4(visibility,1));
+}

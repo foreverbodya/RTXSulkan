@@ -1,6 +1,7 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
+    [ValidateSet(0,1,2,3)][int] $RealtimeStep = 0,
     [Parameter(Mandatory)][string] $InstanceMods,
     [Parameter(Mandatory)][string] $QaDirectory,
     [string] $PrismRoot = (Join-Path $env:APPDATA 'PrismLauncher'),
@@ -117,6 +118,8 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
+if($RealtimeStep -ge 3){$IndirectBounces=2;$IndirectSamples=1;$LeafIndirect=$false}
+
 if($CloudEnvironmentInputs -and (!$PerformanceProfile -or !$CloudPreview -or !$WorkgroupExperiment -or $ComputeExperiment -ne 'cloud-3d-env' -or $CloudNoisePairs -or $RayQueryCounts -or $TemporalProfile -or $NativeFrameComparison -or $CanonicalPackComparison -or $SkipImageComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudEnvironmentInputs requires one cloud environment A/A/B probe'}
 if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb requires CloudNoisePairs'}
 if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
@@ -264,6 +267,7 @@ if ($RayVisibility -or $RayLighting) {
     if ($TemporalInputs) { $createArguments.TemporalInputs = $true }
     if ($WorldDlss) { $createArguments.DlssReconstruction = $true }
     if ($Reflections) { $createArguments.Reflections = $true }
+    if($RayLighting){$createArguments.RealtimeStep=$RealtimeStep}
     if($RoughReflections){$createArguments.RoughReflections=$true}
     if($RoughReflectionComparison){$createArguments.RoughReflectionComparison=$true}
     if ($AlphaTraversal) { $createArguments.AlphaDiagnostic = $true }
@@ -727,7 +731,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; cloudNoisePairs = [bool]$CloudNoisePairs; cloudEnvironmentInputs = [bool]$CloudEnvironmentInputs; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    realtimeStep = $RealtimeStep; computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; cloudNoisePairs = [bool]$CloudNoisePairs; cloudEnvironmentInputs = [bool]$CloudEnvironmentInputs; temporalProfile = [bool]$TemporalProfile; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison

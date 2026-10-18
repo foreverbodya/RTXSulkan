@@ -89,6 +89,12 @@ vec3 foliageShadow(sampler2D atlas,vec3 origin,vec3 direction,float maximum) {
     return transmission;
 }
 vec3 foliageSolarVisibility(sampler2D atlas,vec3 origin,vec3 centre,float maximum) {
+#if REALTIME_DIRECT_SUN == 1
+    vec3 direction=cinematicSunSample(centre,0);
+    if(direction.y<=0.0)return vec3(0);
+    // One query; alpha/leaf interfaces are handled within this traversal.
+    return foliageShadow(atlas,origin,direction,maximum);
+#else
     vec3 sum=vec3(0);
     for(int sampleIndex=0;sampleIndex<SUN_SHADOW_SAMPLES;sampleIndex++) {
         vec3 direction=cinematicSunSample(centre,sampleIndex);
@@ -103,5 +109,6 @@ vec3 foliageSolarVisibility(sampler2D atlas,vec3 origin,vec3 centre,float maximu
 #endif
     }
     return sum/float(SUN_SHADOW_SAMPLES);
+#endif
 }
 #endif

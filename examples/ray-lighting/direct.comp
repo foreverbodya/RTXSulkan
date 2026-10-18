@@ -60,7 +60,11 @@ void main() {
     if ((nl > 0 || (leaf && signedNl<0)) && light.y > 0) {
         vec3 camera = RayCameraPosition.xyz;
         vec3 visibility;
+#if REALTIME_DIRECT_SUN == 1
+        visibility=texelFetch(SunVisibility,pixel,0).rgb;
+#else
         visibility=foliageSolarVisibility(Atlas,camera+relative+normal*(leaf && signedNl<0 ? -0.005 : 0.005),light,128.0);
+#endif
         if (any(greaterThan(visibility,vec3(0)))) {
             vec3 brdf=sulkanSunBrdf(albedo.rgb,leaf ? foliageRho(albedo.rgb) : albedo.rgb,
                 geometry.w,emission.a,normal,view,light);
