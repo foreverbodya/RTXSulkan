@@ -6,7 +6,7 @@ param(
     [ValidateSet(3000,12600,18000)][int]$ProfileTime = 3000,
     [string]$ProfilePlan = 'static,motion,off-clouds,off-gi,off-reflections,off-water,off-shadows,off-denoising,static-repeat,stream,settled',
     [switch]$WorkgroupExperiment,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env")][string]$ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6
 )
 $ErrorActionPreference='Stop'

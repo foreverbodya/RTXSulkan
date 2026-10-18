@@ -30,7 +30,7 @@ final class QaPerformanceProfile {
     private long endEpochMs;
     private String geometryStart;
     private long startEpochMs;
-    private boolean measuring;
+    private boolean measuring,timingSaved;
     private int verificationFrame;
     private CompletableFuture<Void> image;
 
@@ -72,7 +72,7 @@ final class QaPerformanceProfile {
                     "scope","Profiling execution only. Pass-off images are not quality-preserving optimizations. No claim of long-travel leak freedom or final renderer acceptance."));
                 LogUtils.getLogger().info("SULKAN_PERFORMANCE_PROFILE_PASS phases={}",reports.size());return true;
             }
-            frame=-WARMUP;verificationFrame=0;measuring=false;configure();return false;
+            frame=-WARMUP;verificationFrame=0;measuring=false;timingSaved=false;configure();return false;
         }
         if(frame<0){if(path().equals("resize") && frame==-WARMUP+64)Minecraft.getInstance().getWindow().setWindowed(2560,1440);frame++;return false;}
         if(!measuring) {
@@ -102,13 +102,7 @@ final class QaPerformanceProfile {
             return false;
         }
         if(!NativePackRuntime.diagnosticGpuTimingsReady())return false;
-        if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && (phase().equals("static") || phase().equals("motion"))) {
-            if(verificationFrame<9) {System.setProperty("sulkan.qaProfileVerify",verificationFrame<8?"true":"false");verificationFrame++;return false;}
-            if(!com.sulkan.shaders.graph.WorkgroupVerification.ready())return false;
-            var verification=com.sulkan.shaders.graph.WorkgroupVerification.snapshot();
-            write("workgroup-verification.json",verification);
-            if("cloud-3d-env".equals(System.getProperty("sulkan.qaComputeExperiment")) && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
-        }
+        if(!timingSaved) {
         var report=new LinkedHashMap<String,Object>(scene);
         report.put("gpuTimingPrefixFrames",FRAMES);report.put("stressOnly",path().equals("travel"));
         report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
@@ -122,10 +116,20 @@ final class QaPerformanceProfile {
         report.put("vulkanMemoryEnd",NativePackRuntime.diagnosticMemoryBudget());
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
         report.put("worldTime",Minecraft.getInstance().level.getDefaultClockTime());
+        report.put("poseCheckedEveryFrame",true);
         report.put("sourceRevisionUnchanged",perFrame.stream().map(row->((Map<?,?>)row).get("geometryRevision")).distinct().count()==1);
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
         report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",List.copyOf(perFrame));
         reports.add(report);write("profile-"+phase()+".json",report);
+            timingSaved=true;
+        }
+        if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && (phase().equals("static") || phase().equals("motion"))) {
+            if(verificationFrame<9) {System.setProperty("sulkan.qaProfileVerify",verificationFrame<8?"true":"false");verificationFrame++;return false;}
+            if(!com.sulkan.shaders.graph.WorkgroupVerification.ready())return false;
+            var verification=com.sulkan.shaders.graph.WorkgroupVerification.snapshot();
+            write("workgroup-verification.json",verification);
+            if(System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d-env") && verification.stream().anyMatch(row->!Boolean.TRUE.equals(row.get("byteIdentical"))))throw new IllegalStateException("Environment-only storage optimization changed actual GPU output");
+        }
         var dimensions=NativePackRuntime.diagnosticReconstruction();int w=((Number)dimensions.get("outputWidth")).intValue(),h=((Number)dimensions.get("outputHeight")).intValue();
         String name=phase();
         image=NativePackRuntime.diagnosticReadback("$display").thenAccept(pixels->{

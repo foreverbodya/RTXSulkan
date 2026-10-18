@@ -307,7 +307,7 @@ final class QaVisualWorldValidation {
 
     static void frameRendered() {
         if(stopped || pending) return;
-        if(stage==5){try{if(performanceProfile.observe()){stopped=true;Minecraft.getInstance().stop();}else{fixedPose=performanceProfile.pose();applyPose(Minecraft.getInstance());}}catch(Throwable problem){fail(Minecraft.getInstance(),problem);}return;}
+        if(stage==5){try{validatePose(Minecraft.getInstance());if(performanceProfile.observe()){stopped=true;Minecraft.getInstance().stop();}else{fixedPose=performanceProfile.pose();applyPose(Minecraft.getInstance());}}catch(Throwable problem){fail(Minecraft.getInstance(),problem);}return;}
         if(stage!=3)return;
         var client=Minecraft.getInstance();
         try {

@@ -27,7 +27,7 @@ public final class WorkgroupVerification {
                 row.put("changedComponents",changed);row.put("nonfiniteComponents",nonfinite);row.put("meanAbsolute",absolute/(a.remaining()/step));row.put("relativeL1",absolute/Math.max(reference,1e-30));row.put("maximumAbsolute",maximum);
             }
             if(mismatch!=-1 || resource.equals("cloud.environment")) {
-                String key=phase+"-"+pass+"-"+resource;
+                String key=phase+"-"+pass+"-"+resource+(mismatch==-1?"-match":"-mismatch");
                 if(saved.add(key))try {
                     var directory=java.nio.file.Path.of(System.getProperty("sulkan.qaDirectory"),"evidence");
                     byte[] bytes=new byte[a.remaining()];a.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-reference.bin"),bytes);
