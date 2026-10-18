@@ -15,7 +15,7 @@ param(
     [switch]$CloudNoisePairsPerturb,
     [switch]$CloudEnvironmentInputs,
     [switch]$TemporalProfile,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material")][string]$ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material","indirect-lazy-sky")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
 )

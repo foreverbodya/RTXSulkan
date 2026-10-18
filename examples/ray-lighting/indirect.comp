@@ -60,7 +60,10 @@ vec3 indirectPathContinuation(SulkanRaySurface hit,vec3 position,vec3 incident,u
             throughput*=(leaf?2.0*foliageRho(base):base)*(1.0-f);
         }
         rayQueryEXT query;foliageTraceRadiance(query,Atlas,origin,0.002,direction,128.0);
-        vec3 incoming=indirectSky(direction);
+        vec3 incoming;
+#if SULKAN_INDIRECT_LAZY_SKY != 1
+        incoming=indirectSky(direction);
+#endif
         float terminalDistance=-1.0;
         if(rayQueryGetIntersectionTypeEXT(query,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
             float distance=rayQueryGetIntersectionTEXT(query,true);
@@ -77,6 +80,9 @@ vec3 indirectPathContinuation(SulkanRaySurface hit,vec3 position,vec3 incident,u
             incoming=mix(incoming,atmAerialWithLighting(incoming,direction,distance,AtmosphereLighting),atmBlend());
 #endif
         }
+#if SULKAN_INDIRECT_LAZY_SKY == 1
+        else incoming=indirectSky(direction);
+#endif
 #ifdef RAY_INDIRECT_DIAGNOSTIC
         if(diagnostic && bounce==1) {
             ivec2 outputPixel=ivec2(pixel);
@@ -135,7 +141,10 @@ void main() {
         vec3 direction=indirectDirection(samplingNormal,indirectSampleSeed(pathSeed));
         rayQueryEXT query;
         foliageTraceRadiance(query,Atlas,origin,0.002,direction,128.0);
-        vec3 incoming=indirectSky(direction);
+        vec3 incoming;
+#if SULKAN_INDIRECT_LAZY_SKY != 1
+        incoming=indirectSky(direction);
+#endif
         float distance=-1.0,hitMaterial=-1.0;
         if(rayQueryGetIntersectionTypeEXT(query,true)!=gl_RayQueryCommittedIntersectionNoneEXT) {
             distance=rayQueryGetIntersectionTEXT(query,true);
@@ -156,6 +165,9 @@ void main() {
             incoming=mix(incoming,atmAerialWithLighting(incoming,direction,distance,AtmosphereLighting),atmBlend());
 #endif
         }
+#if SULKAN_INDIRECT_LAZY_SKY == 1
+        else incoming=indirectSky(direction);
+#endif
         vec3 h=normalize(v+direction);
         vec3 f=sulkanFresnel(max(dot(v,h),0.0),vec3(0.04));
         // Cosine PDF cancels the receiver Lambert cosine/pi factors.

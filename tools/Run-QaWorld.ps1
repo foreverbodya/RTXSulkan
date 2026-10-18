@@ -79,7 +79,7 @@ param(
     [switch] $WorkgroupExperiment,
     [switch] $NativeFrameComparison,
     [switch] $SkipImageComparison,
-    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material")][string] $ComputeExperiment = "workgroup",
+    [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material","indirect-lazy-sky")][string] $ComputeExperiment = "workgroup",
     [ValidateSet(3000,12600,18000)][int] $ProfileTime = 3000,
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
