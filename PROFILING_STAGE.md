@@ -247,12 +247,21 @@ a complete engine/NGX barrier timeline or isolated stall attribution.
 
 ## Confirmed, hypotheses and open work
 
+The [clean environment repeat](docs/profiling/cloud-clean-20261018.md) confirms
++3.84% static / +3.75% motion FPS without phase image readbacks, with stable
+A/B/A geometry/path and zero timed AS builds/allocations/uploads. All 48 GPU
+intervals and memory scopes are retained. The independent
+[stationary sunset comparison](docs/profiling/cloud-temporal-static-20261018.md)
+also completed: candidate mean RGB error is slightly higher than both controls,
+while maximum and rare-error counts are comparable. The opt-in speedup is
+confirmed; default promotion, image equivalence and general stability remain open.
+
 The [independent motion history run](docs/profiling/cloud-temporal-motion-20261018.md)
 now contains 512 consecutive native displays across A/A/B/A sunset sequences,
 with stable geometry and matched uniforms. Candidate RGB differences are close
 to both independent controls; those controls already differ before DLSS. No
-extra broad image regression is established, but strict equivalence and the
-stationary sunset sequence remain open. The environment candidate stays opt-in.
+extra broad image regression is established, but strict equivalence remains open.
+The environment candidate stays opt-in.
 
 The [material lookup checkpoint](docs/profiling/material-lookup-20261018.md)
 records a preliminary +2.16% stationary bracket, a repeat invalidated by an

@@ -1,0 +1,107 @@
+Per-pass A/B/A means in ms. AS/upload rows are amortized event totals. World total is nested; do not sum rows.
+
+## qa-profile-cloud-env-clean-2 / static
+
+| GPU interval | Before ms | After ms | Saved ms |
+| --- | ---: | ---: | ---: |
+| world.total | 116.4040 | 112.0698 | 4.3343 |
+| indirect.trace | 34.5524 | 34.5698 | -0.0175 |
+| cloud.view | 25.6050 | 25.3744 | 0.2306 |
+| cloud.environment | 19.2118 | 15.1899 | 4.0219 |
+| leaf.indirect.trace | 15.8873 | 15.8878 | -0.0005 |
+| cloud.composite | 10.4297 | 10.3485 | 0.0811 |
+| rough.reflection | 3.8647 | 3.8531 | 0.0117 |
+| atmosphere.multiple | 1.6468 | 1.6251 | 0.0217 |
+| native.dlss | 1.0465 | 1.0474 | -0.0009 |
+| cloud.shadow | 0.7057 | 0.6973 | 0.0083 |
+| cloud.shadow.diagnostic | 0.3719 | 0.3891 | -0.0172 |
+| ray.direct | 0.3233 | 0.3227 | 0.0007 |
+| rough.prefilter.1 | 0.1621 | 0.1622 | -0.0001 |
+| rough.prefilter.2 | 0.1515 | 0.1516 | -0.0001 |
+| water.trace | 0.1391 | 0.1384 | 0.0007 |
+| indirect.spatial.4 | 0.1299 | 0.1299 | -0.0001 |
+| indirect.spatial.1 | 0.1296 | 0.1295 | 0.0001 |
+| indirect.spatial.2 | 0.1274 | 0.1284 | -0.0010 |
+| cloud.reconstruction | 0.1251 | 0.1251 | 0.0001 |
+| atmosphere.lighting | 0.1209 | 0.1245 | -0.0036 |
+| cloud.lighting | 0.1190 | 0.1207 | -0.0016 |
+| rough.temporal | 0.1111 | 0.1112 | -0.0001 |
+| indirect.temporal | 0.0930 | 0.0925 | 0.0006 |
+| display.histogram | 0.0921 | 0.0922 | -0.0001 |
+| atmosphere.sky | 0.0741 | 0.0735 | 0.0005 |
+| leaf.indirect.spatial.1 | 0.0716 | 0.0716 | 0.0000 |
+| leaf.indirect.spatial.4 | 0.0705 | 0.0706 | -0.0001 |
+| leaf.indirect.spatial.2 | 0.0696 | 0.0696 | 0.0000 |
+| cloud.ambient.diagnostic | 0.0682 | 0.0718 | -0.0036 |
+| composition.present | 0.0547 | 0.0547 | -0.0000 |
+| distant.world | 0.0506 | 0.0506 | -0.0001 |
+| leaf.indirect.temporal | 0.0434 | 0.0435 | -0.0001 |
+| motion.camera | 0.0399 | 0.0398 | 0.0001 |
+| display.exposure | 0.0388 | 0.0389 | -0.0000 |
+| cloud.exact.noise | 0.0384 | 0.0375 | 0.0009 |
+| ray.reflection | 0.0354 | 0.0349 | 0.0005 |
+| rough.composite | 0.0287 | 0.0287 | 0.0000 |
+| reconstruction.inputs | 0.0204 | 0.0204 | 0.0000 |
+| ray.composite | 0.0204 | 0.0204 | 0.0000 |
+| water.composite | 0.0204 | 0.0204 | 0.0000 |
+| cloud.scattering.diagnostic | 0.0124 | 0.0124 | 0.0000 |
+| display.meter | 0.0121 | 0.0121 | 0.0000 |
+| indirect.environment | 0.0067 | 0.0065 | 0.0002 |
+| indirect.state | 0.0062 | 0.0062 | 0.0000 |
+| reconstruction.exposure | 0.0057 | 0.0057 | 0.0000 |
+| blas.build | 0.0000 | 0.0000 | 0.0000 |
+| geometry.upload | 0.0000 | 0.0000 | 0.0000 |
+| tlas.build | 0.0000 | 0.0000 | 0.0000 |
+
+## qa-profile-cloud-env-clean-2 / motion
+
+| GPU interval | Before ms | After ms | Saved ms |
+| --- | ---: | ---: | ---: |
+| world.total | 116.3459 | 112.1811 | 4.1649 |
+| indirect.trace | 34.0265 | 33.9711 | 0.0554 |
+| cloud.view | 25.3141 | 25.3732 | -0.0591 |
+| cloud.environment | 19.2100 | 15.1602 | 4.0499 |
+| leaf.indirect.trace | 15.9276 | 15.9187 | 0.0088 |
+| cloud.composite | 10.8189 | 10.7433 | 0.0756 |
+| rough.reflection | 4.1564 | 4.1514 | 0.0050 |
+| atmosphere.multiple | 1.6329 | 1.6318 | 0.0011 |
+| native.dlss | 1.0500 | 1.0513 | -0.0013 |
+| cloud.shadow | 0.7992 | 0.7558 | 0.0434 |
+| cloud.shadow.diagnostic | 0.3474 | 0.3631 | -0.0157 |
+| ray.direct | 0.3248 | 0.3236 | 0.0012 |
+| rough.prefilter.1 | 0.1607 | 0.1606 | 0.0001 |
+| rough.prefilter.2 | 0.1501 | 0.1501 | 0.0000 |
+| water.trace | 0.1365 | 0.1366 | -0.0001 |
+| indirect.spatial.4 | 0.1286 | 0.1286 | 0.0000 |
+| indirect.spatial.1 | 0.1286 | 0.1286 | -0.0000 |
+| indirect.spatial.2 | 0.1265 | 0.1263 | 0.0001 |
+| atmosphere.lighting | 0.1213 | 0.1192 | 0.0021 |
+| cloud.reconstruction | 0.1203 | 0.1204 | -0.0001 |
+| cloud.lighting | 0.1189 | 0.1209 | -0.0020 |
+| rough.temporal | 0.1109 | 0.1109 | -0.0001 |
+| indirect.temporal | 0.0918 | 0.0915 | 0.0004 |
+| display.histogram | 0.0917 | 0.0918 | -0.0001 |
+| atmosphere.sky | 0.0726 | 0.0727 | -0.0001 |
+| leaf.indirect.spatial.1 | 0.0725 | 0.0725 | 0.0000 |
+| leaf.indirect.spatial.4 | 0.0713 | 0.0713 | 0.0000 |
+| leaf.indirect.spatial.2 | 0.0704 | 0.0703 | 0.0001 |
+| cloud.ambient.diagnostic | 0.0686 | 0.0697 | -0.0010 |
+| composition.present | 0.0545 | 0.0546 | -0.0001 |
+| distant.world | 0.0508 | 0.0510 | -0.0001 |
+| leaf.indirect.temporal | 0.0441 | 0.0441 | 0.0000 |
+| motion.camera | 0.0396 | 0.0394 | 0.0003 |
+| display.exposure | 0.0386 | 0.0387 | -0.0001 |
+| cloud.exact.noise | 0.0385 | 0.0375 | 0.0010 |
+| ray.reflection | 0.0349 | 0.0349 | -0.0000 |
+| rough.composite | 0.0287 | 0.0287 | 0.0000 |
+| reconstruction.inputs | 0.0204 | 0.0204 | 0.0000 |
+| water.composite | 0.0204 | 0.0204 | 0.0000 |
+| ray.composite | 0.0204 | 0.0204 | -0.0000 |
+| cloud.scattering.diagnostic | 0.0124 | 0.0124 | -0.0000 |
+| display.meter | 0.0121 | 0.0121 | 0.0001 |
+| indirect.environment | 0.0065 | 0.0065 | 0.0000 |
+| indirect.state | 0.0065 | 0.0064 | 0.0001 |
+| reconstruction.exposure | 0.0061 | 0.0060 | 0.0001 |
+| blas.build | 0.0000 | 0.0000 | 0.0000 |
+| geometry.upload | 0.0000 | 0.0000 | 0.0000 |
+| tlas.build | 0.0000 | 0.0000 | 0.0000 |

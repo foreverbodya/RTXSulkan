@@ -1,0 +1,961 @@
+{
+  "run": "qa-profile-temporal-cloud-static-sunset-1",
+  "source": {
+    "rayQueryCounts": false,
+    "timeoutSeconds": 3600,
+    "skipImageComparison": false,
+    "prepareGeometry": false,
+    "temporalProfile": true,
+    "nativeFrameComparison": false,
+    "experiment": "cloud-3d-env",
+    "profilePlan": "static",
+    "dirty": false,
+    "renderDistance": 6,
+    "canonicalPackComparison": false,
+    "commit": "b6f00eaf838ded5f5c640797bda20c28dc7bb60c",
+    "alternatePipeline": false,
+    "profileTime": 12600
+  },
+  "analysisComplete": true,
+  "evidenceValid": true,
+  "perceptualAcceptance": null,
+  "sourceGeometrySha256": "f60ed7aeabb40f1c2c78982f7f540f980d3f392576a77d4845f42dde5d3cac0b",
+  "inputSize": [
+    1707,
+    960
+  ],
+  "outputSize": [
+    2560,
+    1440
+  ],
+  "uniformExcludedByteRange": [
+    1120,
+    1132
+  ],
+  "terminalResult": {
+    "passed": true,
+    "exitCode": 0,
+    "timedOut": false,
+    "activationFailure": null,
+    "artifactSha256": "C00B75D6AFE6140E5CA3DB3A0E9995F0DF04221E924CD04BEA4EC1D70DB32D10",
+    "runtimeModHashes": {
+      "fabric-api-0.162.0+26.3.jar": "8626C189B702F466800B1C8DDAC6203CF8A1E0BDAEE75A5F9A33B18C2BAA81B1",
+      "voicechat-fabric-2.6.24+26.3.jar": "97074FA1D094A22F17D5AC11282176965A45137950B66627D3813618810C3D00",
+      "sodium-fabric-0.9.2+mc26.3.jar": "87A5BB39F7E6E41106E77F122F82FC93F9D3BC0B6EBCB746B314172A446A287A"
+    },
+    "runtimeModsUnchanged": true,
+    "temporalProfile": true
+  },
+  "displayComparisons": [
+    {
+      "comparison": "A1/A2",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 3440133,
+        "sumSquaredCodeError": 4467387,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.0024301973978678383,
+        "rootMeanSquareCodeError": 0.05617718162931207,
+        "pixelsAtOrAbove": {
+          "1": 3085282,
+          "2": 27145,
+          "4": 6073,
+          "8": 1718,
+          "16": 489,
+          "32": 10,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.006538564893934462,
+          "2": 5.752775404188368E-05,
+          "4": 1.2870364718967013E-05,
+          "8": 3.6409166124131944E-06,
+          "16": 1.0363260904947917E-06,
+          "32": 2.1192762586805556E-08,
+          "64": 0.0
+        },
+        "psnrDb": 73.13960466556546,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 5007781,
+        "sumSquaredCodeError": 5094145,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.003565479099455016,
+        "rootMeanSquareCodeError": 0.06022432412177684,
+        "pixelsAtOrAbove": {
+          "1": 4805950,
+          "2": 14325,
+          "4": 430,
+          "8": 88,
+          "16": 23,
+          "32": 2,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.010265333654582239,
+          "2": 3.0597676755249346E-05,
+          "4": 9.184642935258093E-07,
+          "8": 1.8796478565179354E-07,
+          "16": 4.912715988626422E-08,
+          "32": 4.271926946631671E-09,
+          "64": 0.0
+        }
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 4483963,
+        "sumSquaredCodeError": 5412397,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.0031675854435673466,
+        "rootMeanSquareCodeError": 0.06183409109505279,
+        "pixelsAtOrAbove": {
+          "1": 4140616,
+          "2": 24930,
+          "4": 5287,
+          "8": 1463,
+          "16": 501,
+          "32": 10,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.008775109185112847,
+          "2": 5.283355712890625E-05,
+          "4": 1.1204613579644097E-05,
+          "8": 3.100501166449653E-06,
+          "16": 1.0617574055989583E-06,
+          "32": 2.1192762586805556E-08,
+          "64": 0.0
+        },
+        "psnrDb": 72.30624397993778,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 6795669,
+        "sumSquaredCodeError": 6884973,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.0048384335869149165,
+        "rootMeanSquareCodeError": 0.07001440528625937,
+        "pixelsAtOrAbove": {
+          "1": 6558687,
+          "2": 18095,
+          "4": 404,
+          "8": 75,
+          "16": 19,
+          "32": 3,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.014009115864911418,
+          "2": 3.865025904965004E-05,
+          "4": 8.629292432195975E-07,
+          "8": 1.6019726049868766E-07,
+          "16": 4.058330599300087E-08,
+          "32": 6.407890419947507E-09,
+          "64": 0.0
+        }
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "aggregate": {
+        "samples": 128,
+        "pixelObservations": 471859200,
+        "rgbObservations": 1415577600,
+        "sumAbsoluteCodeError": 3605640,
+        "sumSquaredCodeError": 4711150,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.002547115749782986,
+        "rootMeanSquareCodeError": 0.0576894801099903,
+        "pixelsAtOrAbove": {
+          "1": 3255449,
+          "2": 25688,
+          "4": 6123,
+          "8": 1847,
+          "16": 626,
+          "32": 10,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.0068991957770453555,
+          "2": 5.443996853298611E-05,
+          "4": 1.2976328531901042E-05,
+          "8": 3.9143032497829864E-06,
+          "16": 1.3266669379340279E-06,
+          "32": 2.1192762586805556E-08,
+          "64": 0.0
+        },
+        "psnrDb": 72.90887110525895,
+        "perfectRGBMatch": false,
+        "psnrInfinite": false
+      },
+      "pixelSpaceErrorChangeAggregate": {
+        "samples": 127,
+        "pixelObservations": 468172800,
+        "rgbObservations": 1404518400,
+        "sumAbsoluteCodeError": 5307244,
+        "sumSquaredCodeError": 5402122,
+        "maximumAbsoluteCodeError": 41,
+        "meanAbsoluteCodeError": 0.003778693109324876,
+        "rootMeanSquareCodeError": 0.0620181029227109,
+        "pixelsAtOrAbove": {
+          "1": 5104366,
+          "2": 15221,
+          "4": 450,
+          "8": 90,
+          "16": 27,
+          "32": 4,
+          "64": 0
+        },
+        "pixelFractionAtOrAbove": {
+          "1": 0.010902739330435259,
+          "2": 3.2511500027340335E-05,
+          "4": 9.61183562992126E-07,
+          "8": 1.922367125984252E-07,
+          "16": 5.767101377952756E-08,
+          "32": 8.543853893263342E-09,
+          "64": 0.0
+        }
+      }
+    }
+  ],
+  "sparseInputComparisons": [
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 131425,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 130667,
+        "maximumAbsoluteError": 0.0004062652587890625,
+        "meanAbsoluteError": 3.5721449309833065E-08,
+        "rootMeanSquareError": 7.508857525699563E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 157452,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 151695,
+        "maximumAbsoluteError": 1.7680577002465725E-09,
+        "meanAbsoluteError": 2.995168547211636E-12,
+        "rootMeanSquareError": 1.7470793895970126E-11
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 193698,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 96849,
+        "maximumAbsoluteError": 0.00030517578125,
+        "meanAbsoluteError": 1.957427017031366E-06,
+        "rootMeanSquareError": 1.2711859285720282E-05
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 3.337860107421875E-06,
+        "meanAbsoluteError": 8.344650268554688E-07,
+        "rootMeanSquareError": 1.6689300537109375E-06
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 9471,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 9434,
+        "maximumAbsoluteError": 6.103515625E-05,
+        "meanAbsoluteError": 1.194269800647072E-09,
+        "rootMeanSquareError": 5.049475830251042E-08
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 104,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 96,
+        "maximumAbsoluteError": 2.1464074961841106E-10,
+        "meanAbsoluteError": 1.629862033268692E-15,
+        "rootMeanSquareError": 3.537670203694582E-13
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 156,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 78,
+        "maximumAbsoluteError": 0.000152587890625,
+        "meanAbsoluteError": 1.4042583987294313E-09,
+        "rootMeanSquareError": 3.0425774460528627E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 9.5367431640625E-07,
+        "meanAbsoluteError": 2.384185791015625E-07,
+        "rootMeanSquareError": 4.76837158203125E-07
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 7803,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 7775,
+        "maximumAbsoluteError": 3.814697265625E-06,
+        "meanAbsoluteError": 1.0270736653272632E-09,
+        "rootMeanSquareError": 4.15248524818145E-08
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A2",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 1,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 1,
+        "maximumAbsoluteError": 9.5367431640625E-07,
+        "meanAbsoluteError": 2.384185791015625E-07,
+        "rootMeanSquareError": 4.76837158203125E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 160857,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 159959,
+        "maximumAbsoluteError": 0.0001659393310546875,
+        "meanAbsoluteError": 3.941109437794454E-08,
+        "rootMeanSquareError": 7.100470230475005E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 157452,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 151695,
+        "maximumAbsoluteError": 1.7680577002465725E-09,
+        "meanAbsoluteError": 2.995168547211636E-12,
+        "rootMeanSquareError": 1.7470793895970126E-11
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 193698,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 96849,
+        "maximumAbsoluteError": 0.00030517578125,
+        "meanAbsoluteError": 1.957427017031366E-06,
+        "rootMeanSquareError": 1.2711859285720282E-05
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 4.76837158203125E-06,
+        "meanAbsoluteError": 1.3113021850585938E-06,
+        "rootMeanSquareError": 2.3960770657350755E-06
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 81388,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 80953,
+        "maximumAbsoluteError": 0.0004444122314453125,
+        "meanAbsoluteError": 1.2980765315546372E-08,
+        "rootMeanSquareError": 3.3328925804662196E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 8.58306884765625E-06,
+        "meanAbsoluteError": 2.2649765014648438E-06,
+        "rootMeanSquareError": 4.298152059869753E-06
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 115981,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 115194,
+        "maximumAbsoluteError": 0.0005846023559570312,
+        "meanAbsoluteError": 3.716613594686303E-08,
+        "rootMeanSquareError": 8.979093903454007E-07
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 164590,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 158229,
+        "maximumAbsoluteError": 1.3969838619232178E-09,
+        "meanAbsoluteError": 3.2155864380116815E-12,
+        "rootMeanSquareError": 1.8032462560984105E-11
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 200195,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 100100,
+        "maximumAbsoluteError": 0.0004069805145263672,
+        "meanAbsoluteError": 2.175876483382296E-06,
+        "rootMeanSquareError": 1.3701028272329134E-05
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/B",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 6.67572021484375E-06,
+        "meanAbsoluteError": 1.7285346984863281E-06,
+        "rootMeanSquareError": 3.339988166361308E-06
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 110538,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 110007,
+        "maximumAbsoluteError": 0.0004062652587890625,
+        "meanAbsoluteError": 1.646445915350293E-08,
+        "rootMeanSquareError": 3.3249223019424506E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 0,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 1.9073486328125E-06,
+        "meanAbsoluteError": 5.960464477539062E-07,
+        "rootMeanSquareError": 9.830249847454215E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 79823,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 79297,
+        "maximumAbsoluteError": 0.0004444122314453125,
+        "meanAbsoluteError": 2.9465856874065925E-08,
+        "rootMeanSquareError": 8.048347167535285E-07
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 164590,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 158229,
+        "maximumAbsoluteError": 1.3969838619232178E-09,
+        "meanAbsoluteError": 3.2155864380116815E-12,
+        "rootMeanSquareError": 1.8032462560984105E-11
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 200195,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 100100,
+        "maximumAbsoluteError": 0.0004069805145263672,
+        "meanAbsoluteError": 2.175876483382296E-06,
+        "rootMeanSquareError": 1.3701028272329134E-05
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 63,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 6.67572021484375E-06,
+        "meanAbsoluteError": 1.7285346984863281E-06,
+        "rootMeanSquareError": 3.339988166361308E-06
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "distant.world.hdr",
+      "format": "RGBA16_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 5643,
+      "numeric": {
+        "mutuallyFiniteValues": 6554880,
+        "allValuesFinite": true,
+        "changedFiniteValues": 5620,
+        "maximumAbsoluteError": 3.814697265625E-06,
+        "meanAbsoluteError": 7.253713444605676E-10,
+        "rootMeanSquareError": 3.424425506265413E-08
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "cloud.reconstruction.depth",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1638720,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "cloud.reconstruction.motion",
+      "format": "RG16_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 3277440,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "reconstruction.exposure",
+      "format": "R32_FLOAT",
+      "byteIdentical": true,
+      "changedBytes": 0,
+      "numeric": {
+        "mutuallyFiniteValues": 1,
+        "allValuesFinite": true,
+        "changedFiniteValues": 0,
+        "maximumAbsoluteError": 0.0,
+        "meanAbsoluteError": 0.0,
+        "rootMeanSquareError": 0.0
+      }
+    },
+    {
+      "comparison": "A1/A3",
+      "index": 127,
+      "resource": "display.exposure",
+      "format": "RGBA32_FLOAT",
+      "byteIdentical": false,
+      "changedBytes": 2,
+      "numeric": {
+        "mutuallyFiniteValues": 4,
+        "allValuesFinite": true,
+        "changedFiniteValues": 2,
+        "maximumAbsoluteError": 9.5367431640625E-07,
+        "meanAbsoluteError": 2.980232238769531E-07,
+        "rootMeanSquareError": 4.915124923727108E-07
+      }
+    }
+  ],
+  "failures": [],
+  "scope": "Independent stationary sunset histories; image/readback run has no performance baseline; perceptualAcceptance is not asserted by numerical checks."
+}

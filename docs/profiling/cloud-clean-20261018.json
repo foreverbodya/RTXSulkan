@@ -1,0 +1,1399 @@
+{
+  "run": "qa-profile-cloud-env-clean-2",
+  "source": {
+    "commit": "3569559e894d2d024e115dc23bd14c4fda944541",
+    "timeoutSeconds": 2400,
+    "nativeFrameComparison": false,
+    "dirty": false,
+    "profileTime": 3000,
+    "experiment": "cloud-3d-env",
+    "rayQueryCounts": false,
+    "prepareGeometry": false,
+    "profilePlan": "static,narrow-static,static-repeat,motion,narrow-motion,motion-repeat",
+    "alternatePipeline": true,
+    "canonicalPackComparison": false,
+    "skipImageComparison": true,
+    "temporalProfile": false,
+    "renderDistance": 6
+  },
+  "artifactSha256": "6D34DC869A7BEA7C350D32E39036C1280BA4653F72717CE55E07C00B7994B8EA",
+  "phases": [
+    {
+      "phase": "static",
+      "wallMs": 116.53698661417323,
+      "fps": 8.580966687518416,
+      "renderThreadActiveCpuMs": 2.829724409448819,
+      "gpuWorldMs": 116.49032249999999,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryEnd": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 144.023193359375,
+      "processHeapEstimatedPeakMiB": 1974.53125,
+      "deviceVramSamplePeakMiB": 3504.0,
+      "syncCpuMsPerFrame": 0.00094296875,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "8927eee508d781eeb67c00cefc54acf5ff633a1977068e4c65e98eceb7a38630",
+      "measurementInvalidReasons": []
+    },
+    {
+      "phase": "narrow-static",
+      "wallMs": 112.1651905511811,
+      "fps": 8.915421933364424,
+      "renderThreadActiveCpuMs": 3.0757874015748032,
+      "gpuWorldMs": 112.06976075,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryEnd": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 144.023193359375,
+      "processHeapEstimatedPeakMiB": 1927.28125,
+      "deviceVramSamplePeakMiB": 3457.0,
+      "syncCpuMsPerFrame": 0.0006890625,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "8927eee508d781eeb67c00cefc54acf5ff633a1977068e4c65e98eceb7a38630",
+      "measurementInvalidReasons": []
+    },
+    {
+      "phase": "static-repeat",
+      "wallMs": 116.40792362204725,
+      "fps": 8.590480517862304,
+      "renderThreadActiveCpuMs": 2.706692913385827,
+      "gpuWorldMs": 116.31772875,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryEnd": "98865c2c1dfa638d72a50097cbae2d62c761b2f5ebbd5d755ee72a8bea1d0e81",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 144.023193359375,
+      "processHeapEstimatedPeakMiB": 1927.28125,
+      "deviceVramSamplePeakMiB": 3457.0,
+      "syncCpuMsPerFrame": 0.00069296875,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "8927eee508d781eeb67c00cefc54acf5ff633a1977068e4c65e98eceb7a38630",
+      "measurementInvalidReasons": []
+    },
+    {
+      "phase": "motion",
+      "wallMs": 116.08043700787401,
+      "fps": 8.614716017412716,
+      "renderThreadActiveCpuMs": 2.829724409448819,
+      "gpuWorldMs": 115.99331074999999,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryEnd": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 145.1298828125,
+      "processHeapEstimatedPeakMiB": 1928.46875,
+      "deviceVramSamplePeakMiB": 3458.0,
+      "syncCpuMsPerFrame": 0.00070703125,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "eddb7b3046430892e0128f3d56b90e2e42a5b17e777410145b80856e3f8b1be0",
+      "measurementInvalidReasons": []
+    },
+    {
+      "phase": "narrow-motion",
+      "wallMs": 112.23217716535433,
+      "fps": 8.910100697117159,
+      "renderThreadActiveCpuMs": 2.952755905511811,
+      "gpuWorldMs": 112.18109824999999,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryEnd": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 145.1298828125,
+      "processHeapEstimatedPeakMiB": 1928.46875,
+      "deviceVramSamplePeakMiB": 3458.0,
+      "syncCpuMsPerFrame": 0.000921875,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "eddb7b3046430892e0128f3d56b90e2e42a5b17e777410145b80856e3f8b1be0",
+      "measurementInvalidReasons": []
+    },
+    {
+      "phase": "motion-repeat",
+      "wallMs": 116.79296377952755,
+      "fps": 8.562159633928978,
+      "renderThreadActiveCpuMs": 2.829724409448819,
+      "gpuWorldMs": 116.6985885,
+      "blasBuilds": 0,
+      "tlasBuilds": 0,
+      "geometryStart": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryEnd": "a2ae1a78569ffba43660cb6123122d36d1be38d58c48f2e1997db5a05fcf3ee6",
+      "geometryStable": true,
+      "allocations": 0,
+      "allocationFailures": 0,
+      "uploadMiB": 0.0,
+      "readbackMiB": 0.0,
+      "nativeTimedPeakMiB": 145.1298828125,
+      "processHeapEstimatedPeakMiB": 1928.46875,
+      "deviceVramSamplePeakMiB": 3458.0,
+      "syncCpuMsPerFrame": 0.00112109375,
+      "workCountersDelta": {
+        "descriptorPoolFrees": 0,
+        "dispatches": 5376,
+        "asBarriers": 0,
+        "liveDescriptorPools": 0,
+        "descriptorPoolAllocations": 0,
+        "computeBarriers": 10752
+      },
+      "configuration": {
+        "seed": 672026,
+        "generator": "normal",
+        "camera": [
+          -130.97801932600117,
+          76.0,
+          -70.45603865200235,
+          153.434948822922,
+          -10.0
+        ],
+        "renderDistance": 6,
+        "worldTime": 3000,
+        "options": {
+          "CLOUD_CELLULAR_FIELD": 1.0,
+          "WATER_WAVES": 1.0,
+          "WET_SURFACES": 0.5,
+          "T_SATURATION": 1.0,
+          "SUN_SHAFTS": 1.0,
+          "FOLIAGE_OPTICS": 2.0,
+          "CLOUD_AMBIENT_OCCLUSION": 1.0,
+          "NIGHT_SKY": 1.0,
+          "SMOOTH_METAL_REFLECTIONS": 1.0,
+          "DISPLAY_TONEMAPPER": 2.0,
+          "HELD_LIGHTING": 1.0,
+          "CAMERA_MOTION_DIAGNOSTIC": 1.0,
+          "TM_EXPOSURE": 1.0,
+          "SHADOW_DISTANCE": 128.0,
+          "INDIRECT_TEMPORAL": 1.0,
+          "VEGETATION_WIND": 0.0,
+          "AMBIENT_OCCLUSION": 1.0,
+          "ANTIALIASING": 1.0,
+          "ROUGH_SPECULAR": 1.0,
+          "AUTO_EXPOSURE": 1.0,
+          "CLOUD_VIEW_DENSITY_SUBSTEPS": 1.0,
+          "CINEMATIC_ATMOSPHERE": 1.0,
+          "INDIRECT_BOUNCES": 8.0,
+          "FOLIAGE_TRANSMISSION": 1.0,
+          "COLOR_GRADE": 0.5,
+          "CLOUD_QUALITY": 2.0,
+          "LIGHT_WARMTH": 1.0,
+          "EMISSIVE_ACCENTS": 0.5,
+          "CLOUD_HEIGHT_OFFSET": 0.0,
+          "CLOUD_DENSITY_PROFILE": 1.0,
+          "ROUGH_DENOISE": 1.0,
+          "DISTANCE_COLOR": 1.0,
+          "WATER_REFLECTION_STRENGTH": 1.0,
+          "WATER_DENSITY": 1.0,
+          "TM_CONTRAST": 1.05,
+          "MATERIAL_SHEEN": 0.5,
+          "CLOUD_DEPTH_AWARE": 1.0,
+          "LEAF_INDIRECT": 1.0,
+          "DISTANT_WORLD_BLEND": 1.0,
+          "BLOOM_STRENGTH": 0.12,
+          "WATER_REFLECTION_QUALITY": 2.0,
+          "SUN_SIZE": 1.0,
+          "DIFFUSE_INDIRECT": 1.0,
+          "ATMOSPHERE": 1.0,
+          "INDIRECT_SAMPLES": 4.0,
+          "CLOUD_PREVIEW_STILL": 1.0,
+          "WATER_HDR": 1.0,
+          "SHADOW_QUALITY": 2.0,
+          "CLOUD_RECONSTRUCTION_GUIDES": 1.0,
+          "ATM_MULTIPLE_SCATTERING": 1.0,
+          "CLOUD_COVERAGE": 0.5,
+          "WATER_ENABLED": 1.0
+        },
+        "vsync": false,
+        "poseCheckedEveryFrame": true,
+        "reconstruction": {
+          "inputWidth": 1707,
+          "displayFormat": "RGBA8_UNORM",
+          "displayToneMapper": 2,
+          "outputWidth": 2560,
+          "outputHeight": 1440,
+          "exposureResource": "reconstruction.exposure",
+          "depthResource": "cloud.reconstruction.depth",
+          "motionResource": "cloud.reconstruction.motion",
+          "colorResource": "distant.world.hdr",
+          "inputHeight": 960
+        }
+      },
+      "posePathSha256": "eddb7b3046430892e0128f3d56b90e2e42a5b17e777410145b80856e3f8b1be0",
+      "measurementInvalidReasons": []
+    }
+  ],
+  "comparisons": [
+    {
+      "phase": "static",
+      "valid": true,
+      "invalidReasons": [],
+      "geometryMatched": true,
+      "referenceWallMs": 116.47245511811025,
+      "candidateWallMs": 112.1651905511811,
+      "referenceFps": 8.585720967124272,
+      "candidateFps": 8.915421933364424,
+      "fpsGainPercent": 3.8401080992803482,
+      "referenceGpuMs": 116.404025625,
+      "candidateGpuMs": 112.06976075,
+      "referenceActiveCpuMs": 2.768208661417323,
+      "candidateActiveCpuMs": 3.0757874015748032,
+      "referenceDriftPercent": -0.11074852360244414,
+      "passes": [
+        {
+          "pass": "atmosphere.lighting",
+          "beforeMs": 0.12089725,
+          "afterMs": 0.12450599999999999,
+          "savedMs": -0.003608749999999994,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "atmosphere.multiple",
+          "beforeMs": 1.646785625,
+          "afterMs": 1.62507275,
+          "savedMs": 0.021712874999999965,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "atmosphere.sky",
+          "beforeMs": 0.074081125,
+          "afterMs": 0.07354675,
+          "savedMs": 0.0005343750000000036,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "blas.build",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "cloud.ambient.diagnostic",
+          "beforeMs": 0.06822687499999999,
+          "afterMs": 0.07179425,
+          "savedMs": -0.0035673750000000115,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.composite",
+          "beforeMs": 10.429660375,
+          "afterMs": 10.348518,
+          "savedMs": 0.08114237499999888,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.environment",
+          "beforeMs": 19.211773625,
+          "afterMs": 15.189900499999998,
+          "savedMs": 4.021873125000001,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.exact.noise",
+          "beforeMs": 0.038382124999999996,
+          "afterMs": 0.03750625,
+          "savedMs": 0.0008758749999999982,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.lighting",
+          "beforeMs": 0.119035,
+          "afterMs": 0.120671,
+          "savedMs": -0.0016359999999999986,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.reconstruction",
+          "beforeMs": 0.125119875,
+          "afterMs": 0.12505924999999998,
+          "savedMs": 6.062500000000859E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.scattering.diagnostic",
+          "beforeMs": 0.012404249999999999,
+          "afterMs": 0.012395499999999999,
+          "savedMs": 8.750000000000077E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.shadow",
+          "beforeMs": 0.70565375,
+          "afterMs": 0.6973435,
+          "savedMs": 0.008310249999999963,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.shadow.diagnostic",
+          "beforeMs": 0.371853875,
+          "afterMs": 0.38907674999999997,
+          "savedMs": -0.01722287499999997,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.view",
+          "beforeMs": 25.605025875,
+          "afterMs": 25.3743935,
+          "savedMs": 0.230632374999999,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "composition.present",
+          "beforeMs": 0.054655249999999996,
+          "afterMs": 0.05467325,
+          "savedMs": -1.8000000000004124E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.exposure",
+          "beforeMs": 0.038840625000000004,
+          "afterMs": 0.038888,
+          "savedMs": -4.737499999999534E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.histogram",
+          "beforeMs": 0.092112625,
+          "afterMs": 0.09217575,
+          "savedMs": -6.312499999999721E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.meter",
+          "beforeMs": 0.01209625,
+          "afterMs": 0.012094249999999999,
+          "savedMs": 2.0000000000002655E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "distant.world",
+          "beforeMs": 0.050554749999999996,
+          "afterMs": 0.05061625,
+          "savedMs": -6.1500000000006E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "geometry.upload",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "indirect.environment",
+          "beforeMs": 0.00673725,
+          "afterMs": 0.00651,
+          "savedMs": 0.00022725000000000002,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.1",
+          "beforeMs": 0.12956612499999998,
+          "afterMs": 0.1294855,
+          "savedMs": 8.062499999997308E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.2",
+          "beforeMs": 0.127394875,
+          "afterMs": 0.1284365,
+          "savedMs": -0.0010416250000000182,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.4",
+          "beforeMs": 0.12985775,
+          "afterMs": 0.1299325,
+          "savedMs": -7.47500000000123E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.state",
+          "beforeMs": 0.006241874999999999,
+          "afterMs": 0.00623575,
+          "savedMs": 6.124999999999187E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.temporal",
+          "beforeMs": 0.09303425,
+          "afterMs": 0.09246,
+          "savedMs": 0.0005742499999999984,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.trace",
+          "beforeMs": 34.55235175,
+          "afterMs": 34.56984575,
+          "savedMs": -0.017493999999999232,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.1",
+          "beforeMs": 0.071627,
+          "afterMs": 0.07160425,
+          "savedMs": 2.2750000000001935E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.2",
+          "beforeMs": 0.0696085,
+          "afterMs": 0.0695985,
+          "savedMs": 1.0000000000010001E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.4",
+          "beforeMs": 0.070527,
+          "afterMs": 0.0705895,
+          "savedMs": -6.249999999999312E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.temporal",
+          "beforeMs": 0.043356124999999995,
+          "afterMs": 0.04349075,
+          "savedMs": -0.00013462500000000627,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.trace",
+          "beforeMs": 15.887322,
+          "afterMs": 15.887796999999999,
+          "savedMs": -0.00047499999999978115,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "motion.camera",
+          "beforeMs": 0.03988725,
+          "afterMs": 0.039754,
+          "savedMs": 0.00013325000000000142,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "native.dlss",
+          "beforeMs": 1.04648875,
+          "afterMs": 1.04738625,
+          "savedMs": -0.0008974999999999955,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.composite",
+          "beforeMs": 0.020388,
+          "afterMs": 0.020388,
+          "savedMs": 0.0,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.direct",
+          "beforeMs": 0.3233425,
+          "afterMs": 0.3226835,
+          "savedMs": 0.0006589999999999652,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.reflection",
+          "beforeMs": 0.035422999999999996,
+          "afterMs": 0.03488625,
+          "savedMs": 0.0005367499999999956,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "reconstruction.exposure",
+          "beforeMs": 0.005718625,
+          "afterMs": 0.005712,
+          "savedMs": 6.624999999999687E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "reconstruction.inputs",
+          "beforeMs": 0.020399999999999998,
+          "afterMs": 0.020392499999999997,
+          "savedMs": 7.500000000000562E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.composite",
+          "beforeMs": 0.028700375,
+          "afterMs": 0.0286985,
+          "savedMs": 1.8750000000018752E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.prefilter.1",
+          "beforeMs": 0.16208525,
+          "afterMs": 0.16215924999999998,
+          "savedMs": -7.399999999999074E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.prefilter.2",
+          "beforeMs": 0.151547875,
+          "afterMs": 0.1516025,
+          "savedMs": -5.462500000000259E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.reflection",
+          "beforeMs": 3.864718375,
+          "afterMs": 3.8530604999999998,
+          "savedMs": 0.01165787500000004,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.temporal",
+          "beforeMs": 0.111121,
+          "afterMs": 0.1112445,
+          "savedMs": -0.0001234999999999986,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "tlas.build",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "water.composite",
+          "beforeMs": 0.020363125,
+          "afterMs": 0.02035875,
+          "savedMs": 4.375000000000906E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "water.trace",
+          "beforeMs": 0.13907975,
+          "afterMs": 0.1383775,
+          "savedMs": 0.0007022500000000154,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "world.total",
+          "beforeMs": 116.404025625,
+          "afterMs": 112.06976075,
+          "savedMs": 4.334264875000002,
+          "scope": "interval mean"
+        }
+      ]
+    },
+    {
+      "phase": "motion",
+      "valid": true,
+      "invalidReasons": [],
+      "geometryMatched": true,
+      "referenceWallMs": 116.43670039370079,
+      "candidateWallMs": 112.23217716535433,
+      "referenceFps": 8.588357421833123,
+      "candidateFps": 8.910100697117159,
+      "fpsGainPercent": 3.7462725347935155,
+      "referenceGpuMs": 116.345949625,
+      "candidateGpuMs": 112.18109824999999,
+      "referenceActiveCpuMs": 2.829724409448819,
+      "candidateActiveCpuMs": 2.952755905511811,
+      "referenceDriftPercent": 0.61382157925991,
+      "passes": [
+        {
+          "pass": "atmosphere.lighting",
+          "beforeMs": 0.121293125,
+          "afterMs": 0.1191965,
+          "savedMs": 0.0020966250000000047,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "atmosphere.multiple",
+          "beforeMs": 1.632927,
+          "afterMs": 1.6317895,
+          "savedMs": 0.0011375000000000135,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "atmosphere.sky",
+          "beforeMs": 0.072621125,
+          "afterMs": 0.0727025,
+          "savedMs": -8.137500000000852E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "blas.build",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "cloud.ambient.diagnostic",
+          "beforeMs": 0.0686245,
+          "afterMs": 0.06965325,
+          "savedMs": -0.001028749999999995,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.composite",
+          "beforeMs": 10.818902,
+          "afterMs": 10.74326825,
+          "savedMs": 0.07563374999999972,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.environment",
+          "beforeMs": 19.210041625000002,
+          "afterMs": 15.1601745,
+          "savedMs": 4.049867125000002,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.exact.noise",
+          "beforeMs": 0.038468499999999996,
+          "afterMs": 0.037468499999999995,
+          "savedMs": 0.0010000000000000009,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.lighting",
+          "beforeMs": 0.118926125,
+          "afterMs": 0.12091874999999999,
+          "savedMs": -0.001992624999999998,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.reconstruction",
+          "beforeMs": 0.12028475,
+          "afterMs": 0.12036324999999999,
+          "savedMs": -7.849999999999524E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.scattering.diagnostic",
+          "beforeMs": 0.0124135,
+          "afterMs": 0.01242975,
+          "savedMs": -1.625000000000064E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.shadow",
+          "beforeMs": 0.7992483749999999,
+          "afterMs": 0.75580625,
+          "savedMs": 0.04344212499999989,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.shadow.diagnostic",
+          "beforeMs": 0.347419375,
+          "afterMs": 0.36313975,
+          "savedMs": -0.01572037500000001,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "cloud.view",
+          "beforeMs": 25.3141365,
+          "afterMs": 25.373238999999998,
+          "savedMs": -0.05910249999999806,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "composition.present",
+          "beforeMs": 0.054516749999999996,
+          "afterMs": 0.05457625,
+          "savedMs": -5.9500000000003994E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.exposure",
+          "beforeMs": 0.0385675,
+          "afterMs": 0.0386745,
+          "savedMs": -0.00010700000000000293,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.histogram",
+          "beforeMs": 0.0917235,
+          "afterMs": 0.0918425,
+          "savedMs": -0.00011899999999999411,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "display.meter",
+          "beforeMs": 0.012114375,
+          "afterMs": 0.0120555,
+          "savedMs": 5.88749999999999E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "distant.world",
+          "beforeMs": 0.050823999999999994,
+          "afterMs": 0.050957999999999996,
+          "savedMs": -0.00013400000000000217,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "geometry.upload",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "indirect.environment",
+          "beforeMs": 0.006544625,
+          "afterMs": 0.0065102499999999995,
+          "savedMs": 3.437500000000055E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.1",
+          "beforeMs": 0.12859575,
+          "afterMs": 0.12861075,
+          "savedMs": -1.4999999999987246E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.2",
+          "beforeMs": 0.126457625,
+          "afterMs": 0.12630875,
+          "savedMs": 0.00014887499999999276,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.spatial.4",
+          "beforeMs": 0.12863012499999998,
+          "afterMs": 0.12860475,
+          "savedMs": 2.5374999999994152E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.state",
+          "beforeMs": 0.006451624999999999,
+          "afterMs": 0.00636325,
+          "savedMs": 8.837499999999904E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.temporal",
+          "beforeMs": 0.091848125,
+          "afterMs": 0.09147025,
+          "savedMs": 0.00037787499999999974,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "indirect.trace",
+          "beforeMs": 34.026458125000005,
+          "afterMs": 33.97107725,
+          "savedMs": 0.05538087500000444,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.1",
+          "beforeMs": 0.07245525,
+          "afterMs": 0.0724525,
+          "savedMs": 2.7499999999958114E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.2",
+          "beforeMs": 0.07040037499999999,
+          "afterMs": 0.070322,
+          "savedMs": 7.837499999999165E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.spatial.4",
+          "beforeMs": 0.07134675,
+          "afterMs": 0.07132825,
+          "savedMs": 1.8500000000004624E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.temporal",
+          "beforeMs": 0.044104624999999995,
+          "afterMs": 0.044066499999999995,
+          "savedMs": 3.8124999999999964E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "leaf.indirect.trace",
+          "beforeMs": 15.927575374999998,
+          "afterMs": 15.9187345,
+          "savedMs": 0.00884087499999886,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "motion.camera",
+          "beforeMs": 0.039649,
+          "afterMs": 0.039363999999999996,
+          "savedMs": 0.00028500000000000053,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "native.dlss",
+          "beforeMs": 1.049961875,
+          "afterMs": 1.0513062499999999,
+          "savedMs": -0.0013443749999999532,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.composite",
+          "beforeMs": 0.020396125,
+          "afterMs": 0.02040425,
+          "savedMs": -8.124999999997717E-06,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.direct",
+          "beforeMs": 0.32480375,
+          "afterMs": 0.32360475,
+          "savedMs": 0.0011990000000000056,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "ray.reflection",
+          "beforeMs": 0.034866375,
+          "afterMs": 0.0348775,
+          "savedMs": -1.1125000000000718E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "reconstruction.exposure",
+          "beforeMs": 0.006076999999999999,
+          "afterMs": 0.00597175,
+          "savedMs": 0.00010524999999999944,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "reconstruction.inputs",
+          "beforeMs": 0.020422,
+          "afterMs": 0.020384,
+          "savedMs": 3.799999999999984E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.composite",
+          "beforeMs": 0.028674124999999998,
+          "afterMs": 0.028673749999999998,
+          "savedMs": 3.7500000000037503E-07,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.prefilter.1",
+          "beforeMs": 0.16072575,
+          "afterMs": 0.16061825,
+          "savedMs": 0.00010750000000001037,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.prefilter.2",
+          "beforeMs": 0.150112,
+          "afterMs": 0.15006275,
+          "savedMs": 4.925000000000068E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.reflection",
+          "beforeMs": 4.156392875,
+          "afterMs": 4.151399,
+          "savedMs": 0.0049938750000002585,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "rough.temporal",
+          "beforeMs": 0.11085587499999999,
+          "afterMs": 0.11091025,
+          "savedMs": -5.437500000000928E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "tlas.build",
+          "beforeMs": 0.0,
+          "afterMs": 0.0,
+          "savedMs": 0.0,
+          "scope": "amortized per frame"
+        },
+        {
+          "pass": "water.composite",
+          "beforeMs": 0.02040425,
+          "afterMs": 0.020389499999999998,
+          "savedMs": 1.4750000000000874E-05,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "water.trace",
+          "beforeMs": 0.13648274999999999,
+          "afterMs": 0.13661774999999998,
+          "savedMs": -0.00013499999999999623,
+          "scope": "interval mean"
+        },
+        {
+          "pass": "world.total",
+          "beforeMs": 116.345949625,
+          "afterMs": 112.18109824999999,
+          "savedMs": 4.164851375000012,
+          "scope": "interval mean"
+        }
+      ]
+    }
+  ],
+  "scope": "GPU world excludes UI/swapchain. CPU is render-thread active CPU, not all process CPU. Native allocation bytes exclude engine/Sodium/NGX. Device VRAM/usage are WDDM device-wide 500ms samples, not isolated process residency or guaranteed instantaneous peaks."
+}
