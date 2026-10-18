@@ -1,0 +1,3 @@
+#version 460
+#include "shaders/night-lighting.glsl"
+void main(){imageStore(Output0,ivec2(0),vec4(cinematicKeyDirection(),WorldTimeWeatherDimension.y));}
