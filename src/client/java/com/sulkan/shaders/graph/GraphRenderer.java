@@ -596,7 +596,7 @@ public final class GraphRenderer implements AutoCloseable {
                   System.setProperty("sulkan.qaProfileGroupY","4");
                   dispatchNode(node,uniforms,main,rayHandle,rayAttributes,null);
                   var actualFrame=this.diagnosticFrame();
-                  for(String output:node.writes())WorkgroupVerification.compare(node.name(),output,actualFrame,originals.get(output),readbackTexture(this.image(output).texture,output+"/8x4"));
+                  for(String output:node.writes())WorkgroupVerification.compare(node.name(),output,this.image(output).texture.getFormat().name(),actualFrame,originals.get(output),readbackTexture(this.image(output).texture,output+"/8x4"));
                } finally {System.setProperty("sulkan.qaProfileGroupY",restore);}
             } else dispatchNode(node,uniforms,main,rayHandle,rayAttributes,this.gpuTimings);
             if (node.rayScene()) this.rayDispatches++;
