@@ -14,7 +14,7 @@ public final class WorkgroupVerification {
         int index=frame.getInt(1132);var motion=List.of(frame.getFloat(384),frame.getFloat(388),frame.getFloat(392));
         results.add(baseline.thenCombine(candidate,(a,b)->{
             int mismatch=a.mismatch(b);
-            var row=new LinkedHashMap<String,Object>();row.put("phase",phase);row.put("pass",pass);row.put("resource",resource);row.put("format",format);row.put("frame",index);
+            var row=new LinkedHashMap<String,Object>();row.put("phase",phase);row.put("pass",pass);row.put("resource",resource);row.put("format",format);row.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));row.put("frame",index);
             row.put("cameraDelta",motion);row.put("bytes",a.remaining());row.put("byteIdentical",mismatch==-1);row.put("firstMismatchByte",mismatch);
             if(mismatch!=-1) {
                 int step=format.contains("16_FLOAT")?2:4,changed=0,nonfinite=0;double absolute=0,reference=0,maximum=0;
@@ -28,8 +28,8 @@ public final class WorkgroupVerification {
                 String key=phase+"-"+pass+"-"+resource;
                 if(saved.add(key))try {
                     var directory=java.nio.file.Path.of(System.getProperty("sulkan.qaDirectory"),"evidence");
-                    byte[] bytes=new byte[a.remaining()];a.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-8x8.bin"),bytes);
-                    b.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-8x4.bin"),bytes);
+                    byte[] bytes=new byte[a.remaining()];a.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-reference.bin"),bytes);
+                    b.duplicate().get(bytes);java.nio.file.Files.write(directory.resolve("group-diff-"+key+"-candidate.bin"),bytes);
                 }catch(java.io.IOException failure){throw new java.util.concurrent.CompletionException(failure);}
             }
             return (Map<String,Object>)row;

@@ -55,6 +55,7 @@ final class ComputeProgram implements AutoCloseable {
    private long layout;
    private long pipeline;
    private long profilePipeline;
+   private int profileLocalY=4;
    private static final java.util.Set<String> PROFILE_GROUP_TARGETS=java.util.Set.of("indirect.trace","leaf.indirect.trace","cloud.view","cloud.environment","cloud.composite","rough.reflection");
    boolean profileVariant(){return this.profilePipeline!=0;}
    private final Deque<ComputeProgram.Descriptors> availableDescriptors = new ArrayDeque<>();
@@ -188,9 +189,15 @@ final class ComputeProgram implements AutoCloseable {
                      VK10.vkDestroyShaderModule(this.device.vkDevice(), module, null);
                   }
                }
-               if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && PROFILE_GROUP_TARGETS.contains(pass.name()) && pass.localSize().equals(java.util.List.of(8,8,1))) {
-                  String variantSource=source(graph,pass,files.shader(pass.compute(),shaderDefines)).replace("local_size_y=8,","local_size_y=4,");
-                  this.profilePipeline=compileProfilePipeline(pass.name()+"/8x4",variantSource);
+               boolean cloudCell="cloud-cell".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"));
+               boolean target=cloudCell ? java.util.Set.of("cloud.view","cloud.environment","cloud.composite","cloud.shadow").contains(pass.name()) : PROFILE_GROUP_TARGETS.contains(pass.name());
+               if(Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && target && pass.localSize().equals(java.util.List.of(8,8,1))) {
+                  String variantSource;
+                  if(cloudCell) {
+                     var alternateDefines=new java.util.LinkedHashMap<>(shaderDefines);alternateDefines.put("SULKAN_CLOUD_CELL_FAST_PATH",1d);
+                     variantSource=source(graph,pass,files.shader(pass.compute(),alternateDefines));this.profileLocalY=8;
+                  } else variantSource=source(graph,pass,files.shader(pass.compute(),shaderDefines)).replace("local_size_y=8,","local_size_y=4,");
+                  this.profilePipeline=compileProfilePipeline(pass.name()+"/"+(cloudCell?"cloud-cell":"8x4"),variantSource);
                }
             } catch (Throwable var35) {
                if (stack != null) {
@@ -355,7 +362,7 @@ final class ComputeProgram implements AutoCloseable {
          int z = first == null ? this.pass.dispatch().get(2) : first.getDepthOrLayers();
          int groupsX = (x + this.pass.localSize().get(0) - 1) / this.pass.localSize().get(0);
          boolean narrow=this.profilePipeline!=0 && "4".equals(System.getProperty("sulkan.qaProfileGroupY"));
-         int localY=narrow?4:this.pass.localSize().get(1);
+         int localY=narrow?this.profileLocalY:this.pass.localSize().get(1);
          int groupsY = (y + localY - 1) / localY;
          int groupsZ = (z + this.pass.localSize().get(2) - 1) / this.pass.localSize().get(2);
          if (groupsX > this.groupLimits[0] || groupsY > this.groupLimits[1] || groupsZ > this.groupLimits[2]) {

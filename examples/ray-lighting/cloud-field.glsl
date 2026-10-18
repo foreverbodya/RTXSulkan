@@ -33,6 +33,12 @@ vec4 cinematicCloudCell(sampler2D layoutTexture,ivec2 cell) {
     ivec2 size=textureSize(layoutTexture,0),p=ivec2(sulkanWrapInt(cell.x,size.x),sulkanWrapInt(cell.y,size.y));
     vec4 c=texelFetch(layoutTexture,p,0);
     float occupied=step(10.0/255.0,c.a);
+#if defined(SULKAN_CLOUD_CELL_FAST_PATH) && SULKAN_CLOUD_CELL_FAST_PATH == 1
+    // Exact endpoints of the original transfer function. Colored resource packs
+    // keep the original conversion; no density, sample or radiance approximation.
+    if(occupied==0.0)return vec4(0);
+    if(all(equal(c.rgb,vec3(1))))return vec4(1);
+#endif
     return vec4(cinematicCloudLinear(c.rgb)*occupied,occupied);
 }
 vec4 cinematicCloudField(sampler2D layoutTexture,vec3 p) {

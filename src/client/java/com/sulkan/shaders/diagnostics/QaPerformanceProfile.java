@@ -38,7 +38,7 @@ final class QaPerformanceProfile {
         this.directory=directory;this.base=pose.clone();this.scene=new LinkedHashMap<>(scene);
         plan=List.of(System.getProperty("sulkan.qaProfilePlan","static,motion,static-repeat,stream,settled").split(","));
         if(thread.isCurrentThreadCpuTimeSupported() && !thread.isThreadCpuTimeEnabled())thread.setThreadCpuTimeEnabled(true);
-        write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,
+        write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,"experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"),
             "path","motion: X +/-4m, Z +/-2m, yaw +/-12deg, one sine cycle/128 rendered frames; stream: +4m X/frame for 512m; time does not select path positions",
             "timingScope","No GPU readbacks or disk writes during timed frames; CPU thread time is current render-thread active CPU between world-completion callbacks, excludes blocked GPU waits. Wall includes engine/ticks/pose guard. Vulkan allocation counters exclude engine, Sodium and NGX; device-wide VRAM/usage sampled externally."));
         configure();
@@ -104,12 +104,15 @@ final class QaPerformanceProfile {
         }
         var report=new LinkedHashMap<String,Object>(scene);
         report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
-        report.put("workgroupY",System.getProperty("sulkan.qaProfileGroupY"));report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
+        report.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));
+        report.put("candidateSelected",phase().startsWith("narrow-"));
+        report.put("workgroupY",phase().startsWith("narrow-") && !"cloud-cell".equals(System.getProperty("sulkan.qaComputeExperiment"))?4:8);report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
         report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",geometryEnd);
         report.put("rayStart",rayStart);report.put("rayEnd",rayEnd);
         report.put("workCountersStart",countersStart);report.put("workCountersEnd",countersEnd);
         report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",memoryEnd);
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());
+        report.put("sourceRevisionUnchanged",perFrame.stream().map(row->((Map<?,?>)row).get("geometryRevision")).distinct().count()==1);
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
         report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",List.copyOf(perFrame));
         reports.add(report);write("profile-"+phase()+".json",report);

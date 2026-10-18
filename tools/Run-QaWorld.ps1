@@ -70,6 +70,7 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $WorkgroupExperiment,
+    [ValidateSet("workgroup","cloud-cell")][string] $ComputeExperiment = "workgroup",
     [string] $ProfilePlan = "static,motion,static-repeat,stream,settled",
     [switch] $SolidShadowComparison,
     [switch] $CloudLightingComparison,
@@ -385,7 +386,7 @@ if($CloudMotionAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionAu
 if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionSequence=true')}
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
-if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true")}
+if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")}
 if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
 if($SolidShadowComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSolidShadowComparison=true')}
 if($CloudSourceComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudSourceComparison=true')}
@@ -687,7 +688,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    workgroupExperiment = [bool]$WorkgroupExperiment; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison
