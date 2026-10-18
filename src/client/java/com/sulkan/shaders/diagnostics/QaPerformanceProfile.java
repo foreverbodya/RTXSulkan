@@ -91,8 +91,9 @@ final class QaPerformanceProfile {
             if(previousCpu>0 && active>=0)cpu.add((active-previousCpu)*1e-6);
             previousTime=now;previousCpu=active;
             var rays=NativePackRuntime.diagnosticRayScene();
+            var terrainMemory=TerrainGeometryCache.memoryStatistics();
             perFrame.add(Map.of("index",frame,"pose",pose(),"pendingSections",rays.pendingSections(),
-                "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",TerrainGeometryCache.statistics().revision(),
+                "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",terrainMemory.revision(),"terrainCpuMemory",terrainMemory,
                 "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"vulkanMemory",NativePackRuntime.diagnosticMemoryBudget(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
             frame++;
             if(frame==phaseFrames()) {

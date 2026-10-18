@@ -107,7 +107,7 @@ param(
     [string] $RuntimeDirectory,
     [ValidateRange(10,260)][int] $MaxFps = 60,
     [switch] $DisableVsync,
-    [ValidateRange(180,1800)][int] $TimeoutSeconds = 600
+    [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}

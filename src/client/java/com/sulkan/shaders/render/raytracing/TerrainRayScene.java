@@ -260,6 +260,11 @@ public final class TerrainRayScene {
             oldEmission.close();
             bottoms.forEach(AccelerationStructure::close);
             if (attributeArena!=null) { attributes.forEach(attributeArena::release); attributeArena.close(); }
+            if(Boolean.getBoolean("sulkan.qaPerformanceProfile"))com.mojang.logging.LogUtils.getLogger().info(
+                "SULKAN_PROFILE_RAY_RETIRE nativeBuffers={} attributeBudget={} descriptors={}",
+                new com.google.gson.Gson().toJson(com.sulkan.shaders.platform.vulkan.NativeBuffer.statistics()),
+                attributeArena==null?"null":new com.google.gson.Gson().toJson(attributeArena.budget()),
+                new com.google.gson.Gson().toJson(com.sulkan.shaders.graph.ProfileCounters.snapshot()));
         });
         top = null;
         emission=new RayEmissionSources.Snapshot(null,0,false);

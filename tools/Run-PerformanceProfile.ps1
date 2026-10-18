@@ -9,7 +9,8 @@ param(
     [switch]$NativeFrameComparison,
     [switch]$SkipImageComparison,
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string]$ComputeExperiment = "workgroup",
-    [ValidateRange(2,32)][int]$RenderDistance = 6
+    [ValidateRange(2,32)][int]$RenderDistance = 6,
+    [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
 )
 $ErrorActionPreference='Stop'
 $workspace=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -18,6 +19,11 @@ $target=[IO.Path]::GetFullPath($QaDirectory,$workspace)
 if(Test-Path -LiteralPath $target){throw 'Use a fresh disposable profiling directory'}
 $telemetry=$target+'-gpu.csv'
 $gpuInfo=$target+'-gpu-info.txt'
+$sourceInfo=$target+'-source.json'
+@{commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
+  profilePlan=$ProfilePlan;profileTime=$ProfileTime;renderDistance=$RenderDistance;experiment=$ComputeExperiment;
+  alternatePipeline=[bool]$WorkgroupExperiment;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;
+  timeoutSeconds=$TimeoutSeconds} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
 & nvidia-smi -q | Set-Content -LiteralPath $gpuInfo
 # Owned, read-only telemetry helper; WDDM reports device-wide usage, not process residency.
 $monitor=Start-Process -FilePath (Get-Command nvidia-smi).Source -ArgumentList @('--query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,clocks.gr,clocks.mem','--format=csv,noheader,nounits','-lms','500','-f',('"'+$telemetry+'"')) -WindowStyle Hidden -PassThru
@@ -29,8 +35,8 @@ try {
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `
         -CloudDensityProfile 1 -CloudViewDensitySubsteps 1 -CloudReconstructionGuides -WorldDlss -GpuTimings `
         -NativeLibrary (Join-Path $workspace 'outputs/sulkan-cinematic/build/native/dlss/sulkan_ngx_probe.dll') `
-        -RuntimeDirectory (Join-Path $workspace 'work/dlss-sdk/lib/Windows_x86_64/rel') -MaxFps 260 -DisableVsync -TimeoutSeconds 1800
+        -RuntimeDirectory (Join-Path $workspace 'work/dlss-sdk/lib/Windows_x86_64/rel') -MaxFps 260 -DisableVsync -TimeoutSeconds $TimeoutSeconds
 } finally {
     if(!$monitor.HasExited){$monitor.Kill();$monitor.WaitForExit()}
-    if(Test-Path -LiteralPath $target){Copy-Item -LiteralPath $telemetry,$gpuInfo -Destination $target}
+    if(Test-Path -LiteralPath $target){Copy-Item -LiteralPath $telemetry,$gpuInfo,$sourceInfo -Destination $target}
 }

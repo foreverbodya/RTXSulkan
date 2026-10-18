@@ -19,6 +19,7 @@ public final class TerrainGeometryCache {
     }
     public record Statistics(int sections, long triangles, long ownedBytes, long revision, String failure,
                              long expandedBytes, long payloadBudgetBytes, TerrainMesh.DecodeStatistics decoded) {}
+    public record MemoryStatistics(int sections,long ownedBytes,long payloadBudgetBytes,long revision,TerrainMesh.DecodeStatistics decoded) {}
     private static final Map<Object, Section> SECTIONS = new IdentityHashMap<>();
     private static final Map<Object, Change> CHANGES = new IdentityHashMap<>();
     private static boolean cleared;
@@ -94,6 +95,10 @@ public final class TerrainGeometryCache {
         CHANGES.clear();
         cleared = false;
         return List.copyOf(pending);
+    }
+    /** Constant-time QA memory snapshot; avoid scanning every mesh in each measured frame. */
+    public static MemoryStatistics memoryStatistics() {
+        return new MemoryStatistics(SECTIONS.size(),bytes,MAX_BYTES,revision,TerrainMesh.decodeStatistics());
     }
     public static Statistics statistics() {
         long triangles = SECTIONS.values().stream().flatMap(section -> section.meshes().stream()).mapToLong(TerrainMesh::triangleCount).sum();
