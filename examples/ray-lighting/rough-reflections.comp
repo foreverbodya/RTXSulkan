@@ -44,14 +44,23 @@ void main() {
     vec3 f0=mix(vec3(.04),texelFetch(Albedo,pixel,0).rgb,metal),total=vec3(0);
     uint base=uint(pixel.x)+uint(pixel.y)*65537u;
     base^=indirectHash(RaySceneState.w+0x3f2a61c9u);
-    for(uint i=0u;i<4u;i++) {
+#if REALTIME_DIFFUSE == 1
+    const uint paths=1u;
+#else
+    const uint paths=4u;
+#endif
+    for(uint i=0u;i<paths;i++) {
         uint seed=indirectHash(base^(i*0x9e3779b9u));
         vec3 lightDirection,lightRadiance;float lightPdf;
         if(cinematicSampleEmitter(origin,seed,lightDirection,lightRadiance,lightPdf)) {
             float specularPdf=roughReflectionPdf(roughness,n,v,lightDirection);
             vec3 halfVector=normalize(v+lightDirection);
+            float mis=cinematicPowerWeight(lightPdf,specularPdf);
+#if REALTIME_EMITTER_TREE == 1
+            mis=1.0;
+#endif
             total+=lightRadiance*roughReflectionWeight(f0,roughness,nv,dot(n,lightDirection),dot(v,halfVector))
-                *(specularPdf/lightPdf)*cinematicPowerWeight(lightPdf,specularPdf);
+                *(specularPdf/lightPdf)*mis;
         }
         vec2 sampleValue=indirectSampleSeed(seed).xy;
         vec3 h=roughReflectionHalf(v,n,roughness*roughness,sampleValue);
@@ -78,7 +87,11 @@ void main() {
         total+=incoming*roughReflectionWeight(f0,roughness,nv,nl,dot(v,h));
         if(i==0u)imageStore(Output1,pixel,vec4(origin+direction*max(distance,0.0),distance));
     }
+#if REALTIME_DIFFUSE == 1
+    vec3 result=total;
+#else
     vec3 result=total*.25;
+#endif
 #ifdef CINEMATIC_ATMOSPHERE
     // Direct pass already adds camera-path in-scatter; apply only extinction.
     result*=mix(vec3(1),atmAirTransmittance(length(relative)),atmBlend());

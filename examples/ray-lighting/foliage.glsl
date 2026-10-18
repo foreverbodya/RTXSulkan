@@ -15,7 +15,11 @@ vec3 foliageLinear(vec3 c) {
 // another scattering event. This is a material convention, not a measured leaf
 // volume or a repair claimed for the original two-sided surface convention.
 uint foliageTraceRadiance(rayQueryEXT query,sampler2D atlas,vec3 origin,float minimum,vec3 direction,float maximum) {
-#if LEAF_RADIANCE_BOUNDARY == 1 && defined(FOLIAGE_TRANSMISSION)
+#if REALTIME_DIFFUSE == 1
+    rayQueryInitializeEXT(query,SulkanRayScene,gl_RayFlagsOpaqueEXT,3,origin,minimum,direction,maximum);
+    while(rayQueryProceedEXT(query)) {}
+    return 0u;
+#elif LEAF_RADIANCE_BOUNDARY == 1 && defined(FOLIAGE_TRANSMISSION)
     // NoOpaque also exposes opaque leaf meshes; solid materials still confirm.
     rayQueryInitializeEXT(query,SulkanRayScene,gl_RayFlagsNoOpaqueEXT,3,origin,minimum,direction,maximum);
     uint rejected=0u;vec2 shrink=sulkanRayAtlasShrink(textureSize(atlas,0));
