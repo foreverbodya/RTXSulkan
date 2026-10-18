@@ -8,6 +8,7 @@ param(
     [switch]$WorkgroupExperiment,
     [switch]$NativeFrameComparison,
     [switch]$SkipImageComparison,
+    [switch]$PrepareGeometry,
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
@@ -22,14 +23,14 @@ $gpuInfo=$target+'-gpu-info.txt'
 $sourceInfo=$target+'-source.json'
 @{commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
   profilePlan=$ProfilePlan;profileTime=$ProfileTime;renderDistance=$RenderDistance;experiment=$ComputeExperiment;
-  alternatePipeline=[bool]$WorkgroupExperiment;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;
+  alternatePipeline=[bool]$WorkgroupExperiment;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;prepareGeometry=[bool]$PrepareGeometry;
   timeoutSeconds=$TimeoutSeconds} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
 & nvidia-smi -q | Set-Content -LiteralPath $gpuInfo
 # Owned, read-only telemetry helper; WDDM reports device-wide usage, not process residency.
 $monitor=Start-Process -FilePath (Get-Command nvidia-smi).Source -ArgumentList @('--query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,clocks.gr,clocks.mem','--format=csv,noheader,nounits','-lms','500','-f',('"'+$telemetry+'"')) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `

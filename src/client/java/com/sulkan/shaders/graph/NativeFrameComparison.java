@@ -11,6 +11,9 @@ public final class NativeFrameComparison {
     private static final List<CompletableFuture<Map<String,Object>>> results=new ArrayList<>();
     private static final java.util.concurrent.Executor WRITER=java.util.concurrent.Executors.newSingleThreadExecutor(r->{var thread=new Thread(r,"Sulkan native image evidence");thread.setDaemon(true);return thread;});
     static void capture(ByteBuffer frame,int sequence,int width,int height,CompletableFuture<ByteBuffer> reference,CompletableFuture<ByteBuffer> candidate) {
+        capture("candidate",frame,sequence,width,height,reference,candidate);
+    }
+    static void capture(String comparison,ByteBuffer frame,int sequence,int width,int height,CompletableFuture<ByteBuffer> reference,CompletableFuture<ByteBuffer> candidate) {
         String phase=System.getProperty("sulkan.qaProfilePhase");int frameNumber=frame.getInt(1132);
         var motion=List.of(frame.getFloat(384),frame.getFloat(388),frame.getFloat(392));
         results.add(reference.thenCombineAsync(candidate,(a,b)->{
@@ -23,13 +26,14 @@ public final class NativeFrameComparison {
             }
             try {
                 var directory=Path.of(System.getProperty("sulkan.qaDirectory"),"evidence");
-                String prefix="native-"+phase+"-"+String.format(java.util.Locale.ROOT,"%02d",sequence);
+                String prefix="native-"+(comparison.equals("self")?"self-":"")+phase+"-"+String.format(java.util.Locale.ROOT,"%02d",sequence);
                 png(directory.resolve(prefix+"-reference.png"),a,width,height);png(directory.resolve(prefix+"-candidate.png"),b,width,height);
                 byte[] uniform=new byte[frame.remaining()];frame.duplicate().get(uniform);Files.write(directory.resolve(prefix+"-frame.bin"),uniform);
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
-            return Map.<String,Object>of("phase",phase,"sequence",sequence,"frame",frameNumber,"cameraDelta",motion,
+            var result=new LinkedHashMap<String,Object>(Map.<String,Object>of("phase",phase,"sequence",sequence,"frame",frameNumber,"cameraDelta",motion,
                 "width",width,"height",height,"maximumRGBCodeDelta",maximum,"changedPixels",changedPixels,
-                "meanRGBCodeDelta",absolute/(double)(width*height*3),"meanSquaredRGBCodeDelta",squared/(double)(width*height*3));
+                "meanRGBCodeDelta",absolute/(double)(width*height*3),"meanSquaredRGBCodeDelta",squared/(double)(width*height*3)));
+            result.put("comparison",comparison);return result;
         },WRITER));
     }
     private static void png(Path path,ByteBuffer bytes,int width,int height)throws Exception {

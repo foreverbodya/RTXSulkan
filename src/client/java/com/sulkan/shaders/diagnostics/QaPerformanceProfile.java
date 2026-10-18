@@ -31,6 +31,8 @@ final class QaPerformanceProfile {
     private String geometryStart;
     private long startEpochMs;
     private boolean measuring,timingSaved;
+    private final boolean fastPreparation=Boolean.getBoolean("sulkan.qaProfilePrepareGeometry");
+    private boolean preparingReload;
     private int verificationFrame;
     private CompletableFuture<Void> image;
 
@@ -41,6 +43,7 @@ final class QaPerformanceProfile {
         write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,"experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"),
             "path","motion: X +/-2m, Z +/-1m, yaw +/-12deg, one sine cycle/128 rendered frames; stream: +4m X/frame for 512m; time does not select path positions",
             "timingScope","No GPU readbacks or disk writes during timed frames; CPU thread time is current render-thread active CPU between world-completion callbacks, excludes blocked GPU waits. Wall includes engine/ticks/pose guard. Vulkan allocation counters exclude engine, Sodium and NGX; device-wide VRAM/usage sampled externally."));
+        System.clearProperty("sulkan.qaProfilePrepareGeometry");
         configure();
     }
     private String phase(){return plan.get(phaseIndex);}
@@ -51,7 +54,10 @@ final class QaPerformanceProfile {
         System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
         System.setProperty("sulkan.qaProfileDisabled",group);
-        if(path().equals("reload"))NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),NativePackRuntime.diagnosticOptions());
+        if(path().equals("reload")){
+            if(fastPreparation){System.setProperty("sulkan.qaProfilePrepareGeometry","true");preparingReload=true;}
+            NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),NativePackRuntime.diagnosticOptions());
+        }
         if(path().equals("resize"))Minecraft.getInstance().getWindow().setWindowed(1920,1080);
         LogUtils.getLogger().info("SULKAN_PROFILE_PHASE_CONFIG phase={} disabled={}",phase(),group);
     }
@@ -77,6 +83,7 @@ final class QaPerformanceProfile {
         if(frame<0){if(path().equals("resize") && frame==-WARMUP+64)Minecraft.getInstance().getWindow().setWindowed(2560,1440);frame++;return false;}
         if(!measuring) {
             if(!java.util.Set.of("stream","travel").contains(path()) && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
+            if(preparingReload){System.clearProperty("sulkan.qaProfilePrepareGeometry");preparingReload=false;frame=-WARMUP;return false;}
             startEpochMs=System.currentTimeMillis();
             geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
             countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
@@ -120,6 +127,7 @@ final class QaPerformanceProfile {
         report.put("poseCheckedEveryFrame",true);
         report.put("sourceRevisionUnchanged",perFrame.stream().map(row->((Map<?,?>)row).get("geometryRevision")).distinct().count()==1);
         report.put("renderDistance",Minecraft.getInstance().options.getEffectiveRenderDistance());
+        report.put("asBuildMeshBudget",8);report.put("untimedGeometryPreparationMeshBudget",fastPreparation?128:8);
         report.put("vsync",Minecraft.getInstance().options.enableVsync().get());report.put("perFrame",List.copyOf(perFrame));
         reports.add(report);write("profile-"+phase()+".json",report);
             timingSaved=true;

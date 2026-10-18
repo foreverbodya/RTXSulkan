@@ -559,7 +559,9 @@ public final class GraphRenderer implements AutoCloseable {
          this.rayScene.enqueue(TerrainGeometryCache.drainChanges());
          this.rayScene.sampleEmission(this.graph.options().getOrDefault("EMISSIVE_SAMPLING",0d)>0);
          if(this.graph.cameraRelativeRays()) this.rayScene.followCamera(camera.pos.x,camera.pos.y,camera.pos.z);
-         TerrainRayScene.View rayView = this.rayScene.synchronize(this.rayDevice.createCommandEncoder(), 8,this.gpuTimings);
+         // Explicit QA-only initial/reload preparation. Timed gameplay always restores eight meshes.
+         int meshBudget=Boolean.getBoolean("sulkan.qaPerformanceProfile") && Boolean.getBoolean("sulkan.qaProfilePrepareGeometry")?128:8;
+         TerrainRayScene.View rayView = this.rayScene.synchronize(this.rayDevice.createCommandEncoder(), meshBudget,this.gpuTimings);
          rayHandle = rayView.handle();
          rayAttributes = rayView.attributeData();
          this.frame.emissionSources(this.rayScene.emissionAddress(),this.rayScene.emissionTriangles());
@@ -579,6 +581,10 @@ public final class GraphRenderer implements AutoCloseable {
             var hdrA=readbackTexture(this.image(this.graph.reconstruction().color()).texture,"HDR reference");
             qaReconstruct(this.qaReference,reset || this.qaQualityFrames==0);
             var displayA=qaPresent(this.qaReference.output(),"reference");
+            // Same untouched input resources, jitter/reset and independent NGX history.
+            qaReconstruct(this.qaNativeSelf,reset || this.qaQualityFrames==0);
+            var displaySelf=qaPresent(this.qaNativeSelf.output(),"self");
+            NativeFrameComparison.capture("self",this.diagnosticFrame(),this.qaQualityFrames,destination.width,destination.height,displayA,displaySelf);
             this.buffers.beginFrame(this.parity,false);
             renderSchedule(encoder,uniforms,main,directPresent,rayHandle,rayAttributes);
             var hdrSelf=readbackTexture(this.image(this.graph.reconstruction().color()).texture,"HDR self");
@@ -644,7 +650,7 @@ public final class GraphRenderer implements AutoCloseable {
       this.renderedFrames++;
    }
 
-   private WorldReconstruction qaReference,qaCandidate;
+   private WorldReconstruction qaReference,qaCandidate,qaNativeSelf;
    private Image qaDisplay;
    private int qaQualityFrames;
    private String qaQualityPhase;
@@ -654,6 +660,7 @@ public final class GraphRenderer implements AutoCloseable {
          if(!java.util.Objects.equals(phase,this.qaQualityPhase)){this.qaQualityPhase=phase;this.qaQualityFrames=0;}
          if(this.qaReference==null)this.qaReference=new WorldReconstruction(this.rayDevice,destination);
          if(this.qaCandidate==null)this.qaCandidate=new WorldReconstruction(this.rayDevice,destination);
+         if(this.qaNativeSelf==null)this.qaNativeSelf=new WorldReconstruction(this.rayDevice,destination);
          if(this.qaDisplay==null) {
             var texture=RenderSystem.getDevice().createTexture("Sulkan QA native comparison",10,GpuFormat.RGBA8_UNORM,destination.width,destination.height,1,1);
             try{this.qaDisplay=new Image(texture,RenderSystem.getDevice().createTextureView(texture));}
@@ -1053,6 +1060,7 @@ public final class GraphRenderer implements AutoCloseable {
          this.closed = true;
          if(this.qaReference!=null)this.qaReference.close();
          if(this.qaCandidate!=null)this.qaCandidate.close();
+         if(this.qaNativeSelf!=null)this.qaNativeSelf.close();
          if(this.qaDisplay!=null)RenderSystem.queueFencedTask(this.qaDisplay::close);
          if(this.reconstruction!=null) { this.reconstruction.close(); this.reconstruction=null; }
          if (this.rayScene != null) {

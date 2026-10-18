@@ -11,7 +11,9 @@ from pathlib import Path
 def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
-    combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8"))
+    completed = (evidence / "performance-profile.json").exists()
+    combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8")) if completed else {
+        "reports": sorted((json.loads(f.read_text(encoding="utf-8")) for f in evidence.glob("profile-*.json") if f.name!="profile-plan.json"),key=lambda s:s["startEpochMs"])}
     # Individual reports are authoritative; the first harness version shared list references
     # in its combined report. Scalar means are unaffected, but do not reuse those lists.
     reports = []
@@ -62,7 +64,7 @@ def load_run(root):
                 # Stopping the owned sampler can leave a truncated final line. Preserve the
                 # source and report discarded rows; do not synthesize missing telemetry.
                 try:
-                    if len(r)!=9:
+                    if len(r)!=8:
                         raise ValueError("Incomplete telemetry row")
                     when = dt.datetime.strptime(r[0].strip(), "%Y/%m/%d %H:%M:%S.%f").timestamp() * 1000
                     float(r[1]); float(r[3])
@@ -77,7 +79,7 @@ def load_run(root):
                 row["deviceGpuUtilMeanPercent"] = sum(float(r[1]) for r in samples) / len(samples)
                 row["deviceGpuUtilSamples"] = len(samples)
         reports.append(row)
-    return {"root": str(root.resolve()), "reports": reports,
+    return {"root": str(root.resolve()), "reports": reports, "allPhasesCompleted":completed,
             "artifact": json.loads((root / "result.json").read_text(encoding="utf-8")),
             "scope": "GPU world excludes UI/swapchain. CPU is render-thread active CPU, not all process CPU. Native allocation bytes exclude engine/Sodium/NGX. Device VRAM/usage are WDDM device-wide 500ms samples, not isolated process residency or guaranteed instantaneous peaks."}
 
@@ -121,7 +123,9 @@ def comparisons(run):
 
 def quality_summary(root):
     root=Path(root)
-    a=json.loads((root/"evidence/native-frame-comparison.json").read_text(encoding="utf-8"))
+    all_pairs=json.loads((root/"evidence/native-frame-comparison.json").read_text(encoding="utf-8"))
+    a=[x for x in all_pairs if x.get("comparison","candidate")=="candidate"]
+    self_pairs=[x for x in all_pairs if x.get("comparison")=="self"]
     h=json.loads((root/"evidence/workgroup-verification.json").read_text(encoding="utf-8"))
     return {"root":str(root.resolve()),"pairs":len(a),"changedPixels":sum(x["changedPixels"] for x in a),
             "maximumRGBCodeDelta":max(x["maximumRGBCodeDelta"] for x in a),
@@ -130,6 +134,9 @@ def quality_summary(root):
             "hdrSelfComparisons":sum(x["pass"]=="frame.self" for x in h),
             "hdrSelfIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.self"),
             "hdrCandidateIdentical":all(x["byteIdentical"] for x in h if x["pass"]=="frame.candidate"),
+            "nativeSelfPairs":len(self_pairs),
+            "nativeSelfChangedPixels":sum(x["changedPixels"] for x in self_pairs),
+            "nativeSelfMaximumRGBCodeDelta":max((x["maximumRGBCodeDelta"] for x in self_pairs),default=None),
             "artifact":json.loads((root/"result.json").read_text(encoding="utf-8"))["artifactSha256"]}
 
 

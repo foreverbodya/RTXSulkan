@@ -69,6 +69,7 @@ param(
     [switch] $CameraBobAudit,
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
+    [switch] $PrepareGeometry,
     [switch] $WorkgroupExperiment,
     [switch] $NativeFrameComparison,
     [switch] $SkipImageComparison,
@@ -406,6 +407,10 @@ if($RoughNoiseSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRoughNoiseS
 if($CloudLightingComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudLightingComparison=true')}
 if ($VisualWorld) { $startInfo.ArgumentList.Insert(0, '-Dsulkan.qaVisualWorld=true') }
 if ($DrawDistance32) { $startInfo.ArgumentList.Insert(0, '-Dsulkan.qaDrawDistance32=true') }
+if ($PrepareGeometry) {
+    if(!$PerformanceProfile){throw 'PrepareGeometry requires a performance profile; preparation is excluded from timed frames'}
+    $startInfo.ArgumentList.Insert(0, '-Dsulkan.qaProfilePrepareGeometry=true')
+}
 if ($RayHitMaterials) { $startInfo.ArgumentList.Insert(0, '-Dsulkan.qaRayHitMaterials=true') }
 if ($DlssFeatures) { $startInfo.ArgumentList.Insert(0, '-Dsulkan.dlss=true') }
 if ($TemporalInputs) { $startInfo.ArgumentList.Insert(0, '-Dsulkan.qaTemporalInputs=true') }
