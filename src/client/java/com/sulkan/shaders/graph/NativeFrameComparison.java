@@ -9,10 +9,11 @@ import java.util.concurrent.CompletableFuture;
 /** Untimed real-frame comparison through two independent native DLSS histories and the actual display shader. */
 public final class NativeFrameComparison {
     private static final List<CompletableFuture<Map<String,Object>>> results=new ArrayList<>();
+    private static final java.util.concurrent.Executor WRITER=java.util.concurrent.Executors.newSingleThreadExecutor(r->{var thread=new Thread(r,"Sulkan native image evidence");thread.setDaemon(true);return thread;});
     static void capture(ByteBuffer frame,int sequence,int width,int height,CompletableFuture<ByteBuffer> reference,CompletableFuture<ByteBuffer> candidate) {
         String phase=System.getProperty("sulkan.qaProfilePhase");int frameNumber=frame.getInt(1132);
         var motion=List.of(frame.getFloat(384),frame.getFloat(388),frame.getFloat(392));
-        results.add(reference.thenCombine(candidate,(a,b)->{
+        results.add(reference.thenCombineAsync(candidate,(a,b)->{
             if(a.remaining()!=width*height*4 || b.remaining()!=a.remaining())throw new IllegalStateException("Native comparison display extent");
             int maximum=0,changedPixels=0;long absolute=0,squared=0;
             for(int p=0;p<a.remaining();p+=4) {
@@ -29,7 +30,7 @@ public final class NativeFrameComparison {
             return Map.<String,Object>of("phase",phase,"sequence",sequence,"frame",frameNumber,"cameraDelta",motion,
                 "width",width,"height",height,"maximumRGBCodeDelta",maximum,"changedPixels",changedPixels,
                 "meanRGBCodeDelta",absolute/(double)(width*height*3),"meanSquaredRGBCodeDelta",squared/(double)(width*height*3));
-        }));
+        },WRITER));
     }
     private static void png(Path path,ByteBuffer bytes,int width,int height)throws Exception {
         try(var image=new NativeImage(width,height,false)) {
