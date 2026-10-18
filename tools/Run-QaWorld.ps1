@@ -69,6 +69,7 @@ param(
     [switch] $CameraBobAudit,
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
+    [switch] $RayQueryCounts,
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
     [switch] $WorkgroupExperiment,
@@ -113,6 +114,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
+if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
 if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
@@ -302,6 +304,7 @@ if ($RayVisibility -or $RayLighting) {
     if($RayLighting){$createArguments.DisplayToneMapper=$DisplayToneMapper}
     if($WaterHdr) {$createArguments.WaterHdr=$true;$createArguments.WaterDiagnostic=!$VisualWorld}
     & (Join-Path $PSScriptRoot $creator) @createArguments | Out-Null
+    if($RayQueryCounts){& (Join-Path $PSScriptRoot 'Enable-QaRayQueryCounts.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
     if($CloudAmbientComparison) {
         $path=Join-Path $qaPath ('shaders/'+$packName+'/sulkan.json')
         $manifest=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
@@ -394,6 +397,7 @@ if($CloudMotionAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionAu
 if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionSequence=true')}
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
+if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
 if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
 if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
 $startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")
@@ -471,7 +475,10 @@ if($RaySurfaceProbe) {
 } elseif($PerformanceProfile) {
     $required=@('SULKAN_PERFORMANCE_PROFILE_PASS','SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
     $missing=@($required | Where-Object{!$combined.Contains($_)})
-    foreach($phase in $ProfilePlan.Split(',')){if(!$combined.Contains("SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase ")){$missing+="GPU profile missing $phase"}}
+    foreach($phase in $ProfilePlan.Split(',')){
+        $marker=if($RayQueryCounts){"SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase=$phase"}else{"SULKAN_GPU_PASS_TIMINGS_PASS phase=profile-$phase "}
+        if(!$combined.Contains($marker)){$missing+="Profile missing $phase"}
+    }
 } elseif($VisualWorld) {
     $required=@('SULKAN_QA_VISUAL_CAPTURE_PASS phase=day','SULKAN_QA_VISUAL_CAPTURE_PASS phase=sunset',
         'SULKAN_DLSS_DEVICE_NEGOTIATION requested=true enabled=true','SULKAN_DLSS_WORLD_RETIRE_PASS lastContext=true liveContexts=0')
@@ -707,7 +714,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; rayQueryCounts = [bool]$RayQueryCounts; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison

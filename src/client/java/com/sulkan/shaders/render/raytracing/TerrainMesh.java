@@ -1,5 +1,7 @@
 package com.sulkan.shaders.render.raytracing;
 
+import com.sulkan.shaders.diagnostics.GeometryCpuMetrics;
+import static com.sulkan.shaders.diagnostics.GeometryCpuMetrics.Stage.*;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -37,102 +39,117 @@ public final class TerrainMesh {
     }
 
     public static TerrainMesh copyCompressedQuads(ByteBuffer source, int vertexCount, Opacity opacity) {
-        Objects.requireNonNull(source); Objects.requireNonNull(opacity);
-        if (vertexCount <= 0 || vertexCount % 4 != 0 || source.remaining() % vertexCount != 0)
-            throw new IllegalArgumentException("Invalid quad mesh dimensions");
-        int stride = source.remaining() / vertexCount;
-        if (stride != 20 && stride != 24 && stride != 32)
-            throw new IllegalArgumentException("Unsupported Sodium vertex stride: " + stride);
-        int words = stride / Integer.BYTES;
-        // Separate word byte lanes across vertices before DEFLATE. This is
-        // reversible for every bit, including material flags and float AO.
-        byte[] planes = new byte[Math.multiplyExact(vertexCount, stride)];
-        var input = source.duplicate().order(ByteOrder.nativeOrder());
-        int start = input.position();
-        for (int vertex = 0; vertex < vertexCount; vertex++) for (int word = 0; word < words; word++) {
-            int value = input.getInt(start + vertex * stride + word * 4);
-            if (stride == 32 && word == 7) {
-                float ao = Float.intBitsToFloat(value);
-                if (!Float.isFinite(ao) || ao < 0 || ao > 1)
-                    throw new IllegalArgumentException("Invalid baked vertex occlusion: " + ao);
+        try (var capture = GeometryCpuMetrics.begin(CAPTURE, vertexCount)) {
+            Objects.requireNonNull(source); Objects.requireNonNull(opacity);
+            if (vertexCount <= 0 || vertexCount % 4 != 0 || source.remaining() % vertexCount != 0)
+                throw new IllegalArgumentException("Invalid quad mesh dimensions");
+            int stride = source.remaining() / vertexCount;
+            if (stride != 20 && stride != 24 && stride != 32)
+                throw new IllegalArgumentException("Unsupported Sodium vertex stride: " + stride);
+            int words = stride / Integer.BYTES;
+            // Separate word byte lanes across vertices before DEFLATE. This is
+            // reversible for every bit, including material flags and float AO.
+            byte[] planes;
+            try (var lanes = GeometryCpuMetrics.begin(CAPTURE_LANES, vertexCount)) {
+                planes = new byte[Math.multiplyExact(vertexCount, stride)];
+                var input = source.duplicate().order(ByteOrder.nativeOrder());
+                int start = input.position();
+                for (int vertex = 0; vertex < vertexCount; vertex++) for (int word = 0; word < words; word++) {
+                    int value = input.getInt(start + vertex * stride + word * 4);
+                    if (stride == 32 && word == 7) {
+                        float ao = Float.intBitsToFloat(value);
+                        if (!Float.isFinite(ao) || ao < 0 || ao > 1)
+                            throw new IllegalArgumentException("Invalid baked vertex occlusion: " + ao);
+                    }
+                    for (int lane = 0; lane < 4; lane++)
+                        planes[(word * 4 + lane) * vertexCount + vertex] = (byte) (value >>> (lane * 8));
+                }
             }
-            for (int lane = 0; lane < 4; lane++)
-                planes[(word * 4 + lane) * vertexCount + vertex] = (byte) (value >>> (lane * 8));
+            byte[] zipped;
+            try (var deflate = GeometryCpuMetrics.begin(CAPTURE_DEFLATE, planes.length)) {
+                var compressor = new Deflater(Deflater.BEST_SPEED);
+                try {
+                    compressor.setInput(planes); compressor.finish();
+                    var output = new ByteArrayOutputStream(Math.min(planes.length, 8192));
+                    byte[] block = new byte[8192];
+                    while (!compressor.finished()) {
+                        int count = compressor.deflate(block);
+                        if (count <= 0) throw new IllegalStateException("Terrain compression made no progress");
+                        output.write(block, 0, count);
+                    }
+                    zipped = output.toByteArray();
+                } finally { compressor.end(); }
+            }
+            return new TerrainMesh(opacity, words, vertexCount,
+                zipped.length < planes.length ? zipped : planes, zipped.length < planes.length);
         }
-        var compressor = new Deflater(Deflater.BEST_SPEED);
-        byte[] zipped;
-        try {
-            compressor.setInput(planes); compressor.finish();
-            var output = new ByteArrayOutputStream(Math.min(planes.length, 8192));
-            byte[] block = new byte[8192];
-            while (!compressor.finished()) {
-                int count = compressor.deflate(block);
-                if (count <= 0) throw new IllegalStateException("Terrain compression made no progress");
-                output.write(block, 0, count);
-            }
-            zipped = output.toByteArray();
-        } finally { compressor.end(); }
-        return new TerrainMesh(opacity, words, vertexCount,
-            zipped.length < planes.length ? zipped : planes, zipped.length < planes.length);
     }
 
     private Decoded data() {
         Decoded ready = decoded;
-        if (ready != null) return ready;
+        if (ready != null) { GeometryCpuMetrics.countCacheHit(); return ready; }
         synchronized (DECODED) {
-            if (decoded != null) return decoded;
-            int length = Math.multiplyExact(vertexCount, strideBytes());
-            byte[] planes = payload;
-            if (compressed) {
-                planes = new byte[Math.addExact(length, 1)];
-                var inflater = new Inflater();
-                try {
-                    inflater.setInput(payload);
-                    int offset = 0;
-                    while (!inflater.finished() && offset < planes.length) {
-                        int count = inflater.inflate(planes, offset, planes.length - offset);
-                        if (count == 0 && inflater.finished()) break;
-                        if (count <= 0) throw new IllegalStateException("Incomplete terrain payload");
-                        offset += count;
+            if (decoded != null) { GeometryCpuMetrics.countCacheHit(); return decoded; }
+            try (var miss = GeometryCpuMetrics.begin(DECODE_MISS, vertexCount)) {
+                int length = Math.multiplyExact(vertexCount, strideBytes());
+                byte[] planes = payload;
+                if (compressed) {
+                    try (var inflate = GeometryCpuMetrics.begin(DECODE_INFLATE, length)) {
+                        planes = new byte[Math.addExact(length, 1)];
+                        var inflater = new Inflater();
+                        try {
+                            inflater.setInput(payload);
+                            int offset = 0;
+                            while (!inflater.finished() && offset < planes.length) {
+                                int count = inflater.inflate(planes, offset, planes.length - offset);
+                                if (count == 0 && inflater.finished()) break;
+                                if (count <= 0) throw new IllegalStateException("Incomplete terrain payload");
+                                offset += count;
+                            }
+                            if (!inflater.finished() || offset != length || inflater.getRemaining() != 0)
+                                throw new IllegalStateException("Terrain payload extent changed");
+                        } catch (DataFormatException failure) {
+                            throw new IllegalStateException("Invalid compressed terrain payload", failure);
+                        } finally { inflater.end(); }
                     }
-                    if (!inflater.finished() || offset != length || inflater.getRemaining() != 0)
-                        throw new IllegalStateException("Terrain payload extent changed");
-                } catch (DataFormatException failure) {
-                    throw new IllegalStateException("Invalid compressed terrain payload", failure);
-                } finally { inflater.end(); }
-            }
-            int[] packed = new int[Math.multiplyExact(vertexCount, wordsPerVertex)];
-            float[] positions = new float[Math.multiplyExact(vertexCount, 3)];
-            int[] indices = new int[Math.multiplyExact(vertexCount / 4, 6)];
-            for (int vertex = 0; vertex < vertexCount; vertex++) {
-                for (int word = 0; word < wordsPerVertex; word++) {
-                    int value = 0;
-                    for (int lane = 0; lane < 4; lane++)
-                        value |= (planes[(word * 4 + lane) * vertexCount + vertex] & 255) << (lane * 8);
-                    packed[vertex * wordsPerVertex + word] = value;
                 }
-                int high = packed[vertex * wordsPerVertex], low = packed[vertex * wordsPerVertex + 1];
-                for (int axis = 0; axis < 3; axis++) {
-                    int shift = axis * 10;
-                    int coordinate = (((high >>> shift) & 1023) << 10) | ((low >>> shift) & 1023);
-                    positions[vertex * 3 + axis] = coordinate * (32.0f / 1048576.0f) - 8.0f;
+                try (var reconstruct = GeometryCpuMetrics.begin(DECODE_RECONSTRUCT, vertexCount)) {
+                    int[] packed = new int[Math.multiplyExact(vertexCount, wordsPerVertex)];
+                    float[] positions = new float[Math.multiplyExact(vertexCount, 3)];
+                    int[] indices = new int[Math.multiplyExact(vertexCount / 4, 6)];
+                    for (int vertex = 0; vertex < vertexCount; vertex++) {
+                        for (int word = 0; word < wordsPerVertex; word++) {
+                            int value = 0;
+                            for (int lane = 0; lane < 4; lane++)
+                                value |= (planes[(word * 4 + lane) * vertexCount + vertex] & 255) << (lane * 8);
+                            packed[vertex * wordsPerVertex + word] = value;
+                        }
+                        int high = packed[vertex * wordsPerVertex], low = packed[vertex * wordsPerVertex + 1];
+                        for (int axis = 0; axis < 3; axis++) {
+                            int shift = axis * 10;
+                            int coordinate = (((high >>> shift) & 1023) << 10) | ((low >>> shift) & 1023);
+                            positions[vertex * 3 + axis] = coordinate * (32.0f / 1048576.0f) - 8.0f;
+                        }
+                    }
+                    int[] order = {0, 1, 2, 2, 3, 0};
+                    for (int quad = 0; quad < vertexCount / 4; quad++)
+                        for (int index = 0; index < order.length; index++) indices[quad * 6 + index] = quad * 4 + order[index];
+                    ready = new Decoded(packed, positions, indices); decodeCount++;
                 }
-            }
-            int[] order = {0, 1, 2, 2, 3, 0};
-            for (int quad = 0; quad < vertexCount / 4; quad++)
-                for (int index = 0; index < order.length; index++) indices[quad * 6 + index] = quad * 4 + order[index];
-            ready = new Decoded(packed, positions, indices); decodeCount++;
-            // FIFO by decode time: hot vertex access does not mutate bookkeeping.
-            // Single oversize operations are supported but not retained here.
-            if (ready.bytes() <= DECODED_BUDGET_BYTES) {
-                var iterator = DECODED.entrySet().iterator();
-                while (decodedBytes + ready.bytes() > DECODED_BUDGET_BYTES && iterator.hasNext()) {
-                    var oldest = iterator.next(); decodedBytes -= oldest.getValue().bytes();
-                    oldest.getKey().decoded = null; iterator.remove(); evictionCount++;
+                // FIFO by decode time: hot vertex access does not mutate bookkeeping.
+                // Single oversize operations are supported but not retained here.
+                try (var retain = GeometryCpuMetrics.begin(DECODE_RETAIN, ready.bytes())) {
+                    if (ready.bytes() <= DECODED_BUDGET_BYTES) {
+                        var iterator = DECODED.entrySet().iterator();
+                        while (decodedBytes + ready.bytes() > DECODED_BUDGET_BYTES && iterator.hasNext()) {
+                            var oldest = iterator.next(); decodedBytes -= oldest.getValue().bytes();
+                            oldest.getKey().decoded = null; iterator.remove(); evictionCount++;
+                        }
+                        DECODED.put(this, ready); decodedBytes += ready.bytes(); decoded = ready;
+                    }
                 }
-                DECODED.put(this, ready); decodedBytes += ready.bytes(); decoded = ready;
+                return ready;
             }
-            return ready;
         }
     }
 

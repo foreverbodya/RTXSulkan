@@ -1,5 +1,7 @@
 package com.sulkan.shaders.render.raytracing;
 
+import com.sulkan.shaders.diagnostics.GeometryCpuMetrics;
+import static com.sulkan.shaders.diagnostics.GeometryCpuMetrics.Stage.*;
 import com.sulkan.shaders.platform.vulkan.NativeBuffer;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -59,29 +61,31 @@ public final class AccelerationStructureBuilder {
 
     /** Builds the actual captured, indexed quad mesh; cutout geometry remains non-opaque. */
     public AccelerationStructure mesh(VkCommandBuffer commands, TerrainMesh mesh) {
-        var decoded = mesh.readView();
-        NativeBuffer vertices = new NativeBuffer(device, (long) mesh.vertexCount() * 3 * Float.BYTES, INPUT_USAGE, HOST_MEMORY);
-        NativeBuffer indices = null;
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            indices = new NativeBuffer(device, (long) mesh.triangleCount() * 3 * Integer.BYTES, INPUT_USAGE, HOST_MEMORY);
-            ByteBuffer positionData = MemoryUtil.memAlloc(Math.multiplyExact(mesh.vertexCount(), 3 * Float.BYTES));
-            try { positionData.asFloatBuffer().put(decoded.positions()); vertices.write(positionData); }
-            finally { MemoryUtil.memFree(positionData); }
-            ByteBuffer indexData = MemoryUtil.memAlloc(Math.multiplyExact(mesh.triangleCount(), 3 * Integer.BYTES));
-            try { indexData.asIntBuffer().put(decoded.indices()); indices.write(indexData); }
-            finally { MemoryUtil.memFree(indexData); }
-            VkAccelerationStructureGeometryKHR.Buffer geometry = VkAccelerationStructureGeometryKHR.calloc(1, stack);
-            geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_TRIANGLES_KHR)
-                    .flags(mesh.opacity() == TerrainMesh.Opacity.OPAQUE ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0);
-            geometry.get(0).geometry().triangles().sType$Default().vertexFormat(VK10.VK_FORMAT_R32G32B32_SFLOAT)
-                    .vertexStride(3L * Float.BYTES).maxVertex(mesh.vertexCount() - 1).indexType(VK10.VK_INDEX_TYPE_UINT32);
-            geometry.get(0).geometry().triangles().vertexData().deviceAddress(vertices.deviceAddress());
-            geometry.get(0).geometry().triangles().indexData().deviceAddress(indices.deviceAddress());
-            return build(commands, geometry, mesh.triangleCount(), VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, List.of(vertices, indices), stack);
-        } catch (Throwable failure) {
-            if (indices != null) indices.close();
-            vertices.close();
-            throw failure;
+        try (var preparation = GeometryCpuMetrics.begin(BLAS_PREPARE, mesh.vertexCount())) {
+            var decoded = mesh.readView();
+            NativeBuffer vertices = new NativeBuffer(device, (long) mesh.vertexCount() * 3 * Float.BYTES, INPUT_USAGE, HOST_MEMORY);
+            NativeBuffer indices = null;
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                indices = new NativeBuffer(device, (long) mesh.triangleCount() * 3 * Integer.BYTES, INPUT_USAGE, HOST_MEMORY);
+                ByteBuffer positionData = MemoryUtil.memAlloc(Math.multiplyExact(mesh.vertexCount(), 3 * Float.BYTES));
+                try { positionData.asFloatBuffer().put(decoded.positions()); vertices.write(positionData); }
+                finally { MemoryUtil.memFree(positionData); }
+                ByteBuffer indexData = MemoryUtil.memAlloc(Math.multiplyExact(mesh.triangleCount(), 3 * Integer.BYTES));
+                try { indexData.asIntBuffer().put(decoded.indices()); indices.write(indexData); }
+                finally { MemoryUtil.memFree(indexData); }
+                VkAccelerationStructureGeometryKHR.Buffer geometry = VkAccelerationStructureGeometryKHR.calloc(1, stack);
+                geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_TRIANGLES_KHR)
+                        .flags(mesh.opacity() == TerrainMesh.Opacity.OPAQUE ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0);
+                geometry.get(0).geometry().triangles().sType$Default().vertexFormat(VK10.VK_FORMAT_R32G32B32_SFLOAT)
+                        .vertexStride(3L * Float.BYTES).maxVertex(mesh.vertexCount() - 1).indexType(VK10.VK_INDEX_TYPE_UINT32);
+                geometry.get(0).geometry().triangles().vertexData().deviceAddress(vertices.deviceAddress());
+                geometry.get(0).geometry().triangles().indexData().deviceAddress(indices.deviceAddress());
+                return build(commands, geometry, mesh.triangleCount(), VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, List.of(vertices, indices), stack);
+            } catch (Throwable failure) {
+                if (indices != null) indices.close();
+                vertices.close();
+                throw failure;
+            }
         }
     }
 
@@ -90,16 +94,18 @@ public final class AccelerationStructureBuilder {
      */
     public AccelerationStructure mesh(VkCommandBuffer commands,TerrainMesh mesh,RayAttributeArena arena,RayAttributeRanges.Allocation allocation) {
         if (arena.compactVertices()) return mesh(commands,mesh);
-        try (MemoryStack stack=MemoryStack.stackPush()) {
-            long vertexAddress=arena.meshAddress(allocation)+RaySurfaceAttributes.HEADER_BYTES;
-            var geometry=VkAccelerationStructureGeometryKHR.calloc(1,stack);
-            geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_TRIANGLES_KHR)
-                    .flags(mesh.opacity()==TerrainMesh.Opacity.OPAQUE ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0);
-            geometry.get(0).geometry().triangles().sType$Default().vertexFormat(VK10.VK_FORMAT_R32G32B32_SFLOAT)
-                    .vertexStride(RaySurfaceAttributes.VERTEX_BYTES).maxVertex(mesh.vertexCount()-1).indexType(VK10.VK_INDEX_TYPE_UINT32);
-            geometry.get(0).geometry().triangles().vertexData().deviceAddress(vertexAddress);
-            geometry.get(0).geometry().triangles().indexData().deviceAddress(vertexAddress+(long)mesh.vertexCount()*RaySurfaceAttributes.VERTEX_BYTES);
-            return build(commands,geometry,mesh.triangleCount(),VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,List.of(),stack);
+        try (var preparation = GeometryCpuMetrics.begin(BLAS_PREPARE, mesh.vertexCount())) {
+            try (MemoryStack stack=MemoryStack.stackPush()) {
+                long vertexAddress=arena.meshAddress(allocation)+RaySurfaceAttributes.HEADER_BYTES;
+                var geometry=VkAccelerationStructureGeometryKHR.calloc(1,stack);
+                geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_TRIANGLES_KHR)
+                        .flags(mesh.opacity()==TerrainMesh.Opacity.OPAQUE ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0);
+                geometry.get(0).geometry().triangles().sType$Default().vertexFormat(VK10.VK_FORMAT_R32G32B32_SFLOAT)
+                        .vertexStride(RaySurfaceAttributes.VERTEX_BYTES).maxVertex(mesh.vertexCount()-1).indexType(VK10.VK_INDEX_TYPE_UINT32);
+                geometry.get(0).geometry().triangles().vertexData().deviceAddress(vertexAddress);
+                geometry.get(0).geometry().triangles().indexData().deviceAddress(vertexAddress+(long)mesh.vertexCount()*RaySurfaceAttributes.VERTEX_BYTES);
+                return build(commands,geometry,mesh.triangleCount(),VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,List.of(),stack);
+            }
         }
     }
 
@@ -112,70 +118,75 @@ public final class AccelerationStructureBuilder {
 
     /** Translation-only instances for the initial world/chunk geometry contract. */
     public AccelerationStructure instances(VkCommandBuffer commands, List<Instance> scene) {
-        if (scene.isEmpty()) throw new IllegalArgumentException("Expected at least one scene instance");
-        NativeBuffer input = new NativeBuffer(device, (long) scene.size() * VkAccelerationStructureInstanceKHR.SIZEOF, INPUT_USAGE, HOST_MEMORY);
-        try (VkAccelerationStructureInstanceKHR.Buffer instances = VkAccelerationStructureInstanceKHR.calloc(scene.size());
-             MemoryStack stack = MemoryStack.stackPush()) {
-            for (int i = 0; i < scene.size(); i++) {
-                Instance source = scene.get(i);
-                VkAccelerationStructureInstanceKHR instance = instances.get(i);
-                instance.transform().matrix(0, 1).matrix(5, 1).matrix(10, 1)
-                        .matrix(3, source.x()).matrix(7, source.y()).matrix(11, source.z());
-                instance.instanceCustomIndex(source.id()).mask(source.mask())
-                        .instanceShaderBindingTableRecordOffset(0).flags(VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)
-                        .accelerationStructureReference(source.geometry().deviceAddress());
+        try (var preparation = GeometryCpuMetrics.begin(TLAS_PREPARE, scene.size())) {
+            if (scene.isEmpty()) throw new IllegalArgumentException("Expected at least one scene instance");
+            NativeBuffer input = new NativeBuffer(device, (long) scene.size() * VkAccelerationStructureInstanceKHR.SIZEOF, INPUT_USAGE, HOST_MEMORY);
+            try (VkAccelerationStructureInstanceKHR.Buffer instances = VkAccelerationStructureInstanceKHR.calloc(scene.size());
+                 MemoryStack stack = MemoryStack.stackPush()) {
+                for (int i = 0; i < scene.size(); i++) {
+                    Instance source = scene.get(i);
+                    VkAccelerationStructureInstanceKHR instance = instances.get(i);
+                    instance.transform().matrix(0, 1).matrix(5, 1).matrix(10, 1)
+                            .matrix(3, source.x()).matrix(7, source.y()).matrix(11, source.z());
+                    instance.instanceCustomIndex(source.id()).mask(source.mask())
+                            .instanceShaderBindingTableRecordOffset(0).flags(VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)
+                            .accelerationStructureReference(source.geometry().deviceAddress());
+                }
+                input.write(MemoryUtil.memByteBuffer(instances.address(), scene.size() * VkAccelerationStructureInstanceKHR.SIZEOF));
+                if (Boolean.getBoolean("sulkan.rtConformance")) {
+                    com.mojang.logging.LogUtils.getLogger().info("SULKAN_RT_INSTANCES count={} firstMask={} firstTransform={}", scene.size(), instances.get(0).mask(), input.readFloats(12));
+                }
+                VkAccelerationStructureGeometryKHR.Buffer geometry = VkAccelerationStructureGeometryKHR.calloc(1, stack);
+                geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_INSTANCES_KHR);
+                geometry.get(0).geometry().instances().sType$Default().arrayOfPointers(false).data().deviceAddress(input.deviceAddress());
+                return build(commands, geometry, scene.size(), VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, List.of(input), stack);
+            } catch (Throwable failure) {
+                input.close();
+                throw failure;
             }
-            input.write(MemoryUtil.memByteBuffer(instances.address(), scene.size() * VkAccelerationStructureInstanceKHR.SIZEOF));
-            if (Boolean.getBoolean("sulkan.rtConformance")) {
-                com.mojang.logging.LogUtils.getLogger().info("SULKAN_RT_INSTANCES count={} firstMask={} firstTransform={}", scene.size(), instances.get(0).mask(), input.readFloats(12));
-            }
-            VkAccelerationStructureGeometryKHR.Buffer geometry = VkAccelerationStructureGeometryKHR.calloc(1, stack);
-            geometry.get(0).sType$Default().geometryType(VK_GEOMETRY_TYPE_INSTANCES_KHR);
-            geometry.get(0).geometry().instances().sType$Default().arrayOfPointers(false).data().deviceAddress(input.deviceAddress());
-            return build(commands, geometry, scene.size(), VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, List.of(input), stack);
-        } catch (Throwable failure) {
-            input.close();
-            throw failure;
         }
     }
 
     private AccelerationStructure build(VkCommandBuffer commands, VkAccelerationStructureGeometryKHR.Buffer geometry,
                                         int primitives, int type, List<NativeBuffer> inputs, MemoryStack stack) {
-        VkAccelerationStructureBuildGeometryInfoKHR.Buffer builds = VkAccelerationStructureBuildGeometryInfoKHR.calloc(1, stack);
-        VkAccelerationStructureBuildGeometryInfoKHR build = builds.get(0).sType$Default().type(type)
-                .flags(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR).mode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
-                .geometryCount(geometry.remaining()).pGeometries(geometry);
-        VkAccelerationStructureBuildSizesInfoKHR sizes = VkAccelerationStructureBuildSizesInfoKHR.calloc(stack).sType$Default();
-        vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, build, stack.ints(primitives), sizes);
-        NativeBuffer storage = null;
-        NativeBuffer scratch = null;
-        long handle = 0;
-        try {
-            storage = new NativeBuffer(device, sizes.accelerationStructureSize(), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
-                    | VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK10.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            scratch = new NativeBuffer(device, Math.addExact(sizes.buildScratchSize(), scratchAlignment - 1),
-                    VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK10.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            var result = stack.mallocLong(1);
-            requireSuccess(vkCreateAccelerationStructureKHR(device, VkAccelerationStructureCreateInfoKHR.calloc(stack).sType$Default()
-                    .buffer(storage.handle()).size(sizes.accelerationStructureSize()).type(type), null, result), "vkCreateAccelerationStructureKHR");
-            handle = result.get(0);
-            long address = vkGetAccelerationStructureDeviceAddressKHR(device,
-                    VkAccelerationStructureDeviceAddressInfoKHR.calloc(stack).sType$Default().accelerationStructure(handle));
-            if (address == 0) throw new IllegalStateException("Acceleration structure address is zero");
-            build.dstAccelerationStructure(handle).scratchData().deviceAddress((scratch.deviceAddress() + scratchAlignment - 1) & -scratchAlignment);
-            VkAccelerationStructureBuildRangeInfoKHR.Buffer range = VkAccelerationStructureBuildRangeInfoKHR.calloc(1, stack).primitiveCount(primitives);
-            if (Boolean.getBoolean("sulkan.rtConformance")) {
-                com.mojang.logging.LogUtils.getLogger().info("SULKAN_RT_BUILD type={} geometries={} primitives={} storageBytes={} scratchBytes={}", type, build.geometryCount(), range.get(0).primitiveCount(), sizes.accelerationStructureSize(), sizes.buildScratchSize());
+        try (var recording = GeometryCpuMetrics.begin(type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR
+                ? BLAS_BUILD_RECORD : TLAS_BUILD_RECORD, primitives)) {
+            VkAccelerationStructureBuildGeometryInfoKHR.Buffer builds = VkAccelerationStructureBuildGeometryInfoKHR.calloc(1, stack);
+            VkAccelerationStructureBuildGeometryInfoKHR build = builds.get(0).sType$Default().type(type)
+                    .flags(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR).mode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
+                    .geometryCount(geometry.remaining()).pGeometries(geometry);
+            VkAccelerationStructureBuildSizesInfoKHR sizes = VkAccelerationStructureBuildSizesInfoKHR.calloc(stack).sType$Default();
+            vkGetAccelerationStructureBuildSizesKHR(device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, build, stack.ints(primitives), sizes);
+            NativeBuffer storage = null;
+            NativeBuffer scratch = null;
+            long handle = 0;
+            try {
+                storage = new NativeBuffer(device, sizes.accelerationStructureSize(), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+                        | VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK10.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                scratch = new NativeBuffer(device, Math.addExact(sizes.buildScratchSize(), scratchAlignment - 1),
+                        VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK10.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                var result = stack.mallocLong(1);
+                requireSuccess(vkCreateAccelerationStructureKHR(device, VkAccelerationStructureCreateInfoKHR.calloc(stack).sType$Default()
+                        .buffer(storage.handle()).size(sizes.accelerationStructureSize()).type(type), null, result), "vkCreateAccelerationStructureKHR");
+                handle = result.get(0);
+                long address = vkGetAccelerationStructureDeviceAddressKHR(device,
+                        VkAccelerationStructureDeviceAddressInfoKHR.calloc(stack).sType$Default().accelerationStructure(handle));
+                if (address == 0) throw new IllegalStateException("Acceleration structure address is zero");
+                build.dstAccelerationStructure(handle).scratchData().deviceAddress((scratch.deviceAddress() + scratchAlignment - 1) & -scratchAlignment);
+                VkAccelerationStructureBuildRangeInfoKHR.Buffer range = VkAccelerationStructureBuildRangeInfoKHR.calloc(1, stack).primitiveCount(primitives);
+                if (Boolean.getBoolean("sulkan.rtConformance")) {
+                    com.mojang.logging.LogUtils.getLogger().info("SULKAN_RT_BUILD type={} geometries={} primitives={} storageBytes={} scratchBytes={}", type, build.geometryCount(), range.get(0).primitiveCount(), sizes.accelerationStructureSize(), sizes.buildScratchSize());
+                }
+                vkCmdBuildAccelerationStructuresKHR(commands, builds, stack.pointers(range.address()));
+                var owned = new java.util.ArrayList<>(inputs);
+                owned.add(scratch);
+                return new AccelerationStructure(device, handle, address, storage, owned);
+            } catch (Throwable failure) {
+                if (handle != 0) vkDestroyAccelerationStructureKHR(device, handle, null);
+                if (scratch != null) scratch.close();
+                if (storage != null) storage.close();
+                throw failure;
             }
-            vkCmdBuildAccelerationStructuresKHR(commands, builds, stack.pointers(range.address()));
-            var owned = new java.util.ArrayList<>(inputs);
-            owned.add(scratch);
-            return new AccelerationStructure(device, handle, address, storage, owned);
-        } catch (Throwable failure) {
-            if (handle != 0) vkDestroyAccelerationStructureKHR(device, handle, null);
-            if (scratch != null) scratch.close();
-            if (storage != null) storage.close();
-            throw failure;
         }
     }
 

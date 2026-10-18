@@ -8,10 +8,27 @@ import statistics
 from pathlib import Path
 
 
+def cpu_stage_delta(before, after):
+    if not before or not after:return None
+    rows={}
+    for name,last in after.get("stages",{}).items():
+        first=before["stages"][name]
+        rows[name]={"calls":last["calls"]-first["calls"],
+                    "requestedWorkUnits":last["requestedWorkUnits"]-first["requestedWorkUnits"],
+                    "workUnit":last["workUnit"],"measurement":last["measurement"]}
+        for key in ("wallNanoseconds","activeThreadCpuNanoseconds","javaAllocatedBytes"):
+            rows[name][key]=last[key]-first[key] if key in last and key in first else None
+    return {"stages":rows,"scope":after["scope"],
+            "activeThreadCpuAvailable":after["activeThreadCpuAvailable"],
+            "javaAllocatedBytesAvailable":after["javaAllocatedBytesAvailable"]}
+
+
 def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
     artifact = json.loads((root / "result.json").read_text(encoding="utf-8"))
+    if artifact.get("rayQueryCounts"):
+        raise ValueError(f"{root}: instrumented ray-count run has no performance baseline; use ray-query-counts-*.json")
     completed = (evidence / "performance-profile.json").exists()
     combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8")) if completed else {
         "reports": sorted((json.loads(f.read_text(encoding="utf-8")) for f in evidence.glob("profile-*.json") if f.name!="profile-plan.json"),key=lambda s:s["startEpochMs"])}
@@ -56,6 +73,11 @@ def load_run(root):
             "passes": g["passes"],
         }
         row["configuration"]["reconstruction"]={k:v for k,v in s["reconstruction"].items() if k!="evaluations"}
+        row["geometryCpuDelta"]=cpu_stage_delta(s.get("geometryCpuStart"),s.get("geometryCpuEnd"))
+        row["geometryPreparationCpuDelta"]=cpu_stage_delta(s.get("geometryPreparationCpuStart"),s.get("geometryPreparationCpuEnd"))
+        row["geometryPreparationWallMs"]=s.get("geometryPreparationWallMs")
+        row["qaTelemetryActiveCpuMs"]=s.get("qaTelemetryActiveCpuMs")
+        row["qaTelemetryWallMs"]=s.get("qaTelemetryWallMs")
         memory = [x["vulkanMemory"] for x in s["perFrame"] if x.get("vulkanMemory", {}).get("available")]
         if memory:
             row["processHeapEstimatedPeakMiB"] = max(x["deviceLocalEstimatedUsage"] for x in memory) / 2**20

@@ -21,11 +21,14 @@ final class QaPerformanceProfile {
     private final Map<String,Object> scene;
     private final List<Object> reports=new ArrayList<>();
     private final List<Double> wall=new ArrayList<>(),cpu=new ArrayList<>();
+    private final List<Double> telemetryWall=new ArrayList<>(),telemetryCpu=new ArrayList<>();
     private final List<Object> perFrame=new ArrayList<>();
     private final java.lang.management.ThreadMXBean thread=ManagementFactory.getThreadMXBean();
     private int phaseIndex,frame=-WARMUP;
     private long previousTime,previousCpu;
     private Object rayStart,memoryStart,countersStart,rayEnd,memoryEnd,countersEnd;
+    private Object geometryPreparationStart,geometryPreparationEnd,geometryCpuStart,geometryCpuEnd;
+    private long preparationStartNs,preparationEndNs;
     private String geometryEnd;
     private long endEpochMs;
     private String geometryStart;
@@ -37,6 +40,7 @@ final class QaPerformanceProfile {
     private boolean preparingReload;
     private int verificationFrame;
     private CompletableFuture<Void> image;
+    private CompletableFuture<Map<String,Object>> rayCounts;
 
     QaPerformanceProfile(Path directory,double[] pose,Map<String,Object> scene)throws Exception {
         this.directory=directory;this.base=pose.clone();this.scene=new LinkedHashMap<>(scene);
@@ -65,6 +69,7 @@ final class QaPerformanceProfile {
     private int phaseFrames(){return path().equals("travel")?2048:FRAMES;}
     private String path(){return phase().replace("narrow-","").replace("-repeat","");}
     private void configure()throws Exception{
+        geometryPreparationStart=GeometryCpuMetrics.snapshot();preparationStartNs=System.nanoTime();
         System.setProperty("sulkan.qaProfilePhase",phase());
         System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
@@ -94,16 +99,26 @@ final class QaPerformanceProfile {
                     "scope","Profiling execution only. Pass-off images are not quality-preserving optimizations. No claim of long-travel leak freedom or final renderer acceptance."));
                 LogUtils.getLogger().info("SULKAN_PERFORMANCE_PROFILE_PASS phases={}",reports.size());return true;
             }
-            frame=-WARMUP;verificationFrame=0;measuring=false;timingSaved=false;configure();return false;
+            frame=-WARMUP;verificationFrame=0;measuring=false;timingSaved=false;rayCounts=null;configure();return false;
         }
         if(frame<0){if(path().equals("resize") && frame==-WARMUP+64)Minecraft.getInstance().getWindow().setWindowed(2560,1440);frame++;return false;}
         if(!measuring) {
             if(!java.util.Set.of("stream","travel").contains(path()) && NativePackRuntime.diagnosticRayScene().pendingSections()!=0)return false;
             if(preparingReload){System.clearProperty("sulkan.qaProfilePrepareGeometry");preparingReload=false;frame=-WARMUP;return false;}
+            if(Boolean.getBoolean("sulkan.qaRayQueryCounts")) {
+                // A separate counted pipeline: never start FPS/GPU timing windows here.
+                if(rayCounts==null)rayCounts=QaRayQueryCounts.capture(directory,phase());
+                if(!rayCounts.isDone())return false;
+                reports.add(rayCounts.join());image=CompletableFuture.completedFuture(null);
+                LogUtils.getLogger().info("SULKAN_RAY_QUERY_COUNT_PHASE_PASS phase={}",phase());return false;
+            }
+            // Keep fingerprint decoding outside both preparation and timed CPU scopes.
+            geometryPreparationEnd=GeometryCpuMetrics.snapshot();preparationEndNs=System.nanoTime();
             startEpochMs=System.currentTimeMillis();
             geometryStart=NaturalSceneFingerprint.capture();rayStart=NativePackRuntime.diagnosticRayScene();memoryStart=NativeBuffer.statistics();
             countersStart=com.sulkan.shaders.graph.ProfileCounters.snapshot();
-            wall.clear();cpu.clear();perFrame.clear();previousTime=previousCpu=0;
+            geometryCpuStart=GeometryCpuMetrics.snapshot();
+            wall.clear();cpu.clear();telemetryWall.clear();telemetryCpu.clear();perFrame.clear();previousTime=previousCpu=0;
             System.setProperty("sulkan.qaGpuTimingSamples",Integer.toString(FRAMES));
             NativePackRuntime.diagnosticBeginGpuTimings("profile-"+phase(),directory);
             measuring=true;return false; // first timestamped frame is the following rendered frame
@@ -113,15 +128,18 @@ final class QaPerformanceProfile {
             if(previousTime!=0)wall.add((now-previousTime)*1e-6);
             if(previousCpu>0 && active>=0)cpu.add((active-previousCpu)*1e-6);
             previousTime=now;previousCpu=active;
+            long telemetryStart=System.nanoTime(),telemetryActive=thread.isCurrentThreadCpuTimeSupported()?thread.getCurrentThreadCpuTime():-1;
             var rays=NativePackRuntime.diagnosticRayScene();
             var terrainMemory=TerrainGeometryCache.memoryStatistics();
             perFrame.add(Map.of("index",frame,"pose",pose(),"pendingSections",rays.pendingSections(),
                 "blasBuilds",rays.blasBuilds(),"tlasBuilds",rays.tlasBuilds(),"geometryRevision",terrainMemory.revision(),"terrainCpuMemory",terrainMemory,
                 "nativeAllocationBytes",NativeBuffer.statistics().liveAllocationBytes(),"vulkanMemory",NativePackRuntime.diagnosticMemoryBudget(),"throttle",Minecraft.getInstance().getFramerateLimitTracker().getThrottleReason().name()));
+            telemetryWall.add((System.nanoTime()-telemetryStart)*1e-6);
+            if(telemetryActive>=0)telemetryCpu.add((thread.getCurrentThreadCpuTime()-telemetryActive)*1e-6);
             frame++;
             if(frame==phaseFrames()) {
                 endEpochMs=System.currentTimeMillis();rayEnd=NativePackRuntime.diagnosticRayScene();memoryEnd=NativeBuffer.statistics();
-                countersEnd=com.sulkan.shaders.graph.ProfileCounters.snapshot();geometryEnd=NaturalSceneFingerprint.capture();
+                countersEnd=com.sulkan.shaders.graph.ProfileCounters.snapshot();geometryCpuEnd=GeometryCpuMetrics.snapshot();geometryEnd=NaturalSceneFingerprint.capture();
             }
             return false;
         }
@@ -137,6 +155,12 @@ final class QaPerformanceProfile {
         report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",geometryEnd);
         report.put("rayStart",rayStart);report.put("rayEnd",rayEnd);
         report.put("workCountersStart",countersStart);report.put("workCountersEnd",countersEnd);
+        report.put("geometryPreparationCpuStart",geometryPreparationStart);report.put("geometryPreparationCpuEnd",geometryPreparationEnd);
+        report.put("geometryPreparationWallMs",(preparationEndNs-preparationStartNs)*1e-6);
+        report.put("geometryPreparationScope","Phase configuration/reload through settlement and warmup; elapsed wall includes full rendered warmup frames. Stage scopes are inclusive and exclude the subsequent fingerprint decode. Not a pure loading latency.");
+        report.put("geometryCpuStart",geometryCpuStart);report.put("geometryCpuEnd",geometryCpuEnd);
+        report.put("qaTelemetryWallMs",statistics(telemetryWall));report.put("qaTelemetryActiveCpuMs",statistics(telemetryCpu));
+        report.put("qaTelemetryScope","Per-frame scene/cache/native/Vulkan diagnostics only; raw frame CPU includes this overhead in the following interval. This is not a complete instrumentation-overhead estimate.");
         report.put("nativeMemoryStart",memoryStart);report.put("nativeMemoryEnd",memoryEnd);
         report.put("vulkanMemoryEnd",NativePackRuntime.diagnosticMemoryBudget());
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());report.put("options",NativePackRuntime.diagnosticOptions());

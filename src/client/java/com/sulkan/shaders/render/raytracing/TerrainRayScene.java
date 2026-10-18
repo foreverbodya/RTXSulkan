@@ -1,5 +1,7 @@
 package com.sulkan.shaders.render.raytracing;
 
+import com.sulkan.shaders.diagnostics.GeometryCpuMetrics;
+import static com.sulkan.shaders.diagnostics.GeometryCpuMetrics.Stage.*;
 import com.mojang.renderpearl.backend.vulkan.VulkanCommandEncoder;
 import com.sulkan.shaders.platform.vulkan.NativeBuffer;
 import java.util.ArrayList;
@@ -93,9 +95,11 @@ public final class TerrainRayScene {
     }
 
     public View synchronize(VulkanCommandEncoder encoder,int meshBudget,com.sulkan.shaders.graph.GpuPassTimings timings) {
-        long begin=System.nanoTime();this.timings=timings;
-        try {return synchronize(encoder,meshBudget,true);}
-        finally {this.timings=null;synchronizations++;syncCpuNanoseconds+=System.nanoTime()-begin;}
+        try (var synchronization = GeometryCpuMetrics.begin(SCENE_SYNCHRONIZE, 1)) {
+            long begin=System.nanoTime();this.timings=timings;
+            try {return synchronize(encoder,meshBudget,true);}
+            finally {this.timings=null;synchronizations++;syncCpuNanoseconds+=System.nanoTime()-begin;}
+        }
     }
 
     private boolean hasRetirablePending() {
@@ -238,12 +242,14 @@ public final class TerrainRayScene {
     }
 
     public Statistics statistics() {
-        long bytes = top == null ? 0 : top.storageBytes();
-        for (var values : sections.values()) for (var value : values) bytes += value.acceleration().storageBytes();
-        return new Statistics(sections.size(), view.geometry().size(), pending.size(), bytes,
-                view.generation(), recordedBuilds,attributeArena==null ? 0 : attributeArena.usedBytes(),
-                attributeArena==null ? 0 : attributeArena.capacityBytes(),attributeArena==null ? null : attributeArena.budget(),
-                budgetWaits,retirementOnlyBuilds,view.geometry().values().stream().mapToLong(value->value.mesh().triangleCount()).sum(),blasBuilds,tlasBuilds,0,0,synchronizations,syncCpuNanoseconds);
+        try (var diagnostic = GeometryCpuMetrics.begin(SCENE_STATISTICS, view.geometry().size())) {
+            long bytes = top == null ? 0 : top.storageBytes();
+            for (var values : sections.values()) for (var value : values) bytes += value.acceleration().storageBytes();
+            return new Statistics(sections.size(), view.geometry().size(), pending.size(), bytes,
+                    view.generation(), recordedBuilds,attributeArena==null ? 0 : attributeArena.usedBytes(),
+                    attributeArena==null ? 0 : attributeArena.capacityBytes(),attributeArena==null ? null : attributeArena.budget(),
+                    budgetWaits,retirementOnlyBuilds,view.geometry().values().stream().mapToLong(value->value.mesh().triangleCount()).sum(),blasBuilds,tlasBuilds,0,0,synchronizations,syncCpuNanoseconds);
+        }
     }
     public int pendingSections() { return pending.size(); }
 

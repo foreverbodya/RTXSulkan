@@ -1,5 +1,7 @@
 package com.sulkan.shaders.render.raytracing;
 
+import com.sulkan.shaders.diagnostics.GeometryCpuMetrics;
+import static com.sulkan.shaders.diagnostics.GeometryCpuMetrics.Stage.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -67,20 +69,22 @@ public final class RaySurfaceAttributes {
 
     /** Header: vertex count, triangle count, opacity, vertex stride. Vertices precede uint indices. */
     public static ByteBuffer serialize(TerrainMesh mesh) {
-        int vertexBytes = Math.multiplyExact(mesh.vertexCount(), VERTEX_BYTES);
-        int bytes = Math.addExact(HEADER_BYTES, Math.addExact(vertexBytes, Math.multiplyExact(mesh.triangleCount(), 12)));
-        ByteBuffer data = ByteBuffer.allocate(bytes).order(ByteOrder.nativeOrder());
-        data.putInt(mesh.vertexCount()).putInt(mesh.triangleCount()).putInt(mesh.opacity().ordinal()).putInt(VERTEX_BYTES);
-        var decoded = mesh.readView();
-        var positions = decoded.positions();
-        for (int vertex = 0; vertex < mesh.vertexCount(); vertex++) {
-            data.putFloat(positions.get(vertex*3)).putFloat(positions.get(vertex*3+1)).putFloat(positions.get(vertex*3+2)).putFloat(decoded.bakedOcclusion(vertex));
-            data.putInt(decoded.packedBaseColor(vertex)).putInt(decoded.packedTexture(vertex)).putInt(decoded.packedLightAndData(vertex)).putInt(decoded.packedMaterial(vertex));
+        try (var packing = GeometryCpuMetrics.begin(ATTRIBUTE_LEGACY, mesh.vertexCount())) {
+            int vertexBytes = Math.multiplyExact(mesh.vertexCount(), VERTEX_BYTES);
+            int bytes = Math.addExact(HEADER_BYTES, Math.addExact(vertexBytes, Math.multiplyExact(mesh.triangleCount(), 12)));
+            ByteBuffer data = ByteBuffer.allocate(bytes).order(ByteOrder.nativeOrder());
+            data.putInt(mesh.vertexCount()).putInt(mesh.triangleCount()).putInt(mesh.opacity().ordinal()).putInt(VERTEX_BYTES);
+            var decoded = mesh.readView();
+            var positions = decoded.positions();
+            for (int vertex = 0; vertex < mesh.vertexCount(); vertex++) {
+                data.putFloat(positions.get(vertex*3)).putFloat(positions.get(vertex*3+1)).putFloat(positions.get(vertex*3+2)).putFloat(decoded.bakedOcclusion(vertex));
+                data.putInt(decoded.packedBaseColor(vertex)).putInt(decoded.packedTexture(vertex)).putInt(decoded.packedLightAndData(vertex)).putInt(decoded.packedMaterial(vertex));
+            }
+            var indices = decoded.indices();
+            while (indices.hasRemaining()) data.putInt(indices.get());
+            data.flip();
+            return data.asReadOnlyBuffer().order(ByteOrder.nativeOrder());
         }
-        var indices = decoded.indices();
-        while (indices.hasRemaining()) data.putInt(indices.get());
-        data.flip();
-        return data.asReadOnlyBuffer().order(ByteOrder.nativeOrder());
     }
 
     /** Seven words: packed position pair, base tint, UV, light/flags, material/wind, AO.
@@ -89,16 +93,18 @@ public final class RaySurfaceAttributes {
      * the separately decoded float positions, with build inputs retired after use.
      */
     public static ByteBuffer serializeCompact(TerrainMesh mesh) {
-        int bytes = Math.addExact(HEADER_BYTES, Math.multiplyExact(mesh.vertexCount(), COMPACT_VERTEX_BYTES));
-        ByteBuffer data = ByteBuffer.allocate(bytes).order(ByteOrder.nativeOrder());
-        data.putInt(mesh.vertexCount()).putInt(mesh.triangleCount()).putInt(mesh.opacity().ordinal()).putInt(COMPACT_VERTEX_BYTES);
-        var decoded = mesh.readView(); var packed = decoded.packedVertices();
-        int strideWords = mesh.strideBytes() / 4;
-        for (int vertex = 0; vertex < mesh.vertexCount(); vertex++) {
-            data.putInt(packed.get(vertex * strideWords)).putInt(packed.get(vertex * strideWords + 1));
-            data.putInt(decoded.packedBaseColor(vertex)).putInt(decoded.packedTexture(vertex))
-                .putInt(decoded.packedLightAndData(vertex)).putInt(decoded.packedMaterial(vertex)).putFloat(decoded.bakedOcclusion(vertex));
+        try (var packing = GeometryCpuMetrics.begin(ATTRIBUTE_COMPACT, mesh.vertexCount())) {
+            int bytes = Math.addExact(HEADER_BYTES, Math.multiplyExact(mesh.vertexCount(), COMPACT_VERTEX_BYTES));
+            ByteBuffer data = ByteBuffer.allocate(bytes).order(ByteOrder.nativeOrder());
+            data.putInt(mesh.vertexCount()).putInt(mesh.triangleCount()).putInt(mesh.opacity().ordinal()).putInt(COMPACT_VERTEX_BYTES);
+            var decoded = mesh.readView(); var packed = decoded.packedVertices();
+            int strideWords = mesh.strideBytes() / 4;
+            for (int vertex = 0; vertex < mesh.vertexCount(); vertex++) {
+                data.putInt(packed.get(vertex * strideWords)).putInt(packed.get(vertex * strideWords + 1));
+                data.putInt(decoded.packedBaseColor(vertex)).putInt(decoded.packedTexture(vertex))
+                    .putInt(decoded.packedLightAndData(vertex)).putInt(decoded.packedMaterial(vertex)).putFloat(decoded.bakedOcclusion(vertex));
+            }
+            return data.flip().asReadOnlyBuffer().order(ByteOrder.nativeOrder());
         }
-        return data.flip().asReadOnlyBuffer().order(ByteOrder.nativeOrder());
     }
 }
