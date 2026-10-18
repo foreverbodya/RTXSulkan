@@ -1,0 +1,1308 @@
+{
+  "run": "qa-profile-cloud-environment-inputs-1",
+  "source": {
+    "cloudNoisePairs": false,
+    "skipImageComparison": false,
+    "profilePlan": "static",
+    "experiment": "cloud-3d-env",
+    "canonicalPackComparison": false,
+    "cloudNoisePairsPerturb": false,
+    "alternatePipeline": true,
+    "prepareGeometry": false,
+    "temporalProfile": false,
+    "nativeFrameComparison": false,
+    "dirty": false,
+    "rayQueryCounts": false,
+    "renderDistance": 6,
+    "cloudEnvironmentInputs": true,
+    "timeoutSeconds": 1800,
+    "profileTime": 12600,
+    "commit": "4bada577be20a9f1aeafa599e188e33f1d381f65"
+  },
+  "artifactSha256": "845AE4CEEEFDB4D36DA93A3C616DBB77C1AC8630AC426AB04FC23980B29ACE24",
+  "executionPassed": true,
+  "runtimeModsUnchanged": true,
+  "scope": "Instrumented A/A/B inputs and transport witness only; original difference did not reproduce. Added output stores can affect compilation. Not production performance, whole-renderer equivalence or a root-cause verdict.",
+  "comparisonRows": [
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 387,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 388,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 389,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 390,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 391,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 392,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 393,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment.self",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "cloud.environment",
+      "format": "RGBA16_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 262144,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.direction",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.origin",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.transport",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    },
+    {
+      "phase": "static",
+      "pass": "cloud.environment",
+      "resource": "qa.cloud.environment.clear",
+      "format": "RGBA32_FLOAT",
+      "experimentKind": "cloud-3d-env",
+      "frame": 394,
+      "cameraDelta": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "bytes": 524288,
+      "byteIdentical": true,
+      "firstMismatchByte": -1
+    }
+  ]
+}

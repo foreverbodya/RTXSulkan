@@ -303,3 +303,5 @@ redundant CPU work; longer travel/return cycles, more scenes/drivers/resolutions
 exceptional cleanup and first-person rendering. Existing water grazing-boundary,
 indirect Tmin and original moving-sky/hand regressions stay tracked. No claim of
 universal stability, a finished renderer or a completed profiling stage is made.
+
+The [environment input witness](docs/profiling/cloud-environment-inputs-20261018.md) returned 80 exact A/A and A/B rows, but the original discrepancy disappeared under instrumentation. It is inconclusive for the original cause and provides no new accepted speedup. Further witness-output expansion is deferred.
