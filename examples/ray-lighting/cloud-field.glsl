@@ -106,7 +106,7 @@ float cinematicCloudDensityImpl(sampler2D layoutTexture,vec3 p,bool lighting) {
     vec4 noise;
 #if CLOUD_DENSITY_PROFILE == 1
     vec3 detail;
-#if CLOUD_LIGHTING_VOLUME == 1
+#if CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1
     if(lighting) {
         vec4 fine;cinematicCloudLightingCellularPair(layoutTexture,p,noise,fine);detail=fine.rgb;
     }
@@ -121,7 +121,7 @@ float cinematicCloudDensityImpl(sampler2D layoutTexture,vec3 p,bool lighting) {
     float threshold=0.48+0.22*height*height+0.50*(1.0-coverage);
     float body=clamp((shape-threshold)*6.0,0.0,1.0);
 #else
-#if CLOUD_LIGHTING_VOLUME == 1
+#if CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1
     if(lighting)noise=cinematicCloudLightingCellularScale(layoutTexture,p,512.0);
     else
 #endif

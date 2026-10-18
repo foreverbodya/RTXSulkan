@@ -1,7 +1,7 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-    [ValidateSet(0,1,2,3)][int] $RealtimeStep = 0,
+    [ValidateSet(0,1,2,3,5)][int] $RealtimeStep = 0,
     [Parameter(Mandatory)][string]$QaDirectory,
     [string]$InstanceMods = 'work/qa-world-dlss-5/mods',
     [ValidateSet(3000,12600,18000)][int]$ProfileTime = 3000,

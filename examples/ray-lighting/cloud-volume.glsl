@@ -75,6 +75,12 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
         vec4 field=cinematicCloudField(layoutTexture,p);
         vec3 tint=field.rgb/max(field.a,1e-8);
         vec3 solarVisibility=vec3(0);vec2 ambientVisibility=vec2(0);float referenceWeight=1.0;
+#if REALTIME_CLOUDS == 1 && defined(SULKAN_HAS_BINDING_CLOUDLIGHTINGVOLUME)
+        vec2 period=cinematicCloudPeriod(layoutTexture);
+        vec3 lightUv=vec3(fract(p.x/period.x),clamp((p.y-cinematicCloudBottom())/CLOUD_THICKNESS,0.0,1.0),fract(p.z/period.y));
+        solarVisibility=textureLod(CloudLightingVolume,lightUv,0.0).rgb;
+        ambientVisibility=textureLod(CloudAmbientVolume,lightUv,0.0).rg;
+#else
 #if defined(SULKAN_CLOUD_SOURCE_CACHE_USE) && CLOUD_SOURCE_CACHE == 1
         referenceWeight=cloudSourceLookup(layoutTexture,p,solarVisibility,ambientVisibility);
 #endif
@@ -92,6 +98,7 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
             ambientVisibility+=vec2(referenceWeight);
 #endif
         }
+#endif
         float solarScattering=sun.y>0.0?dot(weight*phase,solarVisibility):0.0;
         vec3 ambient=ambientUp*ambientVisibility.x+ambientDown*ambientVisibility.y;
         vec3 source=0.995*tint*(solar*solarScattering+ambient*weight.x);

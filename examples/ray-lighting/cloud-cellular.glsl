@@ -54,7 +54,7 @@ vec4 cinematicCloudCellularScale(sampler2D layoutTexture,sampler2D noiseTexture,
 vec4 cinematicCloudCellular(sampler2D layoutTexture,sampler2D noiseTexture,vec3 p) {
     return cinematicCloudCellularScale(layoutTexture,noiseTexture,p,512.0);
 }
-#if CLOUD_LIGHTING_VOLUME == 1
+#if CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1
 // Lighting-only approximation: hardware interpolation has finite weight
 // precision. View extinction/proxy and source diagnostics keep explicit fetches.
 vec4 cinematicCloudLightingCellularScale(sampler2D layoutTexture,vec3 p,float scale) {

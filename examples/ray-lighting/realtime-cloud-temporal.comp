@@ -1,0 +1,31 @@
+#version 460
+#include "sulkan/camera-rays.glsl"
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
+    if(any(greaterThanEqual(p,size)))return;
+    vec4 current=texelFetch(Current,p,0),geometry=texelFetch(Geometry,p,0);
+    vec2 uv=(vec2(p)+0.5)/vec2(size);
+    SulkanCameraRay ray=sulkanCameraRay(uv);
+    vec4 clip=PreviousProjection*PreviousView*vec4(ray.origin+ray.direction*geometry.x+CameraDeltaAndHistoryValid.xyz,1);
+    vec2 oldUv=clip.xy/max(clip.w,1e-8)*0.5+0.5;
+    bool valid=CameraDeltaAndHistoryValid.w>0.5 && geometry.y>0.001 && clip.w>0.0
+        && all(greaterThanEqual(oldUv,vec2(0))) && all(lessThan(oldUv,vec2(1)));
+    if(valid) {
+        ivec2 oldPixel=clamp(ivec2(oldUv*vec2(size)),ivec2(0),size-1);
+        vec4 oldGeometry=texelFetch(PreviousGeometry,oldPixel,0),old=texelFetch(Previous,oldPixel,0);
+        // Reject changed ray endpoints and opacity; clamp surviving history to
+        // current support so disocclusions do not leave clouds on terrain.
+        valid=abs(oldGeometry.x-geometry.x)<max(24.0,geometry.x*0.03)
+            && abs(oldGeometry.w-geometry.w)<max(8.0,geometry.w*0.02)
+            && abs(old.a-current.a)<0.2 && !any(isnan(old)) && !any(isinf(old));
+        if(valid) {
+            vec4 lo=current,hi=current;
+            for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++) {
+                vec4 v=texelFetch(Current,clamp(p+ivec2(x,y),ivec2(0),size-1),0);
+                lo=min(lo,v);hi=max(hi,v);
+            }
+            current=mix(current,clamp(old,lo,hi),0.85);
+        }
+    }
+    imageStore(Output0,p,current);
+}

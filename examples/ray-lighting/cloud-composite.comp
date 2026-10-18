@@ -42,6 +42,23 @@ void main() {
     ivec2 cells[4];vec4 weights;
     cinematicCloudFootprint(p,size,textureSize(CloudView,0),cells,weights);
     float proxy=cloudProxy(cells,weights),mode=0.0,mass=1.0;int mask=15;
+#if REALTIME_CLOUDS == 1
+    // Resolve only existing quarter-pixel-count samples. Never launch another
+    // cloud march from this full-resolution composition pass.
+    if(intersects) {
+        vec4 compatible=vec4(0);
+        for(int i=0;i<4;i++) {
+            float tapEnd=texelFetch(CloudGeometry,cells[i],0).w;
+            if(abs(tapEnd-maximum)<=max(4.0,maximum*0.02))compatible[i]=weights[i];
+        }
+        mass=dot(compatible,vec4(1));transport=vec4(0,0,0,1);proxy=0.0;
+        if(mass>1e-6) {
+            weights=compatible/mass;transport=vec4(0);
+            for(int i=0;i<4;i++)transport+=weights[i]*texelFetch(CloudView,cells[i],0);
+            transport.a=clamp(transport.a,0.0,1.0);proxy=cloudProxy(cells,weights);
+        }
+    }
+#else
 #if CLOUD_DEPTH_AWARE == 1
     mode=4.0;proxy=0.0;mass=0.0;mask=0;
     if(intersects) {
@@ -81,6 +98,7 @@ void main() {
             }
         }
     }
+#endif
 #endif
     imageStore(Output0,p,vec4(transport.rgb+texelFetch(Base,p,0).rgb*transport.a,1));
     imageStore(Output1,p,transport);

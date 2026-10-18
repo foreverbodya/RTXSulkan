@@ -1,0 +1,17 @@
+#version 460
+#include "shaders/atmosphere.glsl"
+#include "shaders/cinematic-cloud-volume.glsl"
+void main() {
+    ivec3 cell=ivec3(gl_GlobalInvocationID.xyz),size=imageSize(Output0);
+    if(any(greaterThanEqual(cell,size)))return;
+    vec3 uv=(vec3(cell)+0.5)/vec3(size);
+    vec2 period=cinematicCloudPeriod(CloudLayout);
+    vec3 p=vec3(uv.x*period.x,cinematicCloudBottom()+uv.y*CLOUD_THICKNESS,uv.z*period.y);
+    vec3 sun=cinematicKeyDirection();
+    // Fixed work per cell, amortized over every camera/environment sample.
+    float solar=sun.y>0.0?cinematicCloudOpticalDepthImpl(CloudLayout,p,sun,16384.0,24,false):0.0;
+    float up=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,1,0),CLOUD_THICKNESS,8,false);
+    float down=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,-1,0),CLOUD_THICKNESS,8,false);
+    imageStore(Output0,cell,vec4(exp(-solar*CLOUD_ORDER_EXTINCTION),1));
+    imageStore(Output1,cell,vec4(cinematicCloudHemisphereTransmission(up),cinematicCloudHemisphereTransmission(down),0,1));
+}
