@@ -72,10 +72,11 @@ foreach($pass in $selected) {
 }
 $manifest.name+=' (QA ray-query counting; untimed)'
 $manifest.options['SULKAN_QA_RAY_QUERY_COUNTS']=@{default=1;values=@(1)}
-# This explicit diagnostic allowance is not present in the performance pack.
+# Use existing headroom when the pack already requests the supported maximum.
+# Graph allocation validation still rejects the pack if its actual resources do
+# not fit; do not raise the renderer's 2048 MiB safety limit for instrumentation.
 $previousBudget=if($manifest.Contains('budgetMiB')){[int]$manifest.budgetMiB}else{512}
-if($previousBudget+128 -gt 2048) {throw 'Diagnostic buffer allowance exceeds supported graph budget'}
-$manifest.budgetMiB=$previousBudget+128
+$manifest.budgetMiB=[Math]::Min(2048,$previousBudget+128)
 $details=@{
     version=1;passes=$passDetails;lanes=@('primaryRadiance','continuationRadiance','solarVisibility','emissiveVisibility')
     initializationSites=@{loaderTerrain=1;foliageBoundaryRadiance=1;solidShadowPreflight=1;foliageShadowEnumeration=1}
