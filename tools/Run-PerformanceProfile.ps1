@@ -9,6 +9,7 @@ param(
     [switch]$NativeFrameComparison,
     [switch]$SkipImageComparison,
     [switch]$PrepareGeometry,
+    [switch]$CanonicalPackComparison,
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
@@ -23,14 +24,15 @@ $gpuInfo=$target+'-gpu-info.txt'
 $sourceInfo=$target+'-source.json'
 @{commit=(& git -C (Split-Path $PSScriptRoot -Parent) rev-parse HEAD);dirty=(@(& git -C (Split-Path $PSScriptRoot -Parent) status --porcelain)).Count -gt 0;
   profilePlan=$ProfilePlan;profileTime=$ProfileTime;renderDistance=$RenderDistance;experiment=$ComputeExperiment;
-  alternatePipeline=[bool]$WorkgroupExperiment;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;prepareGeometry=[bool]$PrepareGeometry;
+  alternatePipeline=[bool]$WorkgroupExperiment;canonicalPackComparison=[bool]$CanonicalPackComparison;nativeFrameComparison=[bool]$NativeFrameComparison;skipImageComparison=[bool]$SkipImageComparison;prepareGeometry=[bool]$PrepareGeometry;
   timeoutSeconds=$TimeoutSeconds} | ConvertTo-Json | Set-Content -LiteralPath $sourceInfo
 & nvidia-smi -q | Set-Content -LiteralPath $gpuInfo
 # Owned, read-only telemetry helper; WDDM reports device-wide usage, not process residency.
-$monitor=Start-Process -FilePath (Get-Command nvidia-smi).Source -ArgumentList @('--query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,clocks.gr,clocks.mem','--format=csv,noheader,nounits','-lms','500','-f',('"'+$telemetry+'"')) -WindowStyle Hidden -PassThru
+$stopFile=$target+'-gpu.stop'
+$monitor=Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile','-File',('"'+(Join-Path $PSScriptRoot 'Sample-Gpu.ps1')+'"'),'-OutputPath',('"'+$telemetry+'"'),'-StopFile',('"'+$stopFile+'"'),'-ParentPid',$PID) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `
@@ -38,6 +40,7 @@ try {
         -NativeLibrary (Join-Path $workspace 'outputs/sulkan-cinematic/build/native/dlss/sulkan_ngx_probe.dll') `
         -RuntimeDirectory (Join-Path $workspace 'work/dlss-sdk/lib/Windows_x86_64/rel') -MaxFps 260 -DisableVsync -TimeoutSeconds $TimeoutSeconds
 } finally {
-    if(!$monitor.HasExited){$monitor.Kill();$monitor.WaitForExit()}
+    Set-Content -LiteralPath $stopFile -Value 'stop'
+    if(!$monitor.WaitForExit(5000)){$monitor.Kill();$monitor.WaitForExit()}
     if(Test-Path -LiteralPath $target){Copy-Item -LiteralPath $telemetry,$gpuInfo,$sourceInfo -Destination $target}
 }

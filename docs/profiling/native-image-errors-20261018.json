@@ -1,0 +1,1202 @@
+[
+  {
+    "root": "qa-profile-cloud-env-native-2",
+    "pairs": [
+      {
+        "phase": "static",
+        "sequence": 0,
+        "comparison": "candidate",
+        "frame": 632,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 1,
+        "comparison": "candidate",
+        "frame": 633,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 2,
+        "comparison": "candidate",
+        "frame": 634,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 3,
+        "comparison": "candidate",
+        "frame": 635,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 4,
+        "comparison": "candidate",
+        "frame": 636,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 5,
+        "comparison": "candidate",
+        "frame": 637,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 6,
+        "comparison": "candidate",
+        "frame": 638,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 7,
+        "comparison": "candidate",
+        "frame": 639,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 0,
+        "comparison": "candidate",
+        "frame": 1088,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 1,
+        "comparison": "candidate",
+        "frame": 1089,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 2,
+        "comparison": "candidate",
+        "frame": 1090,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 3,
+        "comparison": "candidate",
+        "frame": 1091,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 4,
+        "comparison": "candidate",
+        "frame": 1092,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 5,
+        "comparison": "candidate",
+        "frame": 1093,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 6,
+        "comparison": "candidate",
+        "frame": 1094,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 7,
+        "comparison": "candidate",
+        "frame": 1095,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      }
+    ],
+    "stationaryTemporal": {
+      "candidate": {
+        "frames": 8,
+        "referenceTemporalRmsCode": 1.8605853535991583,
+        "candidateTemporalRmsCode": 1.8605853535991583,
+        "temporalRmsChangeCode": 0.0
+      }
+    },
+    "scope": "RGB8 actual native-DLSS display output. PSNR/temporal RMS are numerical comparisons, not proof of perceptual equivalence in every scene."
+  },
+  {
+    "root": "qa-profile-cloud-env-native-sunset-1",
+    "pairs": [
+      {
+        "phase": "static",
+        "sequence": 0,
+        "comparison": "candidate",
+        "frame": 538,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0019996021412037037,
+        "maximumRGBCodeDelta": 44,
+        "mseRGBCode": 0.008300419560185185,
+        "psnrDb": 68.93980315712555,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 8592,
+          "2": 1517,
+          "4": 431,
+          "8": 100,
+          "16": 24,
+          "32": 4,
+          "64": 0
+        },
+        "maximumAtXY": [
+          1835,
+          898
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 1,
+        "comparison": "candidate",
+        "frame": 539,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0018646918402777778,
+        "maximumRGBCodeDelta": 48,
+        "mseRGBCode": 0.007203595196759259,
+        "psnrDb": 69.5553106104485,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 10129,
+          "2": 914,
+          "4": 277,
+          "8": 98,
+          "16": 22,
+          "32": 4,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2165,
+          957
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 2,
+        "comparison": "candidate",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0009979926215277779,
+        "maximumRGBCodeDelta": 42,
+        "mseRGBCode": 0.005007143373842593,
+        "psnrDb": 71.13490333763546,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 5434,
+          "2": 355,
+          "4": 170,
+          "8": 66,
+          "16": 17,
+          "32": 3,
+          "64": 0
+        },
+        "maximumAtXY": [
+          186,
+          408
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 3,
+        "comparison": "candidate",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0011469184027777777,
+        "maximumRGBCodeDelta": 60,
+        "mseRGBCode": 0.008618706597222222,
+        "psnrDb": 68.77638264397656,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 5823,
+          "2": 387,
+          "4": 182,
+          "8": 81,
+          "16": 30,
+          "32": 9,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2480,
+          1016
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 4,
+        "comparison": "candidate",
+        "frame": 1,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0025169994212962963,
+        "maximumRGBCodeDelta": 59,
+        "mseRGBCode": 0.011039496527777777,
+        "psnrDb": 67.70131093651712,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 11818,
+          "2": 1637,
+          "4": 443,
+          "8": 127,
+          "16": 37,
+          "32": 7,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2537,
+          1060
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 5,
+        "comparison": "candidate",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.003360912181712963,
+        "maximumRGBCodeDelta": 77,
+        "mseRGBCode": 0.014335847077546296,
+        "psnrDb": 66.56657001204158,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 15938,
+          "2": 2527,
+          "4": 754,
+          "8": 180,
+          "16": 38,
+          "32": 8,
+          "64": 1
+        },
+        "maximumAtXY": [
+          32,
+          457
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 6,
+        "comparison": "candidate",
+        "frame": 1,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.002793601707175926,
+        "maximumRGBCodeDelta": 78,
+        "mseRGBCode": 0.010210593894675926,
+        "psnrDb": 68.04029357499962,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 16631,
+          "2": 1514,
+          "4": 389,
+          "8": 94,
+          "16": 26,
+          "32": 5,
+          "64": 1
+        },
+        "maximumAtXY": [
+          32,
+          457
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 7,
+        "comparison": "candidate",
+        "frame": 2,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0025066008391203703,
+        "maximumRGBCodeDelta": 73,
+        "mseRGBCode": 0.009111237702546297,
+        "psnrDb": 68.53502983798903,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 15230,
+          "2": 1203,
+          "4": 327,
+          "8": 79,
+          "16": 23,
+          "32": 4,
+          "64": 1
+        },
+        "maximumAtXY": [
+          32,
+          456
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 0,
+        "comparison": "candidate",
+        "frame": 396,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 1,
+        "comparison": "candidate",
+        "frame": 397,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 2,
+        "comparison": "candidate",
+        "frame": 398,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 3,
+        "comparison": "candidate",
+        "frame": 399,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 4,
+        "comparison": "candidate",
+        "frame": 400,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 5,
+        "comparison": "candidate",
+        "frame": 401,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 6,
+        "comparison": "candidate",
+        "frame": 402,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "motion",
+        "sequence": 7,
+        "comparison": "candidate",
+        "frame": 403,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      }
+    ],
+    "stationaryTemporal": {
+      "candidate": {
+        "frames": 8,
+        "referenceTemporalRmsCode": 2.5965551595668748,
+        "candidateTemporalRmsCode": 2.5965591333094484,
+        "temporalRmsChangeCode": 3.973742573659678e-06
+      }
+    },
+    "scope": "RGB8 actual native-DLSS display output. PSNR/temporal RMS are numerical comparisons, not proof of perceptual equivalence in every scene."
+  },
+  {
+    "root": "qa-profile-cloud-env-native-self-sunset-1",
+    "pairs": [
+      {
+        "phase": "static",
+        "sequence": 0,
+        "comparison": "self",
+        "frame": 537,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 0,
+        "comparison": "candidate",
+        "frame": 537,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0022393120659722223,
+        "maximumRGBCodeDelta": 71,
+        "mseRGBCode": 0.012619267216435186,
+        "psnrDb": 67.12046224113395,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 8892,
+          "2": 1603,
+          "4": 474,
+          "8": 136,
+          "16": 40,
+          "32": 9,
+          "64": 1
+        },
+        "maximumAtXY": [
+          2475,
+          988
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 1,
+        "comparison": "self",
+        "frame": 538,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 1,
+        "comparison": "candidate",
+        "frame": 538,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0021455439814814813,
+        "maximumRGBCodeDelta": 50,
+        "mseRGBCode": 0.00979076244212963,
+        "psnrDb": 68.22263847663709,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 10612,
+          "2": 1045,
+          "4": 377,
+          "8": 146,
+          "16": 35,
+          "32": 6,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2475,
+          988
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 2,
+        "comparison": "self",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 2,
+        "comparison": "candidate",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0011328125,
+        "maximumRGBCodeDelta": 40,
+        "mseRGBCode": 0.0065610532407407406,
+        "psnrDb": 69.96106798942633,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 5644,
+          "2": 429,
+          "4": 213,
+          "8": 84,
+          "16": 27,
+          "32": 6,
+          "64": 0
+        },
+        "maximumAtXY": [
+          874,
+          755
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 3,
+        "comparison": "self",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 3,
+        "comparison": "candidate",
+        "frame": 0,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0012068684895833333,
+        "maximumRGBCodeDelta": 54,
+        "mseRGBCode": 0.00856617115162037,
+        "psnrDb": 68.80293613541222,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 5968,
+          "2": 402,
+          "4": 193,
+          "8": 93,
+          "16": 36,
+          "32": 6,
+          "64": 0
+        },
+        "maximumAtXY": [
+          1883,
+          892
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 4,
+        "comparison": "self",
+        "frame": 1,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 4,
+        "comparison": "candidate",
+        "frame": 1,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0024774848090277778,
+        "maximumRGBCodeDelta": 46,
+        "mseRGBCode": 0.009159523292824073,
+        "psnrDb": 68.51207489458069,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 11787,
+          "2": 1696,
+          "4": 439,
+          "8": 111,
+          "16": 28,
+          "32": 5,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2411,
+          1006
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 5,
+        "comparison": "self",
+        "frame": 2,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 5,
+        "comparison": "candidate",
+        "frame": 2,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0024696180555555556,
+        "maximumRGBCodeDelta": 36,
+        "mseRGBCode": 0.0086181640625,
+        "psnrDb": 68.77665603447862,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 12135,
+          "2": 1539,
+          "4": 402,
+          "8": 109,
+          "16": 23,
+          "32": 7,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2171,
+          935
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 6,
+        "comparison": "self",
+        "frame": 3,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 6,
+        "comparison": "candidate",
+        "frame": 3,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0021459056712962964,
+        "maximumRGBCodeDelta": 32,
+        "mseRGBCode": 0.00635814525462963,
+        "psnrDb": 70.09749915527041,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 11417,
+          "2": 1201,
+          "4": 324,
+          "8": 74,
+          "16": 14,
+          "32": 3,
+          "64": 0
+        },
+        "maximumAtXY": [
+          325,
+          397
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 7,
+        "comparison": "self",
+        "frame": 4,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0,
+        "maximumRGBCodeDelta": 0,
+        "mseRGBCode": 0.0,
+        "psnrDb": null,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          0,
+          0
+        ]
+      },
+      {
+        "phase": "static",
+        "sequence": 7,
+        "comparison": "candidate",
+        "frame": 4,
+        "pixels": 3686400,
+        "meanRGBCodeDelta": 0.0019825122974537037,
+        "maximumRGBCodeDelta": 30,
+        "mseRGBCode": 0.005608452690972222,
+        "psnrDb": 70.64237300050425,
+        "pixelsAtOrAboveCodeDelta": {
+          "1": 10845,
+          "2": 1047,
+          "4": 283,
+          "8": 63,
+          "16": 15,
+          "32": 0,
+          "64": 0
+        },
+        "maximumAtXY": [
+          2128,
+          958
+        ]
+      }
+    ],
+    "stationaryTemporal": {
+      "self": {
+        "frames": 8,
+        "referenceTemporalRmsCode": 2.3435057378383264,
+        "candidateTemporalRmsCode": 2.3435057378383264,
+        "temporalRmsChangeCode": 0.0
+      },
+      "candidate": {
+        "frames": 8,
+        "referenceTemporalRmsCode": 2.3435057378383264,
+        "candidateTemporalRmsCode": 2.343532881713743,
+        "temporalRmsChangeCode": 2.7143875416690832e-05
+      }
+    },
+    "scope": "RGB8 actual native-DLSS display output. PSNR/temporal RMS are numerical comparisons, not proof of perceptual equivalence in every scene."
+  }
+]

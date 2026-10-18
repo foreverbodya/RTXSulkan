@@ -32,12 +32,27 @@ final class QaPerformanceProfile {
     private long startEpochMs;
     private boolean measuring,timingSaved;
     private final boolean fastPreparation=Boolean.getBoolean("sulkan.qaProfilePrepareGeometry");
+    private final boolean canonicalComparison=Boolean.getBoolean("sulkan.qaCanonicalPackComparison");
+    private final String canonicalReference,canonicalCandidate;
     private boolean preparingReload;
     private int verificationFrame;
     private CompletableFuture<Void> image;
 
     QaPerformanceProfile(Path directory,double[] pose,Map<String,Object> scene)throws Exception {
         this.directory=directory;this.base=pose.clone();this.scene=new LinkedHashMap<>(scene);
+        if(canonicalComparison){
+            canonicalCandidate=Files.readString(directory.getParent().resolve("shaders/RayLighting/sulkan.json"));
+            var reference=com.google.gson.JsonParser.parseString(canonicalCandidate).getAsJsonObject();
+            if(reference.getAsJsonObject("resources").remove("cloud.exact.noise")==null)throw new IllegalStateException("Canonical comparison requires a 3D cloud candidate pack");
+            var passes=new com.google.gson.JsonArray();
+            for(var element:reference.getAsJsonArray("passes")){
+                var pass=element.getAsJsonObject();if(pass.get("name").getAsString().equals("cloud.exact.noise"))continue;
+                if(pass.has("reads"))pass.getAsJsonObject("reads").remove("CloudExactNoise");passes.add(pass);
+            }
+            reference.add("passes",passes);canonicalReference=new GsonBuilder().setPrettyPrinting().create().toJson(reference);
+            Files.writeString(directory.resolve("manifest-reference.json"),canonicalReference);
+            Files.writeString(directory.resolve("manifest-candidate.json"),canonicalCandidate);
+        }else{canonicalReference=canonicalCandidate=null;}
         plan=List.of(System.getProperty("sulkan.qaProfilePlan","static,motion,static-repeat,stream,settled").split(","));
         if(thread.isCurrentThreadCpuTimeSupported() && !thread.isThreadCpuTimeEnabled())thread.setThreadCpuTimeEnabled(true);
         write("profile-plan.json",Map.of("plan",plan,"framesPerPhase",FRAMES,"warmupFrames",WARMUP,"experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"),
@@ -54,7 +69,8 @@ final class QaPerformanceProfile {
         System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
         System.setProperty("sulkan.qaProfileDisabled",group);
-        if(path().equals("reload")){
+        if(canonicalComparison || path().equals("reload")){
+            if(canonicalComparison)Files.writeString(directory.getParent().resolve("shaders/RayLighting/sulkan.json"),phase().startsWith("narrow-")?canonicalCandidate:canonicalReference);
             if(fastPreparation){System.setProperty("sulkan.qaProfilePrepareGeometry","true");preparingReload=true;}
             NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),NativePackRuntime.diagnosticOptions());
         }
@@ -115,8 +131,9 @@ final class QaPerformanceProfile {
         report.put("gpuTimingPrefixFrames",FRAMES);report.put("stressOnly",path().equals("travel"));
         report.put("startEpochMs",startEpochMs);report.put("endEpochMs",endEpochMs);
         report.put("experimentKind",System.getProperty("sulkan.qaComputeExperiment","workgroup"));
-        report.put("candidateSelected",phase().startsWith("narrow-"));
-        report.put("workgroupY",phase().startsWith("narrow-") && "workgroup".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"))?4:8);report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
+        report.put("canonicalPackComparison",canonicalComparison);
+        report.put("candidateSelected",canonicalComparison || Boolean.getBoolean("sulkan.qaWorkgroupExperiment")?phase().startsWith("narrow-"):System.getProperty("sulkan.qaComputeExperiment","").startsWith("cloud-3d"));
+        report.put("workgroupY",Boolean.getBoolean("sulkan.qaWorkgroupExperiment") && phase().startsWith("narrow-") && "workgroup".equals(System.getProperty("sulkan.qaComputeExperiment","workgroup"))?4:8);report.put("phase",phase());report.put("frames",frame);report.put("wallMs",statistics(wall));report.put("renderThreadActiveCpuMs",statistics(cpu));
         report.put("geometryStartSha256",geometryStart);report.put("geometryEndSha256",geometryEnd);
         report.put("rayStart",rayStart);report.put("rayEnd",rayEnd);
         report.put("workCountersStart",countersStart);report.put("workCountersEnd",countersEnd);

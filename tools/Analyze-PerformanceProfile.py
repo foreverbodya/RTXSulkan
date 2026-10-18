@@ -11,6 +11,7 @@ from pathlib import Path
 def load_run(root):
     root = Path(root)
     evidence = root / "evidence"
+    artifact = json.loads((root / "result.json").read_text(encoding="utf-8"))
     completed = (evidence / "performance-profile.json").exists()
     combined = json.loads((evidence / "performance-profile.json").read_text(encoding="utf-8")) if completed else {
         "reports": sorted((json.loads(f.read_text(encoding="utf-8")) for f in evidence.glob("profile-*.json") if f.name!="profile-plan.json"),key=lambda s:s["startEpochMs"])}
@@ -42,7 +43,10 @@ def load_run(root):
             "gpuTimingPrefixFrames": s.get("gpuTimingPrefixFrames", s["frames"]),
             "stressOnly": s.get("stressOnly", False),
             "wallP95Ms": s["wallMs"]["p95"],
-            "candidateSelected": s.get("candidateSelected", False),
+            # Older reports label only QA alternate-pipeline selection. Normal
+            # 3D packs select the candidate by their binding at compile time.
+            "candidateSelected": s.get("candidateSelected", False) if artifact.get("workgroupExperiment") or artifact.get("canonicalPackComparison") else artifact.get("computeExperiment", "").startswith("cloud-3d"),
+            "reportedAlternatePipelineSelection": s.get("candidateSelected",False),
             "sourceRevisionUnchanged": s.get("sourceRevisionUnchanged"),
             "syncCpuMsPerFrame": (s["rayEnd"]["syncCpuNanoseconds"] - s["rayStart"]["syncCpuNanoseconds"]) / 1e6 / s["frames"],
             "rayEnd": s["rayEnd"],
@@ -80,7 +84,7 @@ def load_run(root):
                 row["deviceGpuUtilSamples"] = len(samples)
         reports.append(row)
     return {"root": str(root.resolve()), "reports": reports, "allPhasesCompleted":completed,
-            "artifact": json.loads((root / "result.json").read_text(encoding="utf-8")),
+            "artifact": artifact,
             "scope": "GPU world excludes UI/swapchain. CPU is render-thread active CPU, not all process CPU. Native allocation bytes exclude engine/Sodium/NGX. Device VRAM/usage are WDDM device-wide 500ms samples, not isolated process residency or guaranteed instantaneous peaks."}
 
 
@@ -98,10 +102,9 @@ def comparisons(run):
         before = mean("wallMs")
         passes = []
         for name in sorted(a["passes"].keys() | b["passes"].keys() | c["passes"].keys()):
-            if name not in a["passes"] or name not in b["passes"] or name not in c["passes"]:
-                continue
             # Upload/AS rows contain events, not one sample per frame. Amortize their totals.
             def milliseconds(r):
+                if name not in r["passes"]:return 0.0 # graph does not schedule this pass
                 p = r["passes"][name]
                 if name in ("geometry.upload", "blas.build", "tlas.build"):
                     return sum(p["milliseconds"]) / r["gpuTimingPrefixFrames"]
@@ -145,6 +148,7 @@ def main():
     p.add_argument("runs", nargs="+")
     p.add_argument("--output", required=True)
     p.add_argument("--quality-runs", nargs="*", default=[])
+    p.add_argument("--bracket-runs", nargs=3, metavar=("REFERENCE","CANDIDATE","REFERENCE_REPEAT"))
     args = p.parse_args()
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
@@ -153,6 +157,14 @@ def main():
     quality = [quality_summary(r) for r in args.quality_runs]
     (output / "quality.json").write_text(json.dumps(quality, indent=2))
     comparison = [{"root":r["root"],"comparisons":comparisons(r)} for r in runs]
+    if args.bracket_runs:
+        bracket=[load_run(p) for p in args.bracket_runs]
+        reports=[]
+        for i,r in enumerate(bracket):
+            for s in r["reports"]:
+                if s["phase"] in ("static","motion"):
+                    reports.append(dict(s,phase=("narrow-" if i==1 else "")+s["phase"]+("-repeat" if i==2 else "")))
+        comparison.append({"root":"canonical-three-process-bracket","runs":[r["root"] for r in bracket],"comparisons":comparisons({"reports":reports})})
     (output / "comparison.json").write_text(json.dumps(comparison, indent=2))
     with (output / "passes.csv").open("w", newline="") as f:
         writer=csv.writer(f)

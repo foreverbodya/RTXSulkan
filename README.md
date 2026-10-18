@@ -10,8 +10,15 @@ finished material/light response remain incomplete.
 
 ## Current checkpoint — 2026-10-18
 
+Development is focused on profiling, performance and stability; new visual
+effects are frozen. [PROFILING_STAGE.md](PROFILING_STAGE.md) contains actual
+per-pass timings, matched camera A/B results, image differences, full-effects
+32-chunk reload/resize evidence and reproduction commands. The faster cloud
+candidate remains experimental because static sunset image differences remain.
+
 - Camera-relative rays and bounded geometry pages; scoped 16-to-32-chunk and
-  same-pack reload checks. Long-travel coverage remains open.
+  same-pack reload checks, plus an 8 km travel stress run. Longer-session coverage
+  remains open.
 - Opt-in night atmosphere, lunar surface light, procedural Moon/stars and
   exposure. Lunar power and visible-disk compression are artistic choices.
 - A real textured interior with warm emitters and optional area-light MIS.

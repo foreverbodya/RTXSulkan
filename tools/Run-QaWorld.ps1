@@ -70,6 +70,7 @@ param(
     [switch] $GpuTimings,
     [switch] $PerformanceProfile,
     [switch] $PrepareGeometry,
+    [switch] $CanonicalPackComparison,
     [switch] $WorkgroupExperiment,
     [switch] $NativeFrameComparison,
     [switch] $SkipImageComparison,
@@ -395,7 +396,12 @@ if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true'
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($SkipImageComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaSkipImageComparison=true")}
 if($NativeFrameComparison){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaNativeFrameComparison=true")}
-if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")}
+$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaComputeExperiment=$ComputeExperiment")
+if($WorkgroupExperiment){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaWorkgroupExperiment=true")}
+if($CanonicalPackComparison){
+    if(!$PerformanceProfile -or $WorkgroupExperiment -or !$ComputeExperiment.StartsWith('cloud-3d-env')){throw 'CanonicalPackComparison requires a normal environment-only performance candidate'}
+    $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCanonicalPackComparison=true')
+}
 if($PerformanceProfile){$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfileTime=$ProfileTime");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaPerformanceProfile=true");$startInfo.ArgumentList.Insert(0,"-Dsulkan.qaProfilePlan=$ProfilePlan")}
 if($SolidShadowComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSolidShadowComparison=true')}
 if($CloudSourceComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudSourceComparison=true')}
@@ -701,7 +707,7 @@ $result = [ordered]@{
     cloudMotionAudit = [bool]$CloudMotionAudit
     cloudMotionSequence = [bool]$CloudMotionSequence
     cameraBobAudit = [bool]$CameraBobAudit
-    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
+    computeExperiment = $ComputeExperiment; workgroupExperiment = [bool]$WorkgroupExperiment; canonicalPackComparison = [bool]$CanonicalPackComparison; performanceProfile = [bool]$PerformanceProfile; profilePlan = $ProfilePlan
     gpuTimings = [bool]$GpuTimings
     solidShadowComparison = [bool]$SolidShadowComparison
     cloudLightingComparison = [bool]$CloudLightingComparison
