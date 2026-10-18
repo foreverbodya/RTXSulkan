@@ -1,5 +1,52 @@
 # Material-only shadow lookup: experimental, not promoted
 
+## Follow-up gameplay control: candidate rejected for baseline
+
+`qa-profile-shadow-material-quality-3` completed static and motion phases with
+Megabonk closed and approximately 1% device utilization before launch. Source
+`6d61f66e8d85fabaed64f93e607951aab28871cb`, runtime JAR SHA256
+`C00B75D6AFE6140E5CA3DB3A0E9995F0DF04221E924CD04BEA4EC1D70DB32D10`.
+Configuration is unchanged from the six-chunk day setup below. This is image QA,
+not a clean performance comparison: it includes readbacks and has no timed B
+bracket. Other runtime mod hashes were unchanged.
+
+Across eight static and eight moving sampled frames, **all 128 A/A resource
+pairs are byte-identical**. **78 of 128 A/B pairs differ**. Thus reference replay
+noise does not explain the observed candidate differences in these frames.
+The integer lookup is not accepted into the default renderer. A/A equality does
+not establish whether the remaining cause is material classification, other
+shader arithmetic/code generation, or a separate error; no driver cause is proven.
+
+The worst-pair retention now gives concrete evidence instead of a lone maximum:
+
+| Path / frame | Maximum distance-component difference | Reference / candidate distance | Pixels with distance difference ≥0.001 | Hit/miss/status switches in retained pair |
+| --- | ---: | ---: | ---: | ---: |
+| Static / 634 | 109.2414 | 110.2479 / 1.0064 | 13 of 1,638,720 | 1 |
+| Motion / 1054 | 121.5593 | 120.5593 / −1 (miss) | 16 of 1,638,720 | 1 |
+
+The static maximum is at input buffer pixel (1650,341); motion maximum at
+(372,79), with y in GPU-buffer order. These are rough reflection first-sample
+intersection witnesses, not screen-space displacement or a measured visible
+artifact size. They demonstrate rare changed intersections despite most numeric
+differences being tiny. No conformance tolerance or base quality was reduced.
+
+At teardown all 5272 tracked native-buffer allocations are freed, live attribute
+arena/compute descriptor/NGX context counts return to zero, and tracked allocation
+failures are zero. This establishes only the lifecycle observed in this run.
+Reports, full first/worst buffers, uniforms and mod/pack hashes are archived under
+`evidence/qa-profile-shadow-material-quality-3/`; compact summaries are retained
+as `profile-shadow-material-quality-3.json` and `*-worst.json` in that archive.
+
+Reproduction (fresh disposable directory, from repository):
+
+```powershell
+./tools/Run-PerformanceProfile.ps1 -QaDirectory work/qa-profile-shadow-material-quality-3 -WorkgroupExperiment -ComputeExperiment shadow-material -ProfilePlan 'static,motion' -TimeoutSeconds 2400
+```
+
+The historical pilot timing below remains preliminary. There is no reason to
+spend another performance run qualifying this candidate before resolving image
+equivalence. The independent cloud history experiment remains a separate candidate.
+
 ## Configuration and provenance
 
 Minecraft 26.3 / Sodium 0.9.2, Ryzen 7 5800X, RTX 5070, NVIDIA 596.21,
