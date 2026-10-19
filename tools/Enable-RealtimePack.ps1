@@ -41,7 +41,7 @@ if($Step -ge 5){
     $manifest.options['REALTIME_ATMOSPHERE_CACHE']=@{default=1;values=@(1)}
     ($manifest.passes|Where-Object{$_.name -eq 'atmosphere.multiple'}).reads['PreviousMultiple']='atmosphere.multiple@previous'
     $manifest.options['REALTIME_CLOUDS']=@{default=1;values=@(1)}
-    $manifest.options['CLOUD_EDGE_RETRACE']=@{default=0;values=@(0,1)}
+    $manifest.options['CLOUD_EDGE_RETRACE']=@{label='Cloud edges: standard / refined';default=1;values=@(0,1)}
     $manifest.options['SUNSET_CLOUD_SHADOW']=@{label='Softer cloud extinction at sunset';default=1;values=@(0,1)}
     $manifest.resources['cloud.clear.base']=@{format='RGBA16_FLOAT'}
     ($manifest.passes|Where-Object{$_.name -eq 'cloud.composite'}).writes+=@('cloud.clear.base')
