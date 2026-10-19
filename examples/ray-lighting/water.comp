@@ -32,7 +32,7 @@ void main() {
 #if WATER_SURFACE == 1
     float angularPixel=2.0/(max(abs(Projection[1][1]),0.01)*ViewSizeAndInverse.y);
     float flatness=smoothstep(0.7,0.95,ng.y);
-    vec2 waveCoordinate=(RaySceneOrigin.xyz+position).xz;
+    vec2 waveCoordinate=waterWaveCoordinates(position);
     WaterWaves waves=waterWaves(waveCoordinate,TimeDeltaFrame.x,length(relative)*angularPixel/max(dot(ng,-incident),0.2),0.0);
     n=waterWaveNormal(ng,incident,waves.slope*flatness);
     float glintAlpha2=WATER_GLINT_ALPHA2+waves.lostVariance*flatness;
@@ -83,7 +83,7 @@ void main() {
         if(any(greaterThan(submergedSolar,vec3(0)))) {
             vec3 entry=shadowStart+waterLight*solarDistance;
             float causticFootprint=max((length(relative)+transmissionDistance)*angularPixel,solarDistance*0.01);
-            WaterWaves entryWaves=waterWaves((RaySceneOrigin.xyz+entry).xz,TimeDeltaFrame.x,causticFootprint,0.45);
+            WaterWaves entryWaves=waterWaves(waterWaveCoordinates(entry),TimeDeltaFrame.x,causticFootprint,0.45);
             submergedSolar*=mix(1.0,waterCaustic(entryWaves,solarDistance,eta),flatness*smoothstep(0.0,0.6,solarDistance));
         }
 #endif

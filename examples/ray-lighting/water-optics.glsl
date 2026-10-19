@@ -19,14 +19,15 @@ float waterFresnel(float cosine,float eta) {
     return 0.5*(rs*rs+rp*rp);
 }
 vec3 waterTransmittance(float distance) {return exp(-WATER_SIGMA_T*max(distance,0.0));}
-vec3 waterEnvironmentDisk(vec3 direction,bool sunDisk) {
+#ifndef WATER_MEDIUM_ONLY
+vec3 waterEnvironmentDisk(vec3 direction,bool keyDisk) {
     float daylight=smoothstep(-0.05,0.15,SunDirectionAndRainBrightness.y);
     vec3 incoming=mix(vec3(0.015,0.02,0.04),mix(vec3(0.22,0.28,0.38),vec3(0.12,0.25,0.5),clamp(direction.y,0.0,1.0)),daylight);
 #ifdef CINEMATIC_ATMOSPHERE
 #ifdef CLOUD_PREVIEW_STILL
-    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,true,sunDisk),atmBlend());
+    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,true,keyDisk),atmBlend());
 #else
-    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,false,sunDisk),atmBlend());
+    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,false,keyDisk),atmBlend());
 #endif
 #endif
     return incoming;
@@ -53,6 +54,12 @@ vec3 waterScatter(float distance,vec3 direction,vec3 normal,vec3 lightWater,vec3
 // and the planar interface used for submerged sun paths stay flat.
 // Base GGX alpha^2 for unresolved capillary ripples (alpha ~= 0.03).
 const float WATER_GLINT_ALPHA2=0.0009;
+const float WATER_WAVE_PERIOD=256.0;
+vec2 waterWaveCoordinates(vec3 position){
+    // Wrap the origin before adding local coordinates, preserving sub-block
+    // precision when the scene origin is far from the world's origin.
+    return mod(RaySceneOrigin.xz,WATER_WAVE_PERIOD)+position.xz;
+}
 struct WaterWaves {vec2 slope;float laplacian;float lostVariance;};
 // Sum of directional sines, wavelengths 7 .. 0.15 blocks, deep-water dispersion
 // with 1 block = 1 m. Directions stay within ~60 degrees of one wind direction.
@@ -60,14 +67,19 @@ struct WaterWaves {vec2 slope;float laplacian;float lostVariance;};
 // into the glint roughness instead (Toksvig-style), so distant water calms into
 // a soft sun path rather than aliasing.
 WaterWaves waterWaves(vec2 p,float time,float footprint,float minimumWavelength) {
+    p=mod(p,WATER_WAVE_PERIOD)/WATER_WAVE_PERIOD;
     WaterWaves w=WaterWaves(vec2(0),0.0,0.0);
     float steepness=0.032+0.025*clamp(WorldTimeWeatherDimension.y,0.0,1.0);
     float wavelength=7.0;
     for(int i=0;i<9;i++) {
         float angle=0.35+1.05*sin(float(i)*2.399963);
         vec2 direction=vec2(cos(angle),sin(angle));
-        float k=6.283185307/wavelength,omega=sqrt(9.81*k);
-        float phase=k*dot(direction,p)-omega*time+float(i)*1.7;
+        // Integer cycles make the wrapped spatial phase continuous. Keep the
+        // PR's nine sine waves and dispersion, with slightly quantized vectors.
+        vec2 cycles=round(direction*(WATER_WAVE_PERIOD/wavelength));
+        direction=normalize(cycles);
+        float k=6.283185307*length(cycles)/WATER_WAVE_PERIOD,omega=sqrt(9.81*k);
+        float phase=6.283185307*dot(cycles,p)-omega*time+float(i)*1.7;
         float fade=smoothstep(2.0*footprint,6.0*footprint,wavelength)*step(minimumWavelength,wavelength);
         float slope=steepness*(i<3?0.5:1.0);
         w.slope+=direction*(slope*cos(phase)*fade);
@@ -114,3 +126,4 @@ float waterCaustic(WaterWaves waves,float depth,float eta) {
     return clamp(1.0/max(abs(jacobian),0.5),0.6,1.7);
 }
 #endif
+#endif // WATER_MEDIUM_ONLY
