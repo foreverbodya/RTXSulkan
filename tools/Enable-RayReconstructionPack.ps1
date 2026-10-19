@@ -9,6 +9,18 @@ $m.reconstruction.guides=@{diffuse='rr.diffuse';specular='rr.specular';normalRou
 foreach($n in @('rr.diffuse','rr.specular','rr.geometry')){$m.resources[$n]=@{format='RGBA16_FLOAT'}}
 $m.resources['rr.distance']=@{format='R32_FLOAT'}
 $m.passes+=@{name='rr.guides';compute='shaders/rr-guides.comp';localSize=@(8,8,1);reads=@{Surface='surface.data';Depth='$depth';Albedo='gbuffer.albedo';NormalRoughness='gbuffer.normal';EmissionMetal='gbuffer.emission';SpecularHit='rough.reflection.hit';MirrorHit='ray.reflection.hit'};writes=@('rr.diffuse','rr.specular','rr.geometry','rr.distance')}
+$waterTrace=$m.passes|Where-Object name -eq 'water.trace'
+if($waterTrace -and $m.options.ContainsKey('WATER_SURFACE') -and !$m.options.ContainsKey('WATER_DIAGNOSTIC')){
+    # Keep off until the matched native RR movement comparison is accepted.
+    $m.options['WATER_RR_GUIDES']=@{default=0;values=@(0,1)}
+    $m.resources['water.reflection.hit']=@{format='RGBA32_FLOAT'}
+    $m.resources['water.rr.geometry']=@{format='RGBA16_FLOAT'}
+    $waterTrace.writes+=@('water.reflection.hit','water.rr.geometry')
+    $rr=$m.passes|Where-Object name -eq 'rr.guides'
+    $rr.reads.WaterRadiance='water.radiance'
+    $rr.reads.WaterHit='water.reflection.hit'
+    $rr.reads.WaterGeometry='water.rr.geometry'
+}
 # RR consumes raw noisy lighting. Cull custom diffuse/specular/sun filters by
 # removing their consumers; keep the independent cloud cache/composite intact.
 ($m.passes|Where-Object name -eq 'ray.direct').reads.Indirect='indirect.raw'

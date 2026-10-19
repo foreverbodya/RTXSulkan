@@ -26,6 +26,19 @@ void main(){
         float distance=metal>=.99?texelFetch(MirrorHit,p,0).w:texelFetch(SpecularHit,p,0).w;
         hitDistance=distance<0?128:distance;
     }
+#if WATER_RR_GUIDES == 1
+    if(texelFetch(WaterRadiance,p,0).a>0.5){
+        geometry=texelFetch(WaterGeometry,p,0);
+        geometry.xyz=normalize(geometry.xyz);
+        // Water is a dielectric interface. No diffuse surface lobe; the
+        // transmitted bottom remains in radiance, rather than its albedo guide.
+        diffuse=vec3(0);
+        float f0=(1.3333333333-1.0)/(1.3333333333+1.0);
+        specular=vec3(f0*f0);
+        float distance=texelFetch(WaterHit,p,0).w;
+        hitDistance=distance<0.0?128.0:distance;
+    }
+#endif
     imageStore(Output0,p,vec4(diffuse,1));imageStore(Output1,p,vec4(specular,1));
     imageStore(Output2,p,geometry);imageStore(Output3,p,vec4(hitDistance));
 }

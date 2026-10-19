@@ -11,6 +11,10 @@ void main() {
     ivec2 pixel=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
     if(any(greaterThanEqual(pixel,size)))return;
     imageStore(Output0,pixel,vec4(0));
+#ifdef WATER_RR_GUIDES
+    imageStore(Output1,pixel,vec4(0,0,0,-1));
+    imageStore(Output2,pixel,vec4(0,0,1,1));
+#endif
 #ifdef WATER_DIAGNOSTIC
     imageStore(Output1,pixel,vec4(0,0,0,-1));imageStore(Output2,pixel,vec4(0,0,0,-1));imageStore(Output3,pixel,vec4(0));
     imageStore(Output4,pixel,vec4(0));
@@ -96,6 +100,16 @@ void main() {
     result=mix(result,atmAerialWithLighting(result,incident,length(relative),AtmosphereLighting),atmBlend());
 #endif
     imageStore(Output0,pixel,vec4(max(result,vec3(0)),1));
+#ifdef WATER_RR_GUIDES
+    // Distance along the reflected ray from the visible water interface.
+    // The shading waves leave primary depth and planar camera motion intact.
+    float roughness=0.02;
+#if WATER_SURFACE == 1
+    roughness=pow(glintAlpha2,0.25);
+#endif
+    imageStore(Output1,pixel,vec4(reflectionPoint,reflectionDistance));
+    imageStore(Output2,pixel,vec4(n,roughness));
+#endif
 #ifdef WATER_DIAGNOSTIC
     imageStore(Output1,pixel,vec4(reflectionPoint,reflectionDistance));imageStore(Output2,pixel,vec4(transmissionPoint,transmissionDistance));
     imageStore(Output3,pixel,vec4(f,cosine,max(dot(n,-t),0.0),distance));
