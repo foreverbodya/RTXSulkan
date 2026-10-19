@@ -129,7 +129,14 @@ public final class QaTemporalProfile {
         System.setProperty("sulkan.qaProfileGroupY","8");
         Files.writeString(manifestPath,phase().equals("candidate")?candidateManifest:referenceManifest);
         var phaseOptions=new LinkedHashMap<>(options);
-        if(CLOUD)phaseOptions.put("CLOUD_ART_STEP",phase().equals("candidate")?3d:0d);
+        if(CLOUD){
+            String beautyOption=System.getProperty("sulkan.qaBeautyOption");
+            if(beautyOption==null)phaseOptions.put("CLOUD_ART_STEP",phase().equals("candidate")?3d:0d);
+            else {
+                if(!phaseOptions.containsKey(beautyOption))throw new IllegalArgumentException("Missing beauty comparison option: "+beautyOption);
+                phaseOptions.put(beautyOption,phase().equals("candidate")?1d:0d);
+            }
+        }
         if(Boolean.getBoolean("sulkan.qaFoliageComparison")){
             phaseOptions.put("QA_FOLIAGE_MOTION_FIX",phase().equals("candidate")?1d:0d);
             phaseOptions.put("REALTIME_RAY_LOD",phase().equals("candidate")?1d:0d);

@@ -56,6 +56,7 @@ param(
     [switch] $HeldItemCapture,
     [switch] $VisualWorld,
     [ValidateRange(-80,80)][double] $CameraPitch = 0,
+    [switch] $WaterView,
     [switch] $BounceComparison,
     [switch] $AtmosphereComparison,
     [switch] $SamplingComparison,
@@ -412,6 +413,10 @@ if($SunIndirectComparison){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaSunIndir
 if($NightDisplay){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaNightDisplay=true')}
 if($PSBoundParameters.ContainsKey('CameraPitch')){
     $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaVisualPitch='+$CameraPitch.ToString([Globalization.CultureInfo]::InvariantCulture))
+}
+if($WaterView){
+    if(!$VisualWorld){throw 'WaterView requires the disposable visual world'}
+    $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaWaterView=true')
 }
 if($CloudDiagnostic){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudDiagnostic=true')}
 if($CloudPreview){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudPreview=true')}

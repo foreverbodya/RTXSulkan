@@ -26,6 +26,8 @@ param(
     [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
     [ValidateSet("workgroup","cloud-cell","cloud-3d","cloud-3d-env","cloud-3d-env32","shadow-material","indirect-lazy-sky")][string]$ComputeExperiment = "workgroup",
     [ValidateRange(2,32)][int]$RenderDistance = 6,
+    [ValidateRange(-90,90)][double]$CameraPitch = -10,
+    [switch]$WaterView,
     [ValidateRange(180,3600)][int]$TimeoutSeconds = 1800
 )
 $ErrorActionPreference='Stop'
@@ -49,7 +51,7 @@ $stopFile=$target+'-gpu.stop'
 $monitor=Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile','-File',('"'+(Join-Path $PSScriptRoot 'Sample-Gpu.ps1')+'"'),'-OutputPath',('"'+$telemetry+'"'),'-StopFile',('"'+$stopFile+'"'),'-ParentPid',$PID) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -RealtimeStep $RealtimeStep -CloudEnvironmentInputs:$CloudEnvironmentInputs -CloudNoisePairs:$CloudNoisePairs -CloudNoisePairsPerturb:$CloudNoisePairsPerturb -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -BeautyOption $BeautyOption -LightingAudit:$LightingAudit -CloudSequence:$CloudSequence -CloudArtStep $CloudArtStep -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -BeautyOption $BeautyOption -LightingAudit:$LightingAudit -CloudSequence:$CloudSequence -CloudArtStep $CloudArtStep -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch $CameraPitch -WaterView:$WaterView `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -WaterSurface $WaterSurface -WaterSurfaceComparison:$WaterSurfaceComparison -DistantWorld -CloudPreview `
