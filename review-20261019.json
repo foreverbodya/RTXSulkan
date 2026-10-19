@@ -438,7 +438,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "displayToneMapper": 2
       },
-      "image": "work\\qa-shadow-preflight-day-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-day-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "shadow-preflight/day",
@@ -778,7 +778,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "displayToneMapper": 2
       },
-      "image": "work\\qa-shadow-preflight-day-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-day-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "shadow-preflight/sunset",
@@ -1118,7 +1118,7 @@
         "displayToneMapper": 2,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-shadow-preflight-sunset-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-sunset-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "shadow-preflight/sunset",
@@ -1458,7 +1458,7 @@
         "displayToneMapper": 2,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-shadow-preflight-sunset-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-sunset-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "shadow-preflight/open",
@@ -1798,7 +1798,7 @@
         "mode": "dlss-ray-reconstruction",
         "displayFormat": "RGBA8_UNORM"
       },
-      "image": "work\\qa-shadow-preflight-open-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-open-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "shadow-preflight/open",
@@ -2138,7 +2138,7 @@
         "mode": "dlss-ray-reconstruction",
         "displayFormat": "RGBA8_UNORM"
       },
-      "image": "work\\qa-shadow-preflight-open-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-shadow-preflight-open-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "water-haze/day",
@@ -2478,7 +2478,7 @@
         "mode": "dlss-ray-reconstruction",
         "displayFormat": "RGBA8_UNORM"
       },
-      "image": "work\\qa-water-under-day-2\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-day-2/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "water-haze/day",
@@ -2818,7 +2818,7 @@
         "mode": "dlss-ray-reconstruction",
         "displayFormat": "RGBA8_UNORM"
       },
-      "image": "work\\qa-water-under-day-2\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-day-2/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "water-haze/sunset",
@@ -3158,7 +3158,7 @@
         "evaluations": 548,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-water-under-sunset-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "water-haze/sunset",
@@ -3498,7 +3498,7 @@
         "evaluations": 548,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-water-under-sunset-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "water-haze/sunset-abba",
@@ -3838,7 +3838,7 @@
         "displayFormat": "RGBA8_UNORM",
         "exposureResource": "reconstruction.exposure"
       },
-      "image": "work\\qa-water-under-sunset-abba-1\\evidence\\profile-beauty0-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-abba-1/evidence/profile-beauty0-static-repeat.png"
     },
     {
       "experiment": "water-haze/sunset-abba",
@@ -4178,7 +4178,7 @@
         "displayFormat": "RGBA8_UNORM",
         "exposureResource": "reconstruction.exposure"
       },
-      "image": "work\\qa-water-under-sunset-abba-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-abba-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "water-haze/sunset-abba",
@@ -4518,7 +4518,7 @@
         "displayFormat": "RGBA8_UNORM",
         "exposureResource": "reconstruction.exposure"
       },
-      "image": "work\\qa-water-under-sunset-abba-1\\evidence\\profile-beauty1-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-abba-1/evidence/profile-beauty1-static-repeat.png"
     },
     {
       "experiment": "water-haze/sunset-abba",
@@ -4858,7 +4858,7 @@
         "displayFormat": "RGBA8_UNORM",
         "exposureResource": "reconstruction.exposure"
       },
-      "image": "work\\qa-water-under-sunset-abba-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-water-under-sunset-abba-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "water-waves/day",
@@ -5198,7 +5198,7 @@
         "outputHeight": 1440,
         "inputHeight": 960
       },
-      "image": "work\\qa-water-waves-day-1\\evidence\\profile-beauty0-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-day-1/evidence/profile-beauty0-static-repeat.png"
     },
     {
       "experiment": "water-waves/day",
@@ -5538,7 +5538,7 @@
         "outputHeight": 1440,
         "inputHeight": 960
       },
-      "image": "work\\qa-water-waves-day-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-day-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "water-waves/day",
@@ -5878,7 +5878,7 @@
         "outputHeight": 1440,
         "inputHeight": 960
       },
-      "image": "work\\qa-water-waves-day-1\\evidence\\profile-beauty1-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-day-1/evidence/profile-beauty1-static-repeat.png"
     },
     {
       "experiment": "water-waves/day",
@@ -6218,7 +6218,7 @@
         "outputHeight": 1440,
         "inputHeight": 960
       },
-      "image": "work\\qa-water-waves-day-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-day-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "water-waves/sunset",
@@ -6558,7 +6558,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "evaluations": 609
       },
-      "image": "work\\qa-water-waves-sunset-1\\evidence\\profile-beauty0-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-sunset-1/evidence/profile-beauty0-static-repeat.png"
     },
     {
       "experiment": "water-waves/sunset",
@@ -6898,7 +6898,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "evaluations": 609
       },
-      "image": "work\\qa-water-waves-sunset-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-sunset-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "water-waves/sunset",
@@ -7238,7 +7238,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "evaluations": 609
       },
-      "image": "work\\qa-water-waves-sunset-1\\evidence\\profile-beauty1-static-repeat.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-sunset-1/evidence/profile-beauty1-static-repeat.png"
     },
     {
       "experiment": "water-waves/sunset",
@@ -7578,7 +7578,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "evaluations": 609
       },
-      "image": "work\\qa-water-waves-sunset-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-water-waves-sunset-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "cloud-edges/day",
@@ -7918,7 +7918,7 @@
         "evaluations": 549,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-cloud-edge-day-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-cloud-edge-day-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "cloud-edges/day",
@@ -8258,7 +8258,7 @@
         "evaluations": 549,
         "depthResource": "cloud.reconstruction.depth"
       },
-      "image": "work\\qa-cloud-edge-day-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-cloud-edge-day-1/evidence/profile-beauty1-static.png"
     },
     {
       "experiment": "cloud-edges/sunset",
@@ -8598,7 +8598,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "displayToneMapper": 2
       },
-      "image": "work\\qa-cloud-edge-sunset-1\\evidence\\profile-beauty0-static.png"
+      "image": "work/qa-retained-20261019/qa-cloud-edge-sunset-1/evidence/profile-beauty0-static.png"
     },
     {
       "experiment": "cloud-edges/sunset",
@@ -8938,7 +8938,7 @@
         "depthResource": "cloud.reconstruction.depth",
         "displayToneMapper": 2
       },
-      "image": "work\\qa-cloud-edge-sunset-1\\evidence\\profile-beauty1-static.png"
+      "image": "work/qa-retained-20261019/qa-cloud-edge-sunset-1/evidence/profile-beauty1-static.png"
     }
   ],
   "motion": {
@@ -8983,5 +8983,15 @@
     "water": "WaterView CameraPitch 20; waves add WaterSurfaceComparison; underwater uses WaterViewOffset -2.5 CameraPitch 0",
     "cloud": "CameraPitch -15; BeautyOption CLOUD_EDGE_RETRACE",
     "motion": "CloudSequence ProfilePlan motion; eight frames per independent reference/candidate history"
+  },
+  "localEvidenceRetention": {
+    "date": "2026-10-19",
+    "root": "work/qa-retained-20261019",
+    "reason": "User requested disk cleanup: raw replay buffers, disposable worlds and duplicate QA dependencies removed. Logs, small metrics, recent comparison PNGs and curated sheets retained.",
+    "manifest": "work/cleanup-deletion-manifest-20261019.json",
+    "replayRequiresRecapture": true,
+    "beforeGiB": 239.957,
+    "afterGiB": 15.768,
+    "freedGiB": 224.189
   }
 }
