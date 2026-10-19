@@ -9,7 +9,7 @@ if($Step -ge 2){
     $manifest.options['REALTIME_EMITTER_TREE']=@{default=1;values=@(1)}
     $manifest.materials['minecraft:lantern']=15
     $manifest.options['REALTIME_DIRECT_SUN']=@{default=1;values=@(1)}
-    $manifest.options['SULKAN_SOLID_SHADOW_PREFLIGHT']=@{default=0;values=@(0)}
+    $manifest.options['SULKAN_SOLID_SHADOW_PREFLIGHT']=@{default=1;values=@(0,1)}
     foreach($name in @('sun.raw','sun.accum','sun.normal')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';history=$true}}
     $manifest.resources['sun.position']=@{format='RGBA32_FLOAT';history=$true}
     $manifest.passes+=@{name='sun.trace';compute='shaders/realtime-sun.comp';rayScene=$true;rayAttributes=$true;localSize=@(8,8,1);
