@@ -16,15 +16,33 @@ only the flat static interface.
 - **Footprint filtering.** Each octave fades out between 6 and 2 pixel footprints.
   Its slope variance then moves into the glint GGX roughness (Toksvig-style),
   so distant water calms into a soft sun path instead of aliasing.
-- **Sun glitter.** Mirror misses use the sky without its solar disk. The sun is
-  integrated instead as a GGX lobe on the wave normal (base alpha ~0.03 plus the
-  filtered variance), weighted by the existing entry sun visibility.
+- **Key-light glitter.** Mirror misses use the sky without the disk of the active
+  key light: the sun, or the moon while it is the key. Stars and other sky
+  radiance stay. The key light is integrated instead as a GGX lobe on the wave
+  normal (base alpha ~0.03 plus the filtered variance), weighted by the existing
+  entry visibility, so a moonlit pixel never gets both a mirrored moon disk and
+  the lunar lobe.
 - **Caustics.** Submerged direct sun is modulated by the inverse Jacobian of the
   refracted-ray map from the wave Laplacian at the entry point. It is clamped to
   [0.6, 1.7], uses only wavelengths of at least 0.45 blocks, fades in over the
   first 0.6 blocks of depth and is filtered at the receiver footprint. This is stylized and not energy conserving at focus.
 - **Body colour.** Slightly stronger red absorption and a little more green-blue
   scattering give deep water a soft teal tone.
+
+## Wave coordinates
+
+Waves are evaluated in bounded periodic coordinates. Every wave vector snaps to a
+multiple of 2*pi/1024, so the field tiles every 1024 blocks. The coordinate is
+`mod(RaySceneOrigin.xz, 1024) + originRelative.xz`. `RaySceneOrigin` is an exact
+256-aligned integer, so the mod is exact in float32 and the origin-relative term
+stays small. Phase is therefore continuous across origin rebases and far from
+spawn. Never add the absolute origin to a float position before evaluating
+waves: at x=1048576 that quantizes to 0.125 blocks, comparable to the shortest
+wave. A float32 emulation of a 600-block walk with rebases gives a maximum phase
+error of 0.0018 rad at x~1.05M and 0.0011 rad at x~30M. The old absolute form
+reached 2.78 rad and pi rad respectively.
+
+## Flat interface
 
 Ray origins, the planar interface used for submerged sun paths and the
 scattering normal all keep the flat geometric normal. Reflected and refracted

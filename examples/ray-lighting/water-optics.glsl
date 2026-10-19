@@ -19,14 +19,14 @@ float waterFresnel(float cosine,float eta) {
     return 0.5*(rs*rs+rp*rp);
 }
 vec3 waterTransmittance(float distance) {return exp(-WATER_SIGMA_T*max(distance,0.0));}
-vec3 waterEnvironmentDisk(vec3 direction,bool sunDisk) {
+vec3 waterEnvironmentDisk(vec3 direction,bool keyDisk) {
     float daylight=smoothstep(-0.05,0.15,SunDirectionAndRainBrightness.y);
     vec3 incoming=mix(vec3(0.015,0.02,0.04),mix(vec3(0.22,0.28,0.38),vec3(0.12,0.25,0.5),clamp(direction.y,0.0,1.0)),daylight);
 #ifdef CINEMATIC_ATMOSPHERE
 #ifdef CLOUD_PREVIEW_STILL
-    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,true,sunDisk),atmBlend());
+    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,true,keyDisk),atmBlend());
 #else
-    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,false,sunDisk),atmBlend());
+    incoming=mix(incoming,atmVisibleSkyLayerDisk(AtmosphereSky,AtmosphereLighting,direction,false,keyDisk),atmBlend());
 #endif
 #endif
     return incoming;
@@ -54,6 +54,15 @@ vec3 waterScatter(float distance,vec3 direction,vec3 normal,vec3 lightWater,vec3
 // Base GGX alpha^2 for unresolved capillary ripples (alpha ~= 0.03).
 const float WATER_GLINT_ALPHA2=0.0009;
 struct WaterWaves {vec2 slope;float laplacian;float lostVariance;};
+// The wave field tiles every WATER_WAVE_PERIOD blocks: wave vectors snap to
+// multiples of 2*pi/period. RaySceneOrigin is an exact multiple of 256, so
+// mod(origin, period) is exact in float32 and the origin-relative position stays
+// small; phase is continuous across origin rebases and far from spawn. Never add
+// the absolute origin to a float position before evaluating waves.
+const float WATER_WAVE_PERIOD=1024.0;
+vec2 waterWaveCoordinate(vec3 originRelative) {
+    return mod(RaySceneOrigin.xz,WATER_WAVE_PERIOD)+originRelative.xz;
+}
 // Sum of directional sines, wavelengths 7 .. 0.15 blocks, deep-water dispersion
 // with 1 block = 1 m. Directions stay within ~60 degrees of one wind direction.
 // Octaves below the pixel footprint fade out and their slope variance moves
@@ -65,9 +74,11 @@ WaterWaves waterWaves(vec2 p,float time,float footprint,float minimumWavelength)
     float wavelength=7.0;
     for(int i=0;i<9;i++) {
         float angle=0.35+1.05*sin(float(i)*2.399963);
-        vec2 direction=vec2(cos(angle),sin(angle));
-        float k=6.283185307/wavelength,omega=sqrt(9.81*k);
-        float phase=k*dot(direction,p)-omega*time+float(i)*1.7;
+        const float quantum=6.283185307/WATER_WAVE_PERIOD;
+        vec2 wave=round(vec2(cos(angle),sin(angle))*(6.283185307/wavelength/quantum))*quantum;
+        float k=length(wave),omega=sqrt(9.81*k);
+        vec2 direction=wave/k;
+        float phase=dot(wave,p)-omega*time+float(i)*1.7;
         float fade=smoothstep(2.0*footprint,6.0*footprint,wavelength)*step(minimumWavelength,wavelength);
         float slope=steepness*(i<3?0.5:1.0);
         w.slope+=direction*(slope*cos(phase)*fade);

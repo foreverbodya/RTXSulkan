@@ -204,18 +204,21 @@ vec3 atmMoonDisk(sampler2D lighting,vec3 d,float angularPixel) {
     return cinematicMoonKey()?irradiance*(1.5*shade*edge*maria/(2048.0*3.141592653589793*radius*radius*max(cinematicMoonPhase(),1e-6))):vec3(0);
 }
 #endif
-// sunDisk=false omits only the solar disk, for callers that integrate the sun
-// through their own BRDF lobe (wavy water glint).
-vec3 atmVisibleSkyLayerDisk(sampler2D sky,sampler2D lighting,vec3 direction,bool cloudTransmission,bool sunDisk) {
+// keyDisk=false omits the disk of the active key light (sun, or moon when it is
+// the key) for callers that integrate the key through their own BRDF lobe (wavy
+// water glint). Stars and all other sky radiance are kept.
+vec3 atmVisibleSkyLayerDisk(sampler2D sky,sampler2D lighting,vec3 direction,bool cloudTransmission,bool keyDisk) {
     if(atmBlend()<=0.0) return vec3(0);
     float cosine=dot(direction,normalize(SunDirectionAndRainBrightness.xyz));
     float angularPixel=2.0/(max(abs(Projection[1][1]),0.01)*ViewSizeAndInverse.y);
-    float disk=sunDisk?smoothstep(cos(CINEMATIC_SUN_RADIUS+angularPixel*0.5),cos(max(CINEMATIC_SUN_RADIUS-angularPixel*0.5,0.0001)),cosine):0.0;
+    float disk=keyDisk?smoothstep(cos(CINEMATIC_SUN_RADIUS+angularPixel*0.5),cos(max(CINEMATIC_SUN_RADIUS-angularPixel*0.5,0.0001)),cosine):0.0;
     vec4 environment=atmSkySample(sky,direction);
     vec3 celestial=texelFetch(lighting,ivec2(0,0),0).rgb*(disk/0.00006866);
 #if NIGHT_SKY == 1
     if(cinematicMoonKey())celestial=vec3(0);
-    celestial+=atmMoonDisk(lighting,direction,angularPixel)+atmStars(direction,angularPixel);
+    // atmMoonDisk is nonzero only while the moon is the key light.
+    if(keyDisk)celestial+=atmMoonDisk(lighting,direction,angularPixel);
+    celestial+=atmStars(direction,angularPixel);
 #endif
     return environment.rgb+celestial*(cloudTransmission?environment.a:1.0);
 }
