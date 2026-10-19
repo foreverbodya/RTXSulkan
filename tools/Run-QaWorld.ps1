@@ -76,6 +76,7 @@ param(
     [switch] $CloudEnvironmentInputs,
     [switch] $TemporalProfile,
     [switch]$CloudSequence,
+    [string]$BeautyOption,
     [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
@@ -132,7 +133,7 @@ if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeEx
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
 if($TemporalProfile -and (!$PerformanceProfile -or ($ComputeExperiment -ne 'cloud-3d-env' -and $FoliageSequence -eq 'none' -and !$CloudSequence) -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
-if($PerformanceProfile -and $ProfilePlan -notmatch '^(cloud[0-3]-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,(cloud[0-3]-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
+if($PerformanceProfile -and $ProfilePlan -notmatch '^((cloud[0-3]|beauty[01])-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((cloud[0-3]|beauty[01])-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
 if($EmissiveComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $EmissiveSampling -ne 0)){throw 'EmissiveComparison requires separate interior night 0/1/0 with display/cost capture'}
@@ -176,7 +177,7 @@ if($CloudCameraAudit -and ($BounceComparison -or $AtmosphereComparison -or $Samp
 if($CloudDensityComparison -and (!$CloudPreview -or !$CloudDiagnostic -or $LightingAudit -or $ToneMapComparison)){throw 'CloudDensityComparison requires CloudPreview and CloudDiagnostic without lighting/tone comparisons'}
 if($CloudAmbientComparison -and (!$CloudPreview -or !$CloudDiagnostic -or $LightingAudit -or $ToneMapComparison)){throw 'CloudAmbientComparison requires CloudPreview and CloudDiagnostic without lighting/tone comparisons'}
 if($CloudDiagnostic -and !$VisualWorld){throw 'CloudDiagnostic currently requires VisualWorld'}
-if($LightingAudit -and (!$VisualWorld -or !$LeafIndirect -or !$IndirectSpatial -or !$Atmosphere -or !$AutoExposure)){throw 'LightingAudit requires VisualWorld, LeafIndirect, IndirectSpatial, Atmosphere, AutoExposure'}
+if($LightingAudit -and (!$VisualWorld -or (!$LeafIndirect -and $RealtimeStep -lt 3) -or !$IndirectSpatial -or !$Atmosphere -or !$AutoExposure)){throw 'LightingAudit requires VisualWorld, diffuse lighting, IndirectSpatial, Atmosphere, AutoExposure'}
 if($ToneMapComparison -and (!$VisualWorld -or !$AutoExposure -or !$WorldDlss -or $BounceComparison -or $AtmosphereComparison -or $SamplingComparison)){throw 'ToneMapComparison requires VisualWorld, AutoExposure, WorldDlss, without option-switch comparisons'}
 if(@($BounceComparison,$AtmosphereComparison,$SamplingComparison,$CloudAmbientComparison,$CloudDensityComparison,$CloudColumnComparison,$LeafOpticsComparison,$HorizonComparison | Where-Object {$_}).Count -gt 1){throw 'Choose one option-switch comparison'}
 if($SamplingComparison -and (!$VisualWorld -or !$LeafIndirect -or !$IndirectSpatial -or $IndirectSamples -ne 1)){throw 'SamplingComparison requires VisualWorld, LeafIndirect, IndirectSpatial and initial IndirectSamples 1'}
@@ -419,6 +420,7 @@ if($CloudMotionAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionAu
 if($CloudMotionSequence){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudMotionSequence=true')}
 if($CameraBobAudit){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCameraBob=true');Add-Content -LiteralPath (Join-Path $qaPath 'options.txt') -Value 'bobView:true'}
 if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
+if($BeautyOption){if($BeautyOption -notmatch '^[A-Z][A-Z0-9_]*$'){throw 'Invalid BeautyOption'};$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaBeautyOption='+$BeautyOption)}
 if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
 if($CloudNoisePairs){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudNoisePairs=true')}
 if($TemporalProfile){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaTemporalProfile=true')}

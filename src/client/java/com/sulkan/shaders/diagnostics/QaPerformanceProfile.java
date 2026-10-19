@@ -67,7 +67,7 @@ final class QaPerformanceProfile {
     }
     private String phase(){return plan.get(phaseIndex);}
     private int phaseFrames(){return path().equals("travel")?2048:FRAMES;}
-    private String path(){return phase().replaceFirst("^cloud[0-3]-","").replace("narrow-","").replace("-repeat","");}
+    private String path(){return phase().replaceFirst("^(cloud[0-3]|beauty[01])-","").replace("narrow-","").replace("-repeat","");}
     private void configure()throws Exception{
         geometryPreparationStart=GeometryCpuMetrics.snapshot();preparationStartNs=System.nanoTime();
         System.setProperty("sulkan.qaProfilePhase",phase());
@@ -76,6 +76,12 @@ final class QaPerformanceProfile {
         System.setProperty("sulkan.qaProfileDisabled",group);
         if(phase().startsWith("cloud")){
             var options=new TreeMap<>(NativePackRuntime.diagnosticOptions());options.put("CLOUD_ART_STEP",(double)(phase().charAt(5)-'0'));
+            NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),options);
+        }
+        if(phase().startsWith("beauty")){
+            String option=System.getProperty("sulkan.qaBeautyOption");
+            if(option==null || !NativePackRuntime.diagnosticOptions().containsKey(option))throw new IllegalArgumentException("Missing beauty comparison option: "+option);
+            var options=new TreeMap<>(NativePackRuntime.diagnosticOptions());options.put(option,(double)(phase().charAt(6)-'0'));
             NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),options);
         }
         if(canonicalComparison || path().equals("reload")){
@@ -204,6 +210,7 @@ final class QaPerformanceProfile {
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         });
         }
+        if(Boolean.getBoolean("sulkan.qaLightingAudit"))image=CompletableFuture.allOf(image,NaturalLightingAudit.capture(directory,phase()));
         LogUtils.getLogger().info("SULKAN_PERFORMANCE_PHASE_PASS phase={} frames={} wallMeanMs={}",phase(),frame,statistics(wall).get("mean"));
         return false;
     }

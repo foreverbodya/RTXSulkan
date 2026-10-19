@@ -527,12 +527,12 @@ if($AutoExposure) {
     }
 }
 if($LightingAudit) {
-    if(!$LeafIndirect -or !$IndirectSpatial -or !$Atmosphere -or !$DlssReconstruction){throw 'LightingAudit requires LeafIndirect, IndirectSpatial, Atmosphere and DlssReconstruction'}
+    if((!$LeafIndirect -and $RealtimeStep -lt 3) -or !$IndirectSpatial -or !$Atmosphere -or !$DlssReconstruction){throw 'LightingAudit requires diffuse lighting, IndirectSpatial, Atmosphere and DlssReconstruction'}
     $manifest.budgetMiB=2048
     $manifest.options['LIGHTING_AUDIT']=@{default=1;values=@(1)}
     foreach($name in @('ray.direct.hdr','atmosphere.lighting','atmosphere.sky','reconstruction.depth')){$manifest.resources[$name].history=$true}
     $auditWrites=@()
-    foreach($term in @('sun','reflected','transmitted','emission','albedo')) {
+    foreach($term in @('sun','reflected','transmitted','emission','albedo','solar-factors','visibility-factors')) {
         $name='lighting.audit.'+$term
         $manifest.resources[$name]=@{format='RGBA32_FLOAT';history=$true};$auditWrites+=@($name)
     }

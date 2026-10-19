@@ -17,6 +17,8 @@ param(
     [switch]$CloudEnvironmentInputs,
     [switch]$TemporalProfile,
     [switch]$CloudSequence,
+    [switch]$LightingAudit,
+    [ValidatePattern('^[A-Z][A-Z0-9_]*$')][string]$BeautyOption,
     [switch]$RayReconstruction,
     [ValidateRange(0,3)][int]$CloudArtStep=0,
     [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
@@ -45,7 +47,7 @@ $stopFile=$target+'-gpu.stop'
 $monitor=Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList @('-NoProfile','-File',('"'+(Join-Path $PSScriptRoot 'Sample-Gpu.ps1')+'"'),'-OutputPath',('"'+$telemetry+'"'),'-StopFile',('"'+$stopFile+'"'),'-ParentPid',$PID) -WindowStyle Hidden -PassThru
 try {
     & (Join-Path $PSScriptRoot 'Run-QaWorld.ps1') -RealtimeStep $RealtimeStep -CloudEnvironmentInputs:$CloudEnvironmentInputs -CloudNoisePairs:$CloudNoisePairs -CloudNoisePairsPerturb:$CloudNoisePairsPerturb -InstanceMods ([IO.Path]::GetFullPath($InstanceMods,$workspace)) -QaDirectory $target `
-        -CloudSequence:$CloudSequence -CloudArtStep $CloudArtStep -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
+        -BeautyOption $BeautyOption -LightingAudit:$LightingAudit -CloudSequence:$CloudSequence -CloudArtStep $CloudArtStep -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
         -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `

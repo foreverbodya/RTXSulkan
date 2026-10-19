@@ -21,9 +21,17 @@ final class NaturalLightingAudit {
         int opticsMode=LeafOpticsReference.mode(options);
         var lightingResource=NativePackRuntime.diagnosticPassInputs("ray.direct").get("AtmosphereLighting");
         if(lightingResource==null)throw new IllegalStateException("Lighting audit requires actual atmosphere binding");
-        var names=List.of("lighting.audit.sun","lighting.audit.reflected","lighting.audit.transmitted",
+        var names=new java.util.ArrayList<>(List.of("lighting.audit.sun","lighting.audit.reflected","lighting.audit.transmitted",
             "lighting.audit.emission","lighting.audit.albedo","ray.direct.hdr",lightingResource,"foliage.optics",
-            "reconstruction.depth","atmosphere.sky");
+            "reconstruction.depth","atmosphere.sky"));
+        // Keep the actual multiplicative factors, not only the resulting sun
+        // term, so an all-black sunset can be localized without guessing.
+        var directInputs=NativePackRuntime.diagnosticPassInputs("ray.direct");
+        for(String binding:List.of("SunVisibility","CloudShadow","NormalRoughness")) {
+            String resource=directInputs.get(binding);
+            if(resource!=null && !names.contains(resource))names.add(resource);
+        }
+        names.addAll(List.of("lighting.audit.solar-factors","lighting.audit.visibility-factors"));
         var reads=names.stream().map(NativePackRuntime::diagnosticReadback).toList();
         return CompletableFuture.allOf(reads.toArray(CompletableFuture[]::new)).thenApply(unused->{
             try {
