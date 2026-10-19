@@ -11,8 +11,9 @@ $m.resources['rr.distance']=@{format='R32_FLOAT'}
 $m.passes+=@{name='rr.guides';compute='shaders/rr-guides.comp';localSize=@(8,8,1);reads=@{Surface='surface.data';Depth='$depth';Albedo='gbuffer.albedo';NormalRoughness='gbuffer.normal';EmissionMetal='gbuffer.emission';SpecularHit='rough.reflection.hit';MirrorHit='ray.reflection.hit'};writes=@('rr.diffuse','rr.specular','rr.geometry','rr.distance')}
 $waterTrace=$m.passes|Where-Object name -eq 'water.trace'
 if($waterTrace -and $m.options.ContainsKey('WATER_SURFACE') -and !$m.options.ContainsKey('WATER_DIAGNOSTIC')){
-    # Keep off until the matched native RR movement comparison is accepted.
-    $m.options['WATER_RR_GUIDES']=@{default=0;values=@(0,1)}
+    # The opt-in wave pack exports its actual specular surface. Ordinary flat
+    # packs keep their original resources and reconstruction inputs.
+    $m.options['WATER_RR_GUIDES']=@{default=1;values=@(0,1)}
     $m.resources['water.reflection.hit']=@{format='RGBA32_FLOAT'}
     $m.resources['water.rr.geometry']=@{format='RGBA16_FLOAT'}
     $waterTrace.writes+=@('water.reflection.hit','water.rr.geometry')
