@@ -1,7 +1,29 @@
 #version 460
+#define WATER_MEDIUM_ONLY
+#include "shaders/water-optics.glsl"
 void main() {
     ivec2 pixel=ivec2(gl_GlobalInvocationID.xy);
     if(any(greaterThanEqual(pixel,imageSize(Output0))))return;
     vec4 water=texelFetch(Water,pixel,0);
-    imageStore(Output0,pixel,vec4(water.a>0.5?water.rgb:texelFetch(Base,pixel,0).rgb,1));
+    vec3 result=water.a>0.5?water.rgb:texelFetch(Base,pixel,0).rgb;
+#if WATER_UNDERWATER_FOG == 1
+    if(CameraPositionHighAndFogType.w==1.0){
+        float depth=texelFetch(Depth,pixel,0).r;
+        float surfaceDepth=texelFetch(WaterSurface,pixel,0).w;
+        if(surfaceDepth>depth)depth=surfaceDepth;
+        float distance=128.0;
+        if(depth>1e-7){
+            vec2 uv=(vec2(pixel)+.5)/vec2(imageSize(Output0));
+            vec4 eye=InverseProjection*vec4(uv*2.0-1.0,depth,1);
+            distance=length(eye.xyz/eye.w);
+        }
+        // Same absorption/scattering coefficients as the PR's water surface.
+        // A bounded ambient-source approximation, with no extra traced rays.
+        vec3 trans=waterTransmittance(distance);
+        float daylight=smoothstep(-.08,.15,SunDirectionAndRainBrightness.y);
+        vec3 ambient=mix(vec3(.001,.002,.004),vec3(.10,.16,.23),daylight);
+        result=result*trans+WATER_SIGMA_S/WATER_SIGMA_T*(1.0-trans)*ambient*.5;
+    }
+#endif
+    imageStore(Output0,pixel,vec4(result,1));
 }

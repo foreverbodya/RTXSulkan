@@ -213,6 +213,8 @@ final class QaVisualWorldValidation {
                         if(length<1) {dx=1;dz=0;length=1;}
                         dx/=length;dz/=length;
                         BlockPos waterView=null;
+                        double waterOffset=Double.parseDouble(System.getProperty("sulkan.qaWaterViewOffset","4"));
+                        if(!Double.isFinite(waterOffset) || waterOffset< -8 || waterOffset>32)throw new IllegalArgumentException("Invalid water camera offset");
                         if(Boolean.getBoolean("sulkan.qaWaterView")) {
                             int best=-1;
                             for(int ax=-24;ax<=24;ax+=2) for(int az=-24;az<=24;az+=2) {
@@ -220,6 +222,7 @@ final class QaVisualWorldValidation {
                                 world.getChunk(bx>>4,bz>>4);
                                 int top=world.getHeight(Heightmap.Types.WORLD_SURFACE,bx,bz)-1;
                                 if(!world.getFluidState(new BlockPos(bx,top,bz)).is(net.minecraft.tags.FluidTags.WATER))continue;
+                                if(waterOffset<0 && !world.getFluidState(new BlockPos(bx,(int)Math.floor(top+waterOffset+1.62),bz)).is(net.minecraft.tags.FluidTags.WATER))continue;
                                 int open=0;
                                 for(int ox=-4;ox<=4;ox+=2)for(int oz=-4;oz<=4;oz+=2){
                                     world.getChunk((bx+ox)>>4,(bz+oz)>>4);
@@ -237,7 +240,7 @@ final class QaVisualWorldValidation {
                         int height=world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,(int)Math.floor(x),(int)Math.floor(z));
                         int cloudCameraHeight=Integer.getInteger("sulkan.qaCloudCameraHeight",0);
                         if(cloudCameraHeight<0 || cloudCameraHeight>384 || (cloudCameraHeight>0 && !CLOUD_PREVIEW))throw new IllegalArgumentException("Invalid QA cloud camera height");
-                        double y=waterView!=null?waterView.getY()+4.0:cloudCameraHeight>0?cloudCameraHeight:Math.max(74,height+10);
+                        double y=waterView!=null?waterView.getY()+waterOffset:cloudCameraHeight>0?cloudCameraHeight:Math.max(74,height+10);
                         double yaw=Math.toDegrees(Math.atan2(-dx,dz));
                         List<Integer> cloudTree=List.of();
                         if(Boolean.getBoolean("sulkan.qaCloudInteriorTree")) {

@@ -324,6 +324,7 @@ if($IndirectSpatial) {
 }
 if($WaterHdr) {
     $manifest.options['WATER_HDR']=@{default=1;values=@(1)}
+    $manifest.options['WATER_UNDERWATER_FOG']=@{default=1;values=@(0,1)}
     $manifest.resources['water.surface']=@{format='RGBA32_FLOAT'}
     $manifest.sceneTargets+=@('water.surface')
     foreach($program in $manifest.scenePrograms | Where-Object {$_.pipeline -eq 'sodium:pipeline/translucent_terrain'}) {
@@ -347,7 +348,7 @@ if($WaterHdr) {
         reads=@{Water='water.surface';Surface='surface.data';Depth='$depth';Atlas='$terrainAtlas'};writes=$outputs}
     if($WaterSurface -eq 1 -or $WaterSurfaceComparison){$manifest.options['WATER_SURFACE']=@{label='Water surface: flat / animated waves';default=$WaterSurface;values=@(0,1)}}
     $manifest.passes+=@{name='water.composite';compute='shaders/water-composite.comp';localSize=@(8,8,1);
-        reads=@{Water='water.radiance';Base=$hdrResource};writes=@('water.composite.hdr')}
+        reads=@{Water='water.radiance';WaterSurface='water.surface';Depth='$depth';Base=$hdrResource};writes=@('water.composite.hdr')}
     $hdrResource='water.composite.hdr'
     ($manifest.passes|Where-Object{$_.name -eq 'ray.direct.present'}).reads.HDR=$hdrResource
     foreach($name in @('translucent-water.fsh','water.comp','water-composite.comp','water-optics.glsl')) {
