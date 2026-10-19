@@ -75,6 +75,7 @@ param(
     [switch] $CloudNoisePairsPerturb,
     [switch] $CloudEnvironmentInputs,
     [switch] $TemporalProfile,
+    [switch]$CloudSequence,
     [ValidateSet('none','sr','native','native-direct','fixed-sr','rr')][string]$FoliageSequence='none',
     [switch] $PrepareGeometry,
     [switch] $CanonicalPackComparison,
@@ -113,6 +114,7 @@ param(
     [switch] $TemporalJitter,
     [switch] $WorldDlss,
     [switch] $RayReconstruction,
+    [ValidateRange(0,3)][int]$CloudArtStep=0,
     [string] $NativeLibrary,
     [string] $RuntimeDirectory,
     [ValidateRange(10,260)][int] $MaxFps = 60,
@@ -120,7 +122,7 @@ param(
     [ValidateRange(180,3600)][int] $TimeoutSeconds = 600
 )
 $ErrorActionPreference = 'Stop'
-if($FoliageSequence -ne 'none'){$TemporalProfile=$true}
+if($FoliageSequence -ne 'none' -or $CloudSequence){$TemporalProfile=$true}
 if($RealtimeStep -ge 2){$EmissiveSampling=1;$EmissiveMaterials=$true;$SunShadowSamples=1;$SunIndirectSamples=1}
 if($RealtimeStep -ge 3){$IndirectBounces=2;$IndirectSamples=1;$LeafIndirect=$false}
 
@@ -129,8 +131,8 @@ if($CloudNoisePairsPerturb -and !$CloudNoisePairs){throw 'CloudNoisePairsPerturb
 if($CloudNoisePairs -and (!$PerformanceProfile -or !$CloudPreview -or $ComputeExperiment -ne 'cloud-3d-env' -or $RayQueryCounts -or $TemporalProfile -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'CloudNoisePairs requires a separate full-cloud static/motion diagnostic launch'}
 if($PerformanceProfile -and (!$VisualWorld -or !$WorldDlss -or !$GpuTimings)){throw 'PerformanceProfile requires VisualWorld, WorldDlss and GpuTimings'}
 if($RayQueryCounts -and (!$PerformanceProfile -or !$RayLighting -or !$DiffuseIndirect -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notmatch '^(static|motion)(,(static|motion))*$')){throw 'RayQueryCounts requires a separate diffuse static/motion diagnostic launch without optimization comparisons'}
-if($TemporalProfile -and (!$PerformanceProfile -or ($ComputeExperiment -ne 'cloud-3d-env' -and $FoliageSequence -eq 'none') -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
-if($PerformanceProfile -and $ProfilePlan -notmatch '^((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,((narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
+if($TemporalProfile -and (!$PerformanceProfile -or ($ComputeExperiment -ne 'cloud-3d-env' -and $FoliageSequence -eq 'none' -and !$CloudSequence) -or $RayQueryCounts -or $WorkgroupExperiment -or $CanonicalPackComparison -or $NativeFrameComparison -or $ProfilePlan -notin @('static','motion'))){throw 'TemporalProfile requires separate environment-only cloud storage QA with one static or motion sequence'}
+if($PerformanceProfile -and $ProfilePlan -notmatch '^(cloud[0-3]-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising))(,(cloud[0-3]-(static|motion)|(narrow-)?(static|motion|stream|travel|reload|resize)|settled|static-repeat|motion-repeat|off-(clouds|gi|reflections|water|shadows|denoising)))*$'){throw 'Invalid ProfilePlan'}
 if($RoughDenoiseComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $RoughDenoise -ne 0 -or $EmissiveComparison)){throw 'RoughDenoiseComparison requires separate interior night 0/1/0'}
 if($RoughNoiseSequence -and !$RoughDenoiseComparison){throw 'RoughNoiseSequence requires the paired rough denoising capture'}
 if($EmissiveComparison -and (!$InteriorVisual -or !$NightOnly -or !$ToneMapComparison -or !$GpuTimings -or $EmissiveSampling -ne 0)){throw 'EmissiveComparison requires separate interior night 0/1/0 with display/cost capture'}
@@ -271,6 +273,7 @@ if ($RayVisibility -or $RayLighting) {
     if ($TemporalInputs) { $createArguments.TemporalInputs = $true }
     if ($WorldDlss) { $createArguments.DlssReconstruction = $true }
     if($RayReconstruction){$createArguments.RayReconstruction=$true}
+    $createArguments.CloudArtStep=$CloudArtStep
     if ($Reflections) { $createArguments.Reflections = $true }
     if($RayLighting){$createArguments.RealtimeStep=$RealtimeStep}
     if($RoughReflections){$createArguments.RoughReflections=$true}
@@ -419,6 +422,7 @@ if($GpuTimings){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaGpuTimings=true')}
 if($RayQueryCounts){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaRayQueryCounts=true')}
 if($CloudNoisePairs){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudNoisePairs=true')}
 if($TemporalProfile){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaTemporalProfile=true')}
+if($CloudSequence){if($CloudArtStep -ne 3){throw 'CloudSequence requires CloudArtStep 3'};$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaCloudSequence=true')}
 if($FoliageSequence -ne 'none'){
  $startInfo.ArgumentList.Insert(0,'-Dsulkan.qaFoliageSequence=true')
  if($FoliageSequence.StartsWith('native')){$startInfo.ArgumentList.Insert(0,'-Dsulkan.qaFoliageNative=true')}

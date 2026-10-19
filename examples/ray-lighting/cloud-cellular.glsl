@@ -54,9 +54,10 @@ vec4 cinematicCloudCellularScale(sampler2D layoutTexture,sampler2D noiseTexture,
 vec4 cinematicCloudCellular(sampler2D layoutTexture,sampler2D noiseTexture,vec3 p) {
     return cinematicCloudCellularScale(layoutTexture,noiseTexture,p,512.0);
 }
-#if CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1
-// Lighting-only approximation: hardware interpolation has finite weight
-// precision. View extinction/proxy and source diagnostics keep explicit fetches.
+#if (CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1) || (CLOUD_ART_STEP >= 2 && defined(SULKAN_HAS_BINDING_CLOUDLIGHTINGNOISE))
+// Hardware interpolation has finite weight precision. Legacy lighting uses
+// this approximation; the artistic cloud mode also uses it for view density.
+// The exact diagnostic/reference path above keeps explicit fetches.
 vec4 cinematicCloudLightingCellularScale(sampler2D layoutTexture,vec3 p,float scale) {
     vec2 worldPeriod=cinematicCloudPeriod(layoutTexture);
     vec2 repeats=max(ceil(worldPeriod/scale),vec2(1));

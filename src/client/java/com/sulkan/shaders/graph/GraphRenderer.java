@@ -127,6 +127,8 @@ public final class GraphRenderer implements AutoCloseable {
    private Object rayWorld;
    private VulkanDevice rayDevice;
    private WorldReconstruction reconstruction;
+   private boolean displayFrameUniform;
+   private GpuBufferSlice presentationUniforms;
    public boolean reconstructsWorld() { return this.reconstruction!=null; }
    private GpuPassTimings.Measurement worldTiming;
    public RenderTarget beginWorldFrame(RenderTarget output) {
@@ -215,6 +217,7 @@ public final class GraphRenderer implements AutoCloseable {
             try(var pass=encoder.createRenderPass(()->"Sulkan diagnostic display "+mode,target.view,Optional.empty())) {
                pass.setPipeline(RenderSystem.getCompiledPipeline(this.diagnosticDisplayPipelines.get(mode)));
                RenderSystem.bindDefaultUniforms(pass);
+               if(this.displayFrameUniform)pass.setUniform("SulkanFrame",this.presentationUniforms);
                pass.setUniform("Source",source,this.sampler);
                for(var input:this.graph.reconstruction().displayReads().entrySet()) {
                   // render() has advanced parity; bind the completed exposure, never its previous frame.
@@ -314,12 +317,13 @@ public final class GraphRenderer implements AutoCloseable {
 
          var displaySamplers=new java.util.LinkedHashSet<>(Set.of("Source"));
          if(graph.reconstruction()!=null)displaySamplers.addAll(graph.reconstruction().displayReads().keySet());
+         this.displayFrameUniform=graph.options().getOrDefault("CLOUD_ART_STEP",0d)>=3;
          this.present = this.pipeline(
             "present",
             graph.reconstruction()==null ? PRESENT : files.shader(graph.reconstruction().display(),graph.options()),
             displaySamplers,
             List.of(main.getColorTexture().getFormat()),
-            false
+            this.displayFrameUniform
          );
          if(Boolean.getBoolean("sulkan.qaToneMapComparison")) {
             if(!Boolean.getBoolean("sulkan.qaReadback") || graph.reconstruction()==null
@@ -328,7 +332,7 @@ public final class GraphRenderer implements AutoCloseable {
             for(int mode:List.of(0,1,2,3)) {
                var options=new java.util.TreeMap<>(graph.options());options.put("DISPLAY_TONEMAPPER",(double)mode);
                this.diagnosticDisplayPipelines.put(mode,this.pipeline("diagnostic-display-"+mode,
-                   files.shader(graph.reconstruction().display(),options),displaySamplers,List.of(GpuFormat.RGBA8_UNORM),false));
+                   files.shader(graph.reconstruction().display(),options),displaySamplers,List.of(GpuFormat.RGBA8_UNORM),this.displayFrameUniform));
             }
          }
          this.loadTextures(files);
@@ -578,6 +582,7 @@ public final class GraphRenderer implements AutoCloseable {
          this.frame.raySceneState(rayView.generation(),this.rayScene.pendingSections(),rayHandle!=0);
       }
       GpuBufferSlice uniforms = this.frame.upload(encoder, camera, view, this.width, this.height, reset);
+      this.presentationUniforms=uniforms;
       boolean directPresent = this.reconstruction==null && main==destination && canPresentDirectly(this.graph, this.schedule.getLast(), destination.getColorTexture().getFormat(), this.width, this.height);
       this.graph.sceneTargets().forEach(this::generateMipmaps);
 
@@ -628,6 +633,7 @@ public final class GraphRenderer implements AutoCloseable {
          try {
             pass.setPipeline(RenderSystem.getCompiledPipeline(this.present));
             RenderSystem.bindDefaultUniforms(pass);
+            if(this.displayFrameUniform)pass.setUniform("SulkanFrame",this.presentationUniforms);
             pass.setUniform("Source", this.reconstruction==null ? this.image(this.graph.present()).view : this.reconstruction.output(), this.sampler);
             if(this.reconstruction!=null) for(var input:this.graph.reconstruction().displayReads().entrySet())
                pass.setUniform(input.getKey(),this.image(input.getValue()).view,this.sampler);
@@ -706,6 +712,7 @@ public final class GraphRenderer implements AutoCloseable {
       var encoder=RenderSystem.getDevice().createCommandEncoder();
       try(var pass=encoder.createRenderPass(()->"Sulkan QA native "+label,this.qaDisplay.view,Optional.empty())) {
          pass.setPipeline(RenderSystem.getCompiledPipeline(this.present));RenderSystem.bindDefaultUniforms(pass);
+         if(this.displayFrameUniform)pass.setUniform("SulkanFrame",this.presentationUniforms);
          pass.setUniform("Source",source,this.sampler);
          for(var input:this.graph.reconstruction().displayReads().entrySet())pass.setUniform(input.getKey(),this.image(input.getValue()).view,this.sampler);
          pass.draw(3,1,0,0);

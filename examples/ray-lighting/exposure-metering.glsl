@@ -8,6 +8,9 @@ uint exposureWeight(ivec2 p) {
 }
 float exposureLuminance(ivec2 p) {
     vec3 value=texelFetch(HDR,exposureCoordinate(p),0).rgb;
+#if CLOUD_ART_STEP >= 3
+    vec4 cloud=texelFetch(CloudMeter,exposureCoordinate(p),0);value=cloud.rgb+value*cloud.a;
+#endif
     if(any(isnan(value)) || any(isinf(value)))return uintBitsToFloat(0x7fc00000u);
     return dot(max(value,vec3(0)),vec3(0.2126,0.7152,0.0722));
 }

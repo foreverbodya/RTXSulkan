@@ -9,6 +9,30 @@ vec4 cloudBilinear(ivec2 pixel,ivec2 fullSize) {
     return mix(mix(texelFetch(CloudView,cells[0],0),texelFetch(CloudView,cells[1],0),w.x),
         mix(texelFetch(CloudView,cells[2],0),texelFetch(CloudView,cells[3],0),w.x),w.y);
 }
+#if CLOUD_ART_STEP >= 3
+vec4 cloudCubic(float x){
+    return vec4(-.5*x+x*x-.5*x*x*x,1-2.5*x*x+1.5*x*x*x,
+        .5*x+2*x*x-1.5*x*x*x,-.5*x*x+.5*x*x*x);
+}
+vec4 cloudSharpResolve(vec2 uv,float maximum,out float proxy){
+    ivec2 size=textureSize(CloudView,0);vec2 q=uv*vec2(size)-.5;
+    ivec2 base=ivec2(floor(q));vec4 wx=cloudCubic(fract(q.x)),wy=cloudCubic(fract(q.y));
+    vec4 total=vec4(0),lo=vec4(1e30),hi=vec4(-1e30);float mass=0,proxyMass=0;proxy=0;
+    for(int y=0;y<4;y++)for(int x=0;x<4;x++){
+        ivec2 p=clamp(base+ivec2(x-1,y-1),ivec2(0),size-1);
+        vec4 geometry=texelFetch(CloudGeometry,p,0);
+        if(abs(geometry.w-maximum)>max(4.0,maximum*.02))continue;
+        vec4 value=texelFetch(CloudView,p,0);float w=wx[x]*wy[y];
+        total+=value*w;mass+=w;lo=min(lo,value);hi=max(hi,value);
+        float positive=max(w,0.0)*geometry.y;proxy+=positive*geometry.x;proxyMass+=positive;
+    }
+    proxy=proxyMass>1e-7?proxy/proxyMass:0;
+    if(mass<=1e-5)return vec4(0,0,0,1);
+    // Negative cubic lobes recover edge contrast. Bound them by existing local
+    // transport samples so no bright fringe or negative transmittance is added.
+    return clamp(total/mass,lo,hi);
+}
+#endif
 float cloudProxy(ivec2 cells[4],vec4 weights) {
     float sum=0.0,mass=0.0;
     for(int i=0;i<4;i++) {
@@ -100,7 +124,13 @@ void main() {
     }
 #endif
 #endif
+#if CLOUD_ART_STEP >= 3
+    if(intersects)transport=cloudSharpResolve(uv,maximum,proxy);
+#endif
     imageStore(Output0,p,vec4(transport.rgb+texelFetch(Base,p,0).rgb*transport.a,1));
+#if REALTIME_CLOUDS == 1
+    imageStore(Output4,p,texelFetch(Base,p,0));
+#endif
     imageStore(Output1,p,transport);
     imageStore(Output2,p,vec4(depth,maximum,intersects?begin:-1.0,intersects?end:-1.0));
     imageStore(Output3,p,vec4(proxy,mode,mass,float(mask)));

@@ -58,6 +58,17 @@ vec4 cinematicCloudField(sampler2D layoutTexture,vec3 p) {
     field.rgb*=coverage/max(field.a,0.0001);field.a=coverage;
     return field;
 }
+// Conservative empty-space bound: all four weather support cells are empty.
+// A zero interpolated coverage at one point alone is not a safe skip bound.
+bool cinematicCloudEmptyWeather(sampler2D layoutTexture,vec3 p){
+    ivec2 cell=ivec2(floor((p.xz+vec2(cinematicCloudPhase(),3.960000038))/CLOUD_CELL_SIZE-.5));
+    ivec2 size=textureSize(layoutTexture,0);
+    for(int y=0;y<2;y++)for(int x=0;x<2;x++){
+        ivec2 q=cell+ivec2(x,y);q=ivec2(sulkanWrapInt(q.x,size.x),sulkanWrapInt(q.y,size.y));
+        if(texelFetch(layoutTexture,q,0).a>=10.0/255.0)return false;
+    }
+    return true;
+}
 uint cinematicCloudHash(ivec3 cell,ivec2 period) {
     cell.x=sulkanWrapInt(cell.x,period.x);cell.z=sulkanWrapInt(cell.z,period.y);
     uint h=uint(cell.x)*0x8da6b343u^uint(cell.y)*0xd8163841u^uint(cell.z)*0xcb1ab31fu;
@@ -100,11 +111,28 @@ float cinematicCloudNoiseScale(sampler2D layoutTexture,vec3 p,float scale) {
 float cinematicCloudDensityImpl(sampler2D layoutTexture,vec3 p,bool lighting) {
     float height=(p.y-cinematicCloudBottom())/CLOUD_THICKNESS;
     if(height<=0.0 || height>=1.0)return 0.0;
+    float envelopeHeight=height;
     float coverage=cinematicCloudField(layoutTexture,p).a;
     if(coverage<=0.0)return 0.0;
 #ifdef CLOUD_CELLULAR_FIELD
     vec4 noise;
-#if CLOUD_DENSITY_PROFILE == 1
+#if CLOUD_ART_STEP >= 2 && defined(SULKAN_HAS_BINDING_CLOUDLIGHTINGNOISE)
+    // One low-frequency shape sample. Erosion is evaluated only in its boundary
+    // band; dense cores do not pay for detail that cannot affect the outline.
+    noise=cinematicCloudLightingCellularScale(layoutTexture,p,512.0);
+    float shape=.70*noise.r+.20*noise.g+.10*noise.a;
+    // Vary cloud base/top with the coarse shape, so the common slab does
+    // not turn into parallel painted bands near the horizon.
+    envelopeHeight=(height-(.02+.16*noise.a))/(.83-.12*noise.g);
+    float threshold=.48+.22*envelopeHeight*envelopeHeight+.50*(1.0-coverage);
+    float edge=shape-threshold;
+    if(edge>-.025 && edge<.24){
+        vec3 detail=cinematicCloudLightingCellularScale(layoutTexture,p,64.0).rgb;
+        float erosion=1.0-dot(detail,vec3(.625,.25,.125));
+        edge-=.30*erosion*(1.0-smoothstep(.10,.24,edge));
+    }
+    float body=clamp(edge*14.0,0.0,1.0);
+#elif CLOUD_DENSITY_PROFILE == 1
     vec3 detail;
 #if CLOUD_LIGHTING_VOLUME == 1 && REALTIME_CLOUDS != 1
     if(lighting) {
@@ -139,7 +167,7 @@ float cinematicCloudDensityImpl(sampler2D layoutTexture,vec3 p,bool lighting) {
     float threshold=0.36+0.25*height*height+0.50*(1.0-coverage);
     float body=clamp((shape-threshold)*3.2,0.0,1.0);
 #endif
-    float envelope=smoothstep(0.0,0.10,height)*(1.0-smoothstep(0.88,1.0,height));
+    float envelope=smoothstep(0.0,0.10,envelopeHeight)*(1.0-smoothstep(0.88,1.0,envelopeHeight));
     return CLOUD_EXTINCTION*body*envelope;
 }
 float cinematicCloudDensity(sampler2D layoutTexture,vec3 p) {

@@ -13,18 +13,33 @@ void main() {
     if(valid) {
         ivec2 oldPixel=clamp(ivec2(oldUv*vec2(size)),ivec2(0),size-1);
         vec4 oldGeometry=texelFetch(PreviousGeometry,oldPixel,0),old=texelFetch(Previous,oldPixel,0);
+#if CLOUD_ART_STEP >= 3
+        old=textureLod(Previous,oldUv,0.0);
+#endif
         // Reject changed ray endpoints and opacity; clamp surviving history to
         // current support so disocclusions do not leave clouds on terrain.
         valid=abs(oldGeometry.x-geometry.x)<max(24.0,geometry.x*0.03)
             && abs(oldGeometry.w-geometry.w)<max(8.0,geometry.w*0.02)
             && abs(old.a-current.a)<0.2 && !any(isnan(old)) && !any(isinf(old));
         if(valid) {
-            vec4 lo=current,hi=current;
+            vec4 lo=current,hi=current,mean=vec4(0),second=vec4(0);
             for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++) {
                 vec4 v=texelFetch(Current,clamp(p+ivec2(x,y),ivec2(0),size-1),0);
-                lo=min(lo,v);hi=max(hi,v);
+                lo=min(lo,v);hi=max(hi,v);mean+=v;second+=v*v;
             }
+            #if CLOUD_ART_STEP >= 3
+            mean/=9.0;second/=9.0;vec4 sigma=sqrt(max(second-mean*mean,vec4(0)));
+            // Keep the current sample inside the clip box. Otherwise an edge
+            // outlier can make the tightened alpha interval empty (lo > hi).
+            vec4 lower=min(current,max(lo,mean-1.25*sigma)),upper=max(current,min(hi,mean+1.25*sigma));
+            lower.a=max(lower.a,current.a-max(.02,sigma.a*.5));
+            upper.a=min(upper.a,current.a+max(.02,sigma.a*.5));
+            float motion=length((oldUv-uv)*vec2(size));
+            float response=mix(.70,.30,clamp(motion,0,1))*(1-clamp(abs(old.a-current.a)*4.0,0,.8));
+            current=mix(current,clamp(old,lower,upper),response);
+#else
             current=mix(current,clamp(old,lo,hi),0.85);
+#endif
         }
     }
     imageStore(Output0,p,current);

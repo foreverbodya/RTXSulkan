@@ -1,0 +1,3595 @@
+{
+  "baseCommit": "09d54d4f1ea096cd8d727acf7f28ae298e8f77da",
+  "scope": "Cloud appearance/cost iteration in the existing real-time RR renderer. Does not complete the broader cinematic renderer goal.",
+  "configuration": {
+    "minecraft": "26.3",
+    "sodium": "0.9.2",
+    "gpu": "RTX 5070",
+    "driver": "596.21",
+    "output": [
+      2560,
+      1440
+    ],
+    "rrInput": [
+      1707,
+      960
+    ],
+    "cloudDimensions": [
+      427,
+      240
+    ],
+    "renderDistance": 6,
+    "seed": 672026,
+    "dayTime": 3000,
+    "sunsetTime": 12600,
+    "camera": [
+      -130.978019326,
+      76,
+      -70.456038652,
+      153.434948823,
+      -10
+    ],
+    "diffusePaths": 1,
+    "diffuseBounces": 2,
+    "sunRays": 1,
+    "muted": true,
+    "disposableWorlds": true,
+    "otherModsUnchanged": true
+  },
+  "measurement": {
+    "framesPerStage": 128,
+    "timestamps": "Vulkan GPU timestamps, screenshots after timed interval",
+    "gpuScope": "world.total includes the world render and final presentation, excludes subsequent GUI",
+    "cloudScope": "Sum of cloud.* passes excluding diagnostic passes; final display adds about 0.035 ms over stage 0",
+    "baseline": "Stage 0 of the current realtime/RR graph, not the old user-installed SR pack. Shared new bindings/clear-base/noise resources exist in all stages.",
+    "cpuCaveat": "Windows active-thread clock is coarse (15.625 ms quanta). Mean retained as evidence, unsuitable for sub-ms CPU attribution.",
+    "vramCaveat": "Device-wide nvidia-smi WDDM samples retained with each run; not process residency or per-stage VRAM attribution."
+  },
+  "steps": [
+    {
+      "step": 1,
+      "change": "Conservative weather-cell empty skipping, adaptive distance steps, remove nested column density substeps",
+      "decision": "Keep: dominant measured saving, similar image before detail work"
+    },
+    {
+      "step": 2,
+      "change": "Hardware trilinear coarse shape and boundary erosion; varied base/top; three local sun probes plus cached lighting and silver rim; opacity contrast",
+      "decision": "Keep: sharper cloud edges and billow contrast visible, incremental whole-frame price below 1 ms"
+    },
+    {
+      "step": 3,
+      "change": "Depth-compatible clamped cubic upsample; variance-clipped motion-responsive history with valid alpha clip interval; horizon fade; compose after RR before display mapping",
+      "decision": "Keep: preserves fine silhouette that RR blurred. No higher cloud dimensions."
+    }
+  ],
+  "rows": [
+    {
+      "scene": "day",
+      "stage": 0,
+      "gpuMs": 16.907445,
+      "wallMs": 16.992066141732284,
+      "fps": 58.850995026673864,
+      "cloudPassesMs": 5.564204,
+      "cloudViewMs": 4.21904375,
+      "cloudSourceMs": 0.11655549999999999,
+      "cloudShadowMs": 0.90078525,
+      "cloudCompositeMs": 0.14505175,
+      "cloudHistoryMs": 0.010220749999999999,
+      "presentMs": 0.053468749999999995,
+      "geometrySha256": "4a96d60df1cdd00261fa748809f5e9a33dea8f9544ec58a04d2fa50fd37af312",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-day-1/evidence/profile-cloud0-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "min": 0.038272,
+          "max": 0.040319999999999995,
+          "mean": 0.03974975,
+          "median": 0.039744,
+          "events": 128,
+          "p95": 0.040288
+        },
+        "cloud.ambient.diagnostic": {
+          "min": 0.063168,
+          "max": 0.194848,
+          "mean": 0.065734,
+          "median": 0.06352,
+          "events": 128,
+          "p95": 0.065568
+        },
+        "atmosphere.multiple": {
+          "min": 0.007744,
+          "max": 0.008608,
+          "mean": 0.008199999999999999,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008447999999999999
+        },
+        "atmosphere.sky": {
+          "min": 0.069536,
+          "max": 0.072032,
+          "mean": 0.0710165,
+          "median": 0.07152,
+          "events": 128,
+          "p95": 0.071744
+        },
+        "atmosphere.lighting": {
+          "min": 0.11631999999999999,
+          "max": 0.24639999999999998,
+          "mean": 0.11919125,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.118848
+        },
+        "cloud.shadow": {
+          "min": 0.8376319999999999,
+          "max": 1.1423999999999999,
+          "mean": 0.90078525,
+          "median": 0.8684,
+          "events": 128,
+          "p95": 1.059296
+        },
+        "cloud.shadow.diagnostic": {
+          "min": 0.17296,
+          "max": 0.450208,
+          "mean": 0.2836835,
+          "median": 0.274416,
+          "events": 128,
+          "p95": 0.403456
+        },
+        "motion.camera": {
+          "min": 0.033856,
+          "max": 0.282304,
+          "mean": 0.042055499999999996,
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.039584
+        },
+        "indirect.trace": {
+          "min": 3.309856,
+          "max": 4.301824,
+          "mean": 3.7612722499999998,
+          "median": 3.773168,
+          "events": 128,
+          "p95": 4.013568
+        },
+        "sun.trace": {
+          "min": 0.345504,
+          "max": 0.621536,
+          "mean": 0.39026,
+          "median": 0.35175999999999996,
+          "events": 128,
+          "p95": 0.552704
+        },
+        "ray.direct": {
+          "min": 0.104256,
+          "max": 0.29247999999999996,
+          "mean": 0.1098415,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.118208
+        },
+        "ray.reflection": {
+          "min": 0.038304,
+          "max": 0.11420799999999999,
+          "mean": 0.039528749999999994,
+          "median": 0.038911999999999995,
+          "events": 128,
+          "p95": 0.03904
+        },
+        "ray.composite": {
+          "min": 0.01952,
+          "max": 0.26867199999999997,
+          "mean": 0.022423,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020704
+        },
+        "rough.reflection": {
+          "min": 1.513472,
+          "max": 2.078112,
+          "mean": 1.6275534999999999,
+          "median": 1.5271679999999999,
+          "events": 128,
+          "p95": 1.955264
+        },
+        "rough.composite": {
+          "min": 0.028128,
+          "max": 0.034592,
+          "mean": 0.02919575,
+          "median": 0.028895999999999998,
+          "events": 128,
+          "p95": 0.030559999999999997
+        },
+        "water.trace": {
+          "min": 0.149088,
+          "max": 0.331264,
+          "mean": 0.1570595,
+          "median": 0.15545599999999998,
+          "events": 128,
+          "p95": 0.159808
+        },
+        "water.composite": {
+          "min": 0.020128,
+          "max": 0.022432,
+          "mean": 0.020581,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.021824
+        },
+        "cloud.source.state": {
+          "min": 0.006144,
+          "max": 0.007808,
+          "mean": 0.0071892499999999995,
+          "median": 0.0072,
+          "events": 128,
+          "p95": 0.007424
+        },
+        "cloud.source.light": {
+          "min": 0.112576,
+          "max": 0.12099199999999999,
+          "mean": 0.11655549999999999,
+          "median": 0.11670399999999999,
+          "events": 128,
+          "p95": 0.11888
+        },
+        "cloud.view": {
+          "min": 3.950592,
+          "max": 4.728352,
+          "mean": 4.21904375,
+          "median": 4.188176,
+          "events": 128,
+          "p95": 4.47392
+        },
+        "cloud.temporal": {
+          "min": 0.009311999999999999,
+          "max": 0.010591999999999999,
+          "mean": 0.010220749999999999,
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.0104
+        },
+        "cloud.scattering.diagnostic": {
+          "min": 0.011968,
+          "max": 0.014336,
+          "mean": 0.012553749999999999,
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.014272
+        },
+        "cloud.composite": {
+          "min": 0.139232,
+          "max": 0.16399999999999998,
+          "mean": 0.14505175,
+          "median": 0.143696,
+          "events": 128,
+          "p95": 0.14959999999999998
+        },
+        "distant.world": {
+          "min": 0.055264,
+          "max": 0.059775999999999996,
+          "mean": 0.057305499999999995,
+          "median": 0.057344,
+          "events": 128,
+          "p95": 0.057696
+        },
+        "reconstruction.inputs": {
+          "min": 0.019968,
+          "max": 0.021887999999999998,
+          "mean": 0.020417499999999998,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020576
+        },
+        "cloud.reconstruction": {
+          "min": 0.12204799999999999,
+          "max": 0.131232,
+          "mean": 0.125608,
+          "median": 0.12495999999999999,
+          "events": 128,
+          "p95": 0.129024
+        },
+        "reconstruction.exposure": {
+          "min": 0.0051199999999999996,
+          "max": 0.007647999999999999,
+          "mean": 0.007005,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0073279999999999994
+        },
+        "display.histogram": {
+          "min": 0.09027199999999999,
+          "max": 0.09504,
+          "mean": 0.0917805,
+          "median": 0.091168,
+          "events": 128,
+          "p95": 0.093248
+        },
+        "display.meter": {
+          "min": 0.010144,
+          "max": 0.01264,
+          "mean": 0.011495499999999999,
+          "median": 0.012192,
+          "events": 128,
+          "p95": 0.01232
+        },
+        "display.exposure": {
+          "min": 0.036927999999999996,
+          "max": 0.03968,
+          "mean": 0.037964,
+          "median": 0.037888,
+          "events": 128,
+          "p95": 0.038911999999999995
+        },
+        "rr.guides": {
+          "min": 0.09622399999999999,
+          "max": 0.287168,
+          "mean": 0.10048499999999999,
+          "median": 0.098496,
+          "events": 128,
+          "p95": 0.100448
+        },
+        "native.dlss": {
+          "min": 3.687424,
+          "max": 3.941216,
+          "mean": 3.7146475,
+          "median": 3.708944,
+          "events": 128,
+          "p95": 3.73248
+        },
+        "world.total": {
+          "min": 16.51552,
+          "max": 18.378656,
+          "mean": 16.907445,
+          "median": 16.879855999999997,
+          "events": 128,
+          "p95": 17.211168
+        },
+        "composition.present": {
+          "min": 0.0528,
+          "max": 0.054208,
+          "mean": 0.053468749999999995,
+          "median": 0.053472,
+          "events": 128,
+          "p95": 0.053919999999999996
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 16.980999999999998,
+      "wallP95Ms": 17.6875,
+      "renderThreadActiveCpuMs": {
+        "max": 31.25,
+        "mean": 2.3375984251968505,
+        "p95": 15.625,
+        "p50": 0.0
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "day",
+      "stage": 1,
+      "gpuMs": 13.0467655,
+      "wallMs": 13.137614173228345,
+      "fps": 76.11732136553277,
+      "cloudPassesMs": 1.6811762499999998,
+      "cloudViewMs": 0.32447899999999996,
+      "cloudSourceMs": 0.11719175,
+      "cloudShadowMs": 0.907175,
+      "cloudCompositeMs": 0.1461325,
+      "cloudHistoryMs": 0.01021575,
+      "presentMs": 0.053961249999999995,
+      "geometrySha256": "4a96d60df1cdd00261fa748809f5e9a33dea8f9544ec58a04d2fa50fd37af312",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-day-1/evidence/profile-cloud1-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "min": 0.0392,
+          "max": 0.172672,
+          "mean": 0.040862499999999996,
+          "median": 0.03984,
+          "events": 128,
+          "p95": 0.040288
+        },
+        "cloud.ambient.diagnostic": {
+          "min": 0.063104,
+          "max": 0.196512,
+          "mean": 0.06591125,
+          "median": 0.06352,
+          "events": 128,
+          "p95": 0.065664
+        },
+        "atmosphere.multiple": {
+          "min": 0.007552,
+          "max": 0.008832,
+          "mean": 0.008203499999999999,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008512
+        },
+        "atmosphere.sky": {
+          "min": 0.06924799999999999,
+          "max": 0.20268799999999998,
+          "mean": 0.07426524999999999,
+          "median": 0.071584,
+          "events": 128,
+          "p95": 0.071936
+        },
+        "atmosphere.lighting": {
+          "min": 0.116448,
+          "max": 0.24908799999999998,
+          "mean": 0.11950374999999999,
+          "median": 0.11683199999999999,
+          "events": 128,
+          "p95": 0.11881599999999999
+        },
+        "cloud.shadow": {
+          "min": 0.8406079999999999,
+          "max": 1.158528,
+          "mean": 0.907175,
+          "median": 0.87208,
+          "events": 128,
+          "p95": 1.064224
+        },
+        "cloud.shadow.diagnostic": {
+          "min": 0.27183999999999997,
+          "max": 0.523072,
+          "mean": 0.28974225,
+          "median": 0.27648,
+          "events": 128,
+          "p95": 0.40336
+        },
+        "motion.camera": {
+          "min": 0.0344,
+          "max": 0.21443199999999998,
+          "mean": 0.036637249999999996,
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.0392
+        },
+        "indirect.trace": {
+          "min": 3.294432,
+          "max": 4.263552,
+          "mean": 3.76336975,
+          "median": 3.780208,
+          "events": 128,
+          "p95": 4.0243519999999995
+        },
+        "sun.trace": {
+          "min": 0.34608,
+          "max": 0.7034239999999999,
+          "mean": 0.39237574999999997,
+          "median": 0.351952,
+          "events": 128,
+          "p95": 0.547808
+        },
+        "ray.direct": {
+          "min": 0.104032,
+          "max": 0.297376,
+          "mean": 0.11494675,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.128608
+        },
+        "ray.reflection": {
+          "min": 0.038624,
+          "max": 0.171488,
+          "mean": 0.040445749999999996,
+          "median": 0.038911999999999995,
+          "events": 128,
+          "p95": 0.039071999999999996
+        },
+        "ray.composite": {
+          "min": 0.019968,
+          "max": 0.15417599999999998,
+          "mean": 0.0226985,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020832
+        },
+        "rough.reflection": {
+          "min": 1.512768,
+          "max": 2.129312,
+          "mean": 1.62168,
+          "median": 1.5324959999999999,
+          "events": 128,
+          "p95": 1.9521279999999999
+        },
+        "rough.composite": {
+          "min": 0.028192,
+          "max": 0.031167999999999998,
+          "mean": 0.029033999999999997,
+          "median": 0.028863999999999997,
+          "events": 128,
+          "p95": 0.030463999999999998
+        },
+        "water.trace": {
+          "min": 0.149248,
+          "max": 0.313536,
+          "mean": 0.15828699999999998,
+          "median": 0.15545599999999998,
+          "events": 128,
+          "p95": 0.161664
+        },
+        "water.composite": {
+          "min": 0.020128,
+          "max": 0.022591999999999998,
+          "mean": 0.0205955,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.02208
+        },
+        "cloud.source.state": {
+          "min": 0.006144,
+          "max": 0.007744,
+          "mean": 0.0071245,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007424
+        },
+        "cloud.source.light": {
+          "min": 0.112672,
+          "max": 0.251648,
+          "mean": 0.11719175,
+          "median": 0.11652799999999999,
+          "events": 128,
+          "p95": 0.11881599999999999
+        },
+        "cloud.view": {
+          "min": 0.311264,
+          "max": 0.352512,
+          "mean": 0.32447899999999996,
+          "median": 0.323632,
+          "events": 128,
+          "p95": 0.335904
+        },
+        "cloud.temporal": {
+          "min": 0.009824,
+          "max": 0.010528,
+          "mean": 0.01021575,
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010367999999999999
+        },
+        "cloud.scattering.diagnostic": {
+          "min": 0.012095999999999999,
+          "max": 0.014336,
+          "mean": 0.01235,
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.012608
+        },
+        "cloud.composite": {
+          "min": 0.14124799999999998,
+          "max": 0.168384,
+          "mean": 0.1461325,
+          "median": 0.14543999999999999,
+          "events": 128,
+          "p95": 0.15152
+        },
+        "distant.world": {
+          "min": 0.053503999999999996,
+          "max": 0.13248,
+          "mean": 0.056105499999999996,
+          "median": 0.055327999999999995,
+          "events": 128,
+          "p95": 0.057311999999999995
+        },
+        "reconstruction.inputs": {
+          "min": 0.02,
+          "max": 0.021471999999999998,
+          "mean": 0.0204195,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020607999999999998
+        },
+        "cloud.reconstruction": {
+          "min": 0.12278399999999999,
+          "max": 0.327872,
+          "mean": 0.12799525,
+          "median": 0.126944,
+          "events": 128,
+          "p95": 0.129056
+        },
+        "reconstruction.exposure": {
+          "min": 0.006144,
+          "max": 0.007488,
+          "mean": 0.0070875,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007264
+        },
+        "display.histogram": {
+          "min": 0.089056,
+          "max": 0.093376,
+          "mean": 0.09178549999999999,
+          "median": 0.09118399999999999,
+          "events": 128,
+          "p95": 0.093216
+        },
+        "display.meter": {
+          "min": 0.010208,
+          "max": 0.012575999999999999,
+          "mean": 0.01162325,
+          "median": 0.012256,
+          "events": 128,
+          "p95": 0.012352
+        },
+        "display.exposure": {
+          "min": 0.037696,
+          "max": 0.039872,
+          "mean": 0.037934749999999996,
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038815999999999996
+        },
+        "rr.guides": {
+          "min": 0.096256,
+          "max": 0.10259199999999999,
+          "mean": 0.09860225,
+          "median": 0.0984,
+          "events": 128,
+          "p95": 0.100384
+        },
+        "native.dlss": {
+          "min": 3.68944,
+          "max": 4.031552,
+          "mean": 3.72592725,
+          "median": 3.71752,
+          "events": 128,
+          "p95": 3.740224
+        },
+        "world.total": {
+          "min": 12.36032,
+          "max": 14.137151999999999,
+          "mean": 13.0467655,
+          "median": 13.030448,
+          "events": 128,
+          "p95": 13.218912
+        },
+        "composition.present": {
+          "min": 0.052896,
+          "max": 0.05504,
+          "mean": 0.053961249999999995,
+          "median": 0.053952,
+          "events": 128,
+          "p95": 0.0544
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 13.1037,
+      "wallP95Ms": 13.642399999999999,
+      "renderThreadActiveCpuMs": {
+        "max": 15.625,
+        "mean": 2.4606299212598426,
+        "p95": 15.625,
+        "p50": 0.0
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "day",
+      "stage": 2,
+      "gpuMs": 12.98147775,
+      "wallMs": 13.070862992125983,
+      "fps": 76.50604253157653,
+      "cloudPassesMs": 1.6762517499999998,
+      "cloudViewMs": 0.7991152499999999,
+      "cloudSourceMs": 0.040812249999999994,
+      "cloudShadowMs": 0.51083525,
+      "cloudCompositeMs": 0.14394674999999998,
+      "cloudHistoryMs": 0.01021175,
+      "presentMs": 0.05354125,
+      "geometrySha256": "4a96d60df1cdd00261fa748809f5e9a33dea8f9544ec58a04d2fa50fd37af312",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-day-1/evidence/profile-cloud2-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "min": 0.037823999999999997,
+          "max": 0.040768,
+          "mean": 0.03968375,
+          "median": 0.039760000000000004,
+          "events": 128,
+          "p95": 0.040256
+        },
+        "cloud.ambient.diagnostic": {
+          "min": 0.058976,
+          "max": 0.061695999999999994,
+          "mean": 0.060046499999999996,
+          "median": 0.059472,
+          "events": 128,
+          "p95": 0.061503999999999996
+        },
+        "atmosphere.multiple": {
+          "min": 0.006208,
+          "max": 0.14166399999999998,
+          "mean": 0.00920475,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008416
+        },
+        "atmosphere.sky": {
+          "min": 0.069504,
+          "max": 0.203168,
+          "mean": 0.0721765,
+          "median": 0.071616,
+          "events": 128,
+          "p95": 0.071808
+        },
+        "atmosphere.lighting": {
+          "min": 0.116128,
+          "max": 0.24742399999999998,
+          "mean": 0.1182145,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.118848
+        },
+        "cloud.shadow": {
+          "min": 0.432096,
+          "max": 1.394016,
+          "mean": 0.51083525,
+          "median": 0.45811199999999996,
+          "events": 128,
+          "p95": 0.711488
+        },
+        "cloud.shadow.diagnostic": {
+          "min": 0.178176,
+          "max": 0.36675199999999997,
+          "mean": 0.21824849999999998,
+          "median": 0.21110399999999999,
+          "events": 128,
+          "p95": 0.34105599999999997
+        },
+        "motion.camera": {
+          "min": 0.034336,
+          "max": 0.166848,
+          "mean": 0.03599375,
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.035199999999999995
+        },
+        "indirect.trace": {
+          "min": 3.30464,
+          "max": 4.384128,
+          "mean": 3.75886825,
+          "median": 3.7932479999999997,
+          "events": 128,
+          "p95": 4.03712
+        },
+        "sun.trace": {
+          "min": 0.345696,
+          "max": 0.62864,
+          "mean": 0.38710625,
+          "median": 0.352336,
+          "events": 128,
+          "p95": 0.549696
+        },
+        "ray.direct": {
+          "min": 0.104352,
+          "max": 0.296512,
+          "mean": 0.11563675,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.12464
+        },
+        "ray.reflection": {
+          "min": 0.037056,
+          "max": 0.22780799999999998,
+          "mean": 0.045106499999999994,
+          "median": 0.038911999999999995,
+          "events": 128,
+          "p95": 0.042367999999999996
+        },
+        "ray.composite": {
+          "min": 0.02,
+          "max": 0.200256,
+          "mean": 0.023067749999999998,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.0208
+        },
+        "rough.reflection": {
+          "min": 1.516544,
+          "max": 2.0863039999999997,
+          "mean": 1.64858175,
+          "median": 1.536544,
+          "events": 128,
+          "p95": 1.954432
+        },
+        "rough.composite": {
+          "min": 0.027968,
+          "max": 0.161984,
+          "mean": 0.030428249999999997,
+          "median": 0.028928,
+          "events": 128,
+          "p95": 0.032128
+        },
+        "water.trace": {
+          "min": 0.147328,
+          "max": 0.360896,
+          "mean": 0.16172625,
+          "median": 0.155488,
+          "events": 128,
+          "p95": 0.16352
+        },
+        "water.composite": {
+          "min": 0.020191999999999998,
+          "max": 0.022496,
+          "mean": 0.020597749999999998,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.022015999999999997
+        },
+        "cloud.source.state": {
+          "min": 0.006144,
+          "max": 0.228576,
+          "mean": 0.00888325,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007424
+        },
+        "cloud.source.light": {
+          "min": 0.036864,
+          "max": 0.17094399999999998,
+          "mean": 0.040812249999999994,
+          "median": 0.03904,
+          "events": 128,
+          "p95": 0.04112
+        },
+        "cloud.view": {
+          "min": 0.743296,
+          "max": 0.945344,
+          "mean": 0.7991152499999999,
+          "median": 0.793584,
+          "events": 128,
+          "p95": 0.852
+        },
+        "cloud.temporal": {
+          "min": 0.009888,
+          "max": 0.010464,
+          "mean": 0.01021175,
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010367999999999999
+        },
+        "cloud.scattering.diagnostic": {
+          "min": 0.012128,
+          "max": 0.0144,
+          "mean": 0.01245875,
+          "median": 0.01232,
+          "events": 128,
+          "p95": 0.014208
+        },
+        "cloud.composite": {
+          "min": 0.139104,
+          "max": 0.16422399999999998,
+          "mean": 0.14394674999999998,
+          "median": 0.14332799999999998,
+          "events": 128,
+          "p95": 0.14944
+        },
+        "distant.world": {
+          "min": 0.055456,
+          "max": 0.059424,
+          "mean": 0.05735025,
+          "median": 0.057375999999999996,
+          "events": 128,
+          "p95": 0.057664
+        },
+        "reconstruction.inputs": {
+          "min": 0.019968,
+          "max": 0.02144,
+          "mean": 0.02044225,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020607999999999998
+        },
+        "cloud.reconstruction": {
+          "min": 0.118752,
+          "max": 0.127104,
+          "mean": 0.1227635,
+          "median": 0.12287999999999999,
+          "events": 128,
+          "p95": 0.12515199999999999
+        },
+        "reconstruction.exposure": {
+          "min": 0.006144,
+          "max": 0.007552,
+          "mean": 0.00706225,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0072959999999999995
+        },
+        "display.histogram": {
+          "min": 0.09008,
+          "max": 0.09504,
+          "mean": 0.09158949999999999,
+          "median": 0.091136,
+          "events": 128,
+          "p95": 0.093216
+        },
+        "display.meter": {
+          "min": 0.010176,
+          "max": 0.012672,
+          "mean": 0.011474749999999999,
+          "median": 0.012192,
+          "events": 128,
+          "p95": 0.01232
+        },
+        "display.exposure": {
+          "min": 0.036992,
+          "max": 0.03904,
+          "mean": 0.03795875,
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038944
+        },
+        "rr.guides": {
+          "min": 0.096096,
+          "max": 0.10457599999999999,
+          "mean": 0.09826775,
+          "median": 0.098304,
+          "events": 128,
+          "p95": 0.100448
+        },
+        "native.dlss": {
+          "min": 3.690304,
+          "max": 3.8891839999999998,
+          "mean": 3.72029825,
+          "median": 3.71408,
+          "events": 128,
+          "p95": 3.7372799999999997
+        },
+        "world.total": {
+          "min": 12.193247999999999,
+          "max": 14.060288,
+          "mean": 12.98147775,
+          "median": 12.93968,
+          "events": 128,
+          "p95": 13.215392
+        },
+        "composition.present": {
+          "min": 0.05264,
+          "max": 0.054112,
+          "mean": 0.05354125,
+          "median": 0.053536,
+          "events": 128,
+          "p95": 0.053952
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 13.036399999999999,
+      "wallP95Ms": 13.6312,
+      "renderThreadActiveCpuMs": {
+        "max": 15.625,
+        "mean": 1.845472440944882,
+        "p95": 15.625,
+        "p50": 0.0
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "day",
+      "stage": 3,
+      "gpuMs": 12.9034625,
+      "wallMs": 12.988433858267715,
+      "fps": 76.991576575913,
+      "cloudPassesMs": 1.58771875,
+      "cloudViewMs": 0.802342,
+      "cloudSourceMs": 0.039716749999999995,
+      "cloudShadowMs": 0.45438275,
+      "cloudCompositeMs": 0.1565425,
+      "cloudHistoryMs": 0.0104085,
+      "presentMs": 0.0892485,
+      "geometrySha256": "4a96d60df1cdd00261fa748809f5e9a33dea8f9544ec58a04d2fa50fd37af312",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-day-1/evidence/profile-cloud3-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "min": 0.038304,
+          "max": 0.040512,
+          "mean": 0.03981675,
+          "median": 0.039791999999999994,
+          "events": 128,
+          "p95": 0.040352
+        },
+        "cloud.ambient.diagnostic": {
+          "min": 0.059072,
+          "max": 0.195648,
+          "mean": 0.063071,
+          "median": 0.059488,
+          "events": 128,
+          "p95": 0.061503999999999996
+        },
+        "atmosphere.multiple": {
+          "min": 0.007488,
+          "max": 0.008544,
+          "mean": 0.008194,
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008447999999999999
+        },
+        "atmosphere.sky": {
+          "min": 0.069408,
+          "max": 0.072224,
+          "mean": 0.07126874999999999,
+          "median": 0.071616,
+          "events": 128,
+          "p95": 0.07184
+        },
+        "atmosphere.lighting": {
+          "min": 0.116256,
+          "max": 0.250336,
+          "mean": 0.12025,
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.11891199999999999
+        },
+        "cloud.shadow": {
+          "min": 0.432096,
+          "max": 0.681248,
+          "mean": 0.45438275,
+          "median": 0.440256,
+          "events": 128,
+          "p95": 0.587232
+        },
+        "cloud.shadow.diagnostic": {
+          "min": 0.17990399999999998,
+          "max": 0.43014399999999997,
+          "mean": 0.18520974999999998,
+          "median": 0.18223999999999999,
+          "events": 128,
+          "p95": 0.182784
+        },
+        "motion.camera": {
+          "min": 0.034336,
+          "max": 0.16841599999999998,
+          "mean": 0.0369925,
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.035136
+        },
+        "indirect.trace": {
+          "min": 3.301408,
+          "max": 4.361759999999999,
+          "mean": 3.73641175,
+          "median": 3.771152,
+          "events": 128,
+          "p95": 4.033696
+        },
+        "sun.trace": {
+          "min": 0.345792,
+          "max": 0.7269439999999999,
+          "mean": 0.39775699999999997,
+          "median": 0.353664,
+          "events": 128,
+          "p95": 0.5583359999999999
+        },
+        "ray.direct": {
+          "min": 0.10428799999999999,
+          "max": 0.23849599999999999,
+          "mean": 0.10934574999999999,
+          "median": 0.106496,
+          "events": 128,
+          "p95": 0.12028799999999999
+        },
+        "ray.reflection": {
+          "min": 0.0368,
+          "max": 0.218752,
+          "mean": 0.04218925,
+          "median": 0.038911999999999995,
+          "events": 128,
+          "p95": 0.039136
+        },
+        "ray.composite": {
+          "min": 0.0192,
+          "max": 0.151424,
+          "mean": 0.02352425,
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020735999999999997
+        },
+        "rough.reflection": {
+          "min": 1.516544,
+          "max": 1.987968,
+          "mean": 1.673892,
+          "median": 1.54224,
+          "events": 128,
+          "p95": 1.958272
+        },
+        "rough.composite": {
+          "min": 0.028192,
+          "max": 0.03472,
+          "mean": 0.029579249999999998,
+          "median": 0.028895999999999998,
+          "events": 128,
+          "p95": 0.033248
+        },
+        "water.trace": {
+          "min": 0.146112,
+          "max": 0.284288,
+          "mean": 0.15649575,
+          "median": 0.15550399999999998,
+          "events": 128,
+          "p95": 0.159744
+        },
+        "water.composite": {
+          "min": 0.020096,
+          "max": 0.022624,
+          "mean": 0.02063325,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.022208
+        },
+        "cloud.source.state": {
+          "min": 0.006144,
+          "max": 0.007711999999999999,
+          "mean": 0.007199,
+          "median": 0.0072,
+          "events": 128,
+          "p95": 0.007391999999999999
+        },
+        "cloud.source.light": {
+          "min": 0.036864,
+          "max": 0.04128,
+          "mean": 0.039716749999999995,
+          "median": 0.03904,
+          "events": 128,
+          "p95": 0.041024
+        },
+        "cloud.view": {
+          "min": 0.748512,
+          "max": 0.994176,
+          "mean": 0.802342,
+          "median": 0.793072,
+          "events": 128,
+          "p95": 0.907072
+        },
+        "cloud.temporal": {
+          "min": 0.00992,
+          "max": 0.012416,
+          "mean": 0.0104085,
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.012064
+        },
+        "cloud.scattering.diagnostic": {
+          "min": 0.012159999999999999,
+          "max": 0.014624,
+          "mean": 0.01249375,
+          "median": 0.01232,
+          "events": 128,
+          "p95": 0.014112
+        },
+        "cloud.composite": {
+          "min": 0.151232,
+          "max": 0.16380799999999998,
+          "mean": 0.1565425,
+          "median": 0.155696,
+          "events": 128,
+          "p95": 0.16176
+        },
+        "distant.world": {
+          "min": 0.051136,
+          "max": 0.055327999999999995,
+          "mean": 0.053223,
+          "median": 0.053248,
+          "events": 128,
+          "p95": 0.053472
+        },
+        "reconstruction.inputs": {
+          "min": 0.019936,
+          "max": 0.228896,
+          "mean": 0.022073,
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020607999999999998
+        },
+        "cloud.reconstruction": {
+          "min": 0.075712,
+          "max": 0.079904,
+          "mean": 0.07731049999999999,
+          "median": 0.07782399999999999,
+          "events": 128,
+          "p95": 0.07936
+        },
+        "reconstruction.exposure": {
+          "min": 0.0060799999999999995,
+          "max": 0.007808,
+          "mean": 0.0071085,
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007359999999999999
+        },
+        "display.histogram": {
+          "min": 0.097024,
+          "max": 0.100544,
+          "mean": 0.0979965,
+          "median": 0.097312,
+          "events": 128,
+          "p95": 0.099328
+        },
+        "display.meter": {
+          "min": 0.011935999999999999,
+          "max": 0.012608,
+          "mean": 0.01228625,
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.012416
+        },
+        "display.exposure": {
+          "min": 0.036927999999999996,
+          "max": 0.03952,
+          "mean": 0.03797,
+          "median": 0.037888,
+          "events": 128,
+          "p95": 0.038911999999999995
+        },
+        "rr.guides": {
+          "min": 0.092416,
+          "max": 0.10239999999999999,
+          "mean": 0.09491374999999999,
+          "median": 0.09435199999999999,
+          "events": 128,
+          "p95": 0.09648
+        },
+        "native.dlss": {
+          "min": 3.681184,
+          "max": 3.9064319999999997,
+          "mean": 3.7195885,
+          "median": 3.710896,
+          "events": 128,
+          "p95": 3.735328
+        },
+        "world.total": {
+          "min": 12.125599999999999,
+          "max": 13.999775999999999,
+          "mean": 12.9034625,
+          "median": 12.886111999999999,
+          "events": 128,
+          "p95": 13.105279999999999
+        },
+        "composition.present": {
+          "min": 0.088032,
+          "max": 0.09372799999999999,
+          "mean": 0.0892485,
+          "median": 0.08921599999999999,
+          "events": 128,
+          "p95": 0.090144
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 12.974499999999999,
+      "wallP95Ms": 13.4125,
+      "renderThreadActiveCpuMs": {
+        "max": 15.625,
+        "mean": 2.5836614173228347,
+        "p95": 15.625,
+        "p50": 0.0
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "sunset",
+      "stage": 0,
+      "gpuMs": 18.2243815,
+      "wallMs": 18.30446220472441,
+      "fps": 54.63148760207216,
+      "cloudPassesMs": 5.634201,
+      "cloudViewMs": 4.2964005,
+      "cloudSourceMs": 0.11544724999999999,
+      "cloudShadowMs": 0.89134375,
+      "cloudCompositeMs": 0.14547975,
+      "cloudHistoryMs": 0.01020925,
+      "presentMs": 0.053491,
+      "geometrySha256": "549f345563cba8db809bac7d92ee5759565520c13c63e04ec13866286a156381",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-sunset-1/evidence/profile-cloud0-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "median": 0.039647999999999996,
+          "events": 128,
+          "p95": 0.040256,
+          "min": 0.037888,
+          "max": 0.17215999999999998,
+          "mean": 0.0414805
+        },
+        "cloud.ambient.diagnostic": {
+          "median": 0.06352,
+          "events": 128,
+          "p95": 0.065568,
+          "min": 0.062368,
+          "max": 0.19724799999999998,
+          "mean": 0.06597275
+        },
+        "atmosphere.multiple": {
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.00848,
+          "min": 0.00752,
+          "max": 0.008672,
+          "mean": 0.008208749999999999
+        },
+        "atmosphere.sky": {
+          "median": 0.08191999999999999,
+          "events": 128,
+          "p95": 0.08399999999999999,
+          "min": 0.081408,
+          "max": 0.215776,
+          "mean": 0.08414775
+        },
+        "atmosphere.lighting": {
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.11881599999999999,
+          "min": 0.11641599999999999,
+          "max": 0.247552,
+          "mean": 0.12206375
+        },
+        "cloud.shadow": {
+          "median": 0.8621759999999999,
+          "events": 128,
+          "p95": 1.0402879999999999,
+          "min": 0.84576,
+          "max": 1.10528,
+          "mean": 0.89134375
+        },
+        "cloud.shadow.diagnostic": {
+          "median": 0.29897599999999996,
+          "events": 128,
+          "p95": 0.429664,
+          "min": 0.18016,
+          "max": 0.47769599999999995,
+          "mean": 0.30504899999999996
+        },
+        "motion.camera": {
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.038911999999999995,
+          "min": 0.033631999999999995,
+          "max": 0.043168,
+          "mean": 0.035276999999999996
+        },
+        "indirect.trace": {
+          "median": 4.556255999999999,
+          "events": 128,
+          "p95": 4.837632,
+          "min": 3.9272,
+          "max": 5.17664,
+          "mean": 4.5178405
+        },
+        "sun.trace": {
+          "median": 0.5805279999999999,
+          "events": 128,
+          "p95": 0.797504,
+          "min": 0.5735359999999999,
+          "max": 0.9850559999999999,
+          "mean": 0.62747575
+        },
+        "ray.direct": {
+          "median": 0.096256,
+          "events": 128,
+          "p95": 0.115008,
+          "min": 0.094208,
+          "max": 0.289184,
+          "mean": 0.099535
+        },
+        "ray.reflection": {
+          "median": 0.036864,
+          "events": 128,
+          "p95": 0.037024,
+          "min": 0.036448,
+          "max": 0.038464,
+          "mean": 0.0368765
+        },
+        "ray.composite": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020735999999999997,
+          "min": 0.020128,
+          "max": 0.19616,
+          "mean": 0.021863499999999998
+        },
+        "rough.reflection": {
+          "median": 1.876,
+          "events": 128,
+          "p95": 2.070112,
+          "min": 1.854112,
+          "max": 2.313408,
+          "mean": 1.90336625
+        },
+        "rough.composite": {
+          "median": 0.026976,
+          "events": 128,
+          "p95": 0.028704,
+          "min": 0.026272,
+          "max": 0.02896,
+          "mean": 0.027582
+        },
+        "water.trace": {
+          "median": 0.12081599999999999,
+          "events": 128,
+          "p95": 0.126976,
+          "min": 0.11055999999999999,
+          "max": 0.131072,
+          "mean": 0.12090875
+        },
+        "water.composite": {
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020735999999999997,
+          "min": 0.020159999999999997,
+          "max": 0.022528,
+          "mean": 0.020527249999999997
+        },
+        "cloud.source.state": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0072959999999999995,
+          "min": 0.006144,
+          "max": 0.007552,
+          "mean": 0.007124999999999999
+        },
+        "cloud.source.light": {
+          "median": 0.11483199999999999,
+          "events": 128,
+          "p95": 0.118784,
+          "min": 0.11244799999999999,
+          "max": 0.120832,
+          "mean": 0.11544724999999999
+        },
+        "cloud.view": {
+          "median": 4.271088,
+          "events": 128,
+          "p95": 4.553024,
+          "min": 4.003776,
+          "max": 4.873216,
+          "mean": 4.2964005
+        },
+        "cloud.temporal": {
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010464,
+          "min": 0.009216,
+          "max": 0.010624,
+          "mean": 0.01020925
+        },
+        "cloud.scattering.diagnostic": {
+          "median": 0.012352,
+          "events": 128,
+          "p95": 0.014336,
+          "min": 0.012192,
+          "max": 0.014464,
+          "mean": 0.012787749999999999
+        },
+        "cloud.composite": {
+          "median": 0.145344,
+          "events": 128,
+          "p95": 0.149632,
+          "min": 0.139328,
+          "max": 0.153824,
+          "mean": 0.14547975
+        },
+        "distant.world": {
+          "median": 0.053503999999999996,
+          "events": 128,
+          "p95": 0.055423999999999994,
+          "min": 0.05312,
+          "max": 0.057344,
+          "mean": 0.05417475
+        },
+        "reconstruction.inputs": {
+          "median": 0.020367999999999997,
+          "events": 128,
+          "p95": 0.020544,
+          "min": 0.019903999999999998,
+          "max": 0.021408,
+          "mean": 0.020371
+        },
+        "cloud.reconstruction": {
+          "median": 0.126976,
+          "events": 128,
+          "p95": 0.12911999999999998,
+          "min": 0.12393599999999999,
+          "max": 0.134272,
+          "mean": 0.126715
+        },
+        "reconstruction.exposure": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.0072959999999999995,
+          "min": 0.006144,
+          "max": 0.00752,
+          "mean": 0.0070964999999999995
+        },
+        "display.histogram": {
+          "median": 0.09119999999999999,
+          "events": 128,
+          "p95": 0.093248,
+          "min": 0.09088,
+          "max": 0.095168,
+          "mean": 0.09195325
+        },
+        "display.meter": {
+          "median": 0.012256,
+          "events": 128,
+          "p95": 0.012352,
+          "min": 0.010176,
+          "max": 0.012704,
+          "mean": 0.0118865
+        },
+        "display.exposure": {
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038944,
+          "min": 0.037503999999999996,
+          "max": 0.039872,
+          "mean": 0.037975499999999995
+        },
+        "rr.guides": {
+          "median": 0.097744,
+          "events": 128,
+          "p95": 0.099296,
+          "min": 0.09519999999999999,
+          "max": 0.100448,
+          "mean": 0.09747449999999999
+        },
+        "native.dlss": {
+          "median": 3.716064,
+          "events": 128,
+          "p95": 3.742816,
+          "min": 3.6915199999999997,
+          "max": 4.113344,
+          "mean": 3.7247162499999997
+        },
+        "world.total": {
+          "median": 18.182128,
+          "events": 128,
+          "p95": 18.570912,
+          "min": 17.279488,
+          "max": 19.448224,
+          "mean": 18.2243815
+        },
+        "composition.present": {
+          "median": 0.053472,
+          "events": 128,
+          "p95": 0.054048,
+          "min": 0.052863999999999994,
+          "max": 0.054335999999999995,
+          "mean": 0.053491
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 18.3008,
+      "wallP95Ms": 18.919999999999998,
+      "renderThreadActiveCpuMs": {
+        "p95": 15.625,
+        "p50": 0.0,
+        "max": 31.25,
+        "mean": 2.2145669291338583
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "sunset",
+      "stage": 1,
+      "gpuMs": 14.29104825,
+      "wallMs": 14.387570866141731,
+      "fps": 69.50443610695255,
+      "cloudPassesMs": 1.6657772499999999,
+      "cloudViewMs": 0.32656025,
+      "cloudSourceMs": 0.11554249999999999,
+      "cloudShadowMs": 0.8894942499999999,
+      "cloudCompositeMs": 0.14726625,
+      "cloudHistoryMs": 0.010232749999999999,
+      "presentMs": 0.05297175,
+      "geometrySha256": "549f345563cba8db809bac7d92ee5759565520c13c63e04ec13866286a156381",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-sunset-1/evidence/profile-cloud1-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "median": 0.039936,
+          "events": 128,
+          "p95": 0.041631999999999995,
+          "min": 0.039264,
+          "max": 0.173568,
+          "mean": 0.042151749999999995
+        },
+        "cloud.ambient.diagnostic": {
+          "median": 0.06352,
+          "events": 128,
+          "p95": 0.065536,
+          "min": 0.062464,
+          "max": 0.065632,
+          "mean": 0.06386275
+        },
+        "atmosphere.multiple": {
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008416,
+          "min": 0.007808,
+          "max": 0.008704,
+          "mean": 0.00819025
+        },
+        "atmosphere.sky": {
+          "median": 0.081952,
+          "events": 128,
+          "p95": 0.08399999999999999,
+          "min": 0.08144,
+          "max": 0.21375999999999998,
+          "mean": 0.08349625
+        },
+        "atmosphere.lighting": {
+          "median": 0.1168,
+          "events": 128,
+          "p95": 0.11888,
+          "min": 0.116448,
+          "max": 0.249792,
+          "mean": 0.12058674999999999
+        },
+        "cloud.shadow": {
+          "median": 0.8929119999999999,
+          "events": 128,
+          "p95": 1.06032,
+          "min": 0.684032,
+          "max": 1.096064,
+          "mean": 0.8894942499999999
+        },
+        "cloud.shadow.diagnostic": {
+          "median": 0.30108799999999997,
+          "events": 128,
+          "p95": 0.473952,
+          "min": 0.29686399999999996,
+          "max": 0.48268799999999995,
+          "mean": 0.325081
+        },
+        "motion.camera": {
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.040672,
+          "min": 0.033728,
+          "max": 0.042047999999999995,
+          "mean": 0.035311499999999996
+        },
+        "indirect.trace": {
+          "median": 4.55696,
+          "events": 128,
+          "p95": 4.811296,
+          "min": 3.923168,
+          "max": 4.940128,
+          "mean": 4.514095
+        },
+        "sun.trace": {
+          "median": 0.581104,
+          "events": 128,
+          "p95": 0.811264,
+          "min": 0.57424,
+          "max": 0.982912,
+          "mean": 0.6362365
+        },
+        "ray.direct": {
+          "median": 0.096256,
+          "events": 128,
+          "p95": 0.114368,
+          "min": 0.09433599999999999,
+          "max": 0.12102399999999999,
+          "mean": 0.098801
+        },
+        "ray.reflection": {
+          "median": 0.036864,
+          "events": 128,
+          "p95": 0.03712,
+          "min": 0.036544,
+          "max": 0.21375999999999998,
+          "mean": 0.038236
+        },
+        "ray.composite": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020768,
+          "min": 0.020159999999999997,
+          "max": 0.027264,
+          "mean": 0.020555499999999997
+        },
+        "rough.reflection": {
+          "median": 1.87704,
+          "events": 128,
+          "p95": 2.079968,
+          "min": 1.857216,
+          "max": 2.3238399999999997,
+          "mean": 1.9074555
+        },
+        "rough.composite": {
+          "median": 0.02808,
+          "events": 128,
+          "p95": 0.028704,
+          "min": 0.026591999999999998,
+          "max": 0.029023999999999998,
+          "mean": 0.02767725
+        },
+        "water.trace": {
+          "median": 0.12079999999999999,
+          "events": 128,
+          "p95": 0.126976,
+          "min": 0.110496,
+          "max": 0.133344,
+          "mean": 0.12074924999999999
+        },
+        "water.composite": {
+          "median": 0.020463999999999996,
+          "events": 128,
+          "p95": 0.021696,
+          "min": 0.020128,
+          "max": 0.022784,
+          "mean": 0.020590749999999998
+        },
+        "cloud.source.state": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007391999999999999,
+          "min": 0.006176,
+          "max": 0.008095999999999999,
+          "mean": 0.0071055
+        },
+        "cloud.source.light": {
+          "median": 0.11488,
+          "events": 128,
+          "p95": 0.118784,
+          "min": 0.112576,
+          "max": 0.120864,
+          "mean": 0.11554249999999999
+        },
+        "cloud.view": {
+          "median": 0.325632,
+          "events": 128,
+          "p95": 0.33788799999999997,
+          "min": 0.314336,
+          "max": 0.339648,
+          "mean": 0.32656025
+        },
+        "cloud.temporal": {
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010367999999999999,
+          "min": 0.009888,
+          "max": 0.010624,
+          "mean": 0.010232749999999999
+        },
+        "cloud.scattering.diagnostic": {
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.012544,
+          "min": 0.011968,
+          "max": 0.014336,
+          "mean": 0.01236225
+        },
+        "cloud.composite": {
+          "median": 0.145376,
+          "events": 128,
+          "p95": 0.151584,
+          "min": 0.139232,
+          "max": 0.34159999999999996,
+          "mean": 0.14726625
+        },
+        "distant.world": {
+          "median": 0.055231999999999996,
+          "events": 128,
+          "p95": 0.055392,
+          "min": 0.05264,
+          "max": 0.055647999999999996,
+          "mean": 0.05455225
+        },
+        "reconstruction.inputs": {
+          "median": 0.020447999999999997,
+          "events": 128,
+          "p95": 0.020544,
+          "min": 0.019968,
+          "max": 0.0208,
+          "mean": 0.020397
+        },
+        "cloud.reconstruction": {
+          "median": 0.12700799999999998,
+          "events": 128,
+          "p95": 0.129184,
+          "min": 0.12486399999999999,
+          "max": 0.135072,
+          "mean": 0.12742399999999998
+        },
+        "reconstruction.exposure": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007391999999999999,
+          "min": 0.006144,
+          "max": 0.007552,
+          "mean": 0.0070855
+        },
+        "display.histogram": {
+          "median": 0.091168,
+          "events": 128,
+          "p95": 0.09328,
+          "min": 0.09078399999999999,
+          "max": 0.093472,
+          "mean": 0.09195624999999999
+        },
+        "display.meter": {
+          "median": 0.012256,
+          "events": 128,
+          "p95": 0.012384,
+          "min": 0.010208,
+          "max": 0.012608,
+          "mean": 0.0117825
+        },
+        "display.exposure": {
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038176,
+          "min": 0.037024,
+          "max": 0.039008,
+          "mean": 0.0379105
+        },
+        "rr.guides": {
+          "median": 0.09812799999999999,
+          "events": 128,
+          "p95": 0.09856,
+          "min": 0.09529599999999999,
+          "max": 0.100352,
+          "mean": 0.09751349999999999
+        },
+        "native.dlss": {
+          "median": 3.7226559999999997,
+          "events": 128,
+          "p95": 3.7478399999999996,
+          "min": 3.69472,
+          "max": 4.12048,
+          "mean": 3.73263875
+        },
+        "world.total": {
+          "median": 14.299392,
+          "events": 128,
+          "p95": 14.522272,
+          "min": 13.485824,
+          "max": 15.008768,
+          "mean": 14.29104825
+        },
+        "composition.present": {
+          "median": 0.05296,
+          "events": 128,
+          "p95": 0.053503999999999996,
+          "min": 0.052287999999999994,
+          "max": 0.053888,
+          "mean": 0.05297175
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 14.391499999999999,
+      "wallP95Ms": 14.8988,
+      "renderThreadActiveCpuMs": {
+        "p95": 15.625,
+        "p50": 0.0,
+        "max": 15.625,
+        "mean": 2.2145669291338583
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "sunset",
+      "stage": 2,
+      "gpuMs": 14.195921499999999,
+      "wallMs": 14.285186614173227,
+      "fps": 70.0025856860587,
+      "cloudPassesMs": 1.676686,
+      "cloudViewMs": 0.823811,
+      "cloudSourceMs": 0.040071749999999996,
+      "cloudShadowMs": 0.48645875,
+      "cloudCompositeMs": 0.14252299999999998,
+      "cloudHistoryMs": 0.010234749999999999,
+      "presentMs": 0.053453749999999994,
+      "geometrySha256": "549f345563cba8db809bac7d92ee5759565520c13c63e04ec13866286a156381",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-sunset-1/evidence/profile-cloud2-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "median": 0.039807999999999996,
+          "events": 128,
+          "p95": 0.040319999999999995,
+          "min": 0.039264,
+          "max": 0.167712,
+          "mean": 0.04080875
+        },
+        "cloud.ambient.diagnostic": {
+          "median": 0.059424,
+          "events": 128,
+          "p95": 0.061536,
+          "min": 0.059072,
+          "max": 0.192384,
+          "mean": 0.061905249999999995
+        },
+        "atmosphere.multiple": {
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.00848,
+          "min": 0.007679999999999999,
+          "max": 0.136032,
+          "mean": 0.0092075
+        },
+        "atmosphere.sky": {
+          "median": 0.081952,
+          "events": 128,
+          "p95": 0.083968,
+          "min": 0.081472,
+          "max": 0.356832,
+          "mean": 0.08458275
+        },
+        "atmosphere.lighting": {
+          "median": 0.116768,
+          "events": 128,
+          "p95": 0.118976,
+          "min": 0.116352,
+          "max": 0.314208,
+          "mean": 0.12100825
+        },
+        "cloud.shadow": {
+          "median": 0.47568,
+          "events": 128,
+          "p95": 0.60896,
+          "min": 0.470144,
+          "max": 0.634272,
+          "mean": 0.48645875
+        },
+        "cloud.shadow.diagnostic": {
+          "median": 0.226016,
+          "events": 128,
+          "p95": 0.358432,
+          "min": 0.194592,
+          "max": 0.473696,
+          "mean": 0.2341535
+        },
+        "motion.camera": {
+          "median": 0.034816,
+          "events": 128,
+          "p95": 0.040576,
+          "min": 0.034016,
+          "max": 0.2176,
+          "mean": 0.037586999999999995
+        },
+        "indirect.trace": {
+          "median": 4.466784,
+          "events": 128,
+          "p95": 4.722112,
+          "min": 3.9108479999999997,
+          "max": 5.0192,
+          "mean": 4.48202225
+        },
+        "sun.trace": {
+          "median": 0.581152,
+          "events": 128,
+          "p95": 0.806912,
+          "min": 0.572896,
+          "max": 0.930496,
+          "mean": 0.64168775
+        },
+        "ray.direct": {
+          "median": 0.096288,
+          "events": 128,
+          "p95": 0.11631999999999999,
+          "min": 0.094176,
+          "max": 0.274848,
+          "mean": 0.10118825
+        },
+        "ray.reflection": {
+          "median": 0.036864,
+          "events": 128,
+          "p95": 0.037216,
+          "min": 0.036544,
+          "max": 0.052832,
+          "mean": 0.03707575
+        },
+        "ray.composite": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020672,
+          "min": 0.019455999999999998,
+          "max": 0.0248,
+          "mean": 0.0204955
+        },
+        "rough.reflection": {
+          "median": 1.8728159999999998,
+          "events": 128,
+          "p95": 2.089376,
+          "min": 1.851392,
+          "max": 2.3105599999999997,
+          "mean": 1.9192965
+        },
+        "rough.composite": {
+          "median": 0.027072,
+          "events": 128,
+          "p95": 0.028672,
+          "min": 0.026272,
+          "max": 0.028928,
+          "mean": 0.027562
+        },
+        "water.trace": {
+          "median": 0.120768,
+          "events": 128,
+          "p95": 0.126976,
+          "min": 0.11241599999999999,
+          "max": 0.134912,
+          "mean": 0.12057549999999999
+        },
+        "water.composite": {
+          "median": 0.020463999999999996,
+          "events": 128,
+          "p95": 0.020735999999999997,
+          "min": 0.020159999999999997,
+          "max": 0.02256,
+          "mean": 0.020523
+        },
+        "cloud.source.state": {
+          "median": 0.0072,
+          "events": 128,
+          "p95": 0.0073279999999999994,
+          "min": 0.006144,
+          "max": 0.007584,
+          "mean": 0.00712875
+        },
+        "cloud.source.light": {
+          "median": 0.039168,
+          "events": 128,
+          "p95": 0.042943999999999996,
+          "min": 0.038624,
+          "max": 0.045056,
+          "mean": 0.040071749999999996
+        },
+        "cloud.view": {
+          "median": 0.8164799999999999,
+          "events": 128,
+          "p95": 0.876512,
+          "min": 0.77008,
+          "max": 0.927744,
+          "mean": 0.823811
+        },
+        "cloud.temporal": {
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.010336,
+          "min": 0.009984,
+          "max": 0.010591999999999999,
+          "mean": 0.010234749999999999
+        },
+        "cloud.scattering.diagnostic": {
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.01392,
+          "min": 0.012064,
+          "max": 0.014367999999999999,
+          "mean": 0.01241625
+        },
+        "cloud.composite": {
+          "median": 0.141376,
+          "events": 128,
+          "p95": 0.147424,
+          "min": 0.137216,
+          "max": 0.149472,
+          "mean": 0.14252299999999998
+        },
+        "distant.world": {
+          "median": 0.05358399999999999,
+          "events": 128,
+          "p95": 0.05536,
+          "min": 0.053087999999999996,
+          "max": 0.056608,
+          "mean": 0.05429975
+        },
+        "reconstruction.inputs": {
+          "median": 0.020416,
+          "events": 128,
+          "p95": 0.020544,
+          "min": 0.019808,
+          "max": 0.0208,
+          "mean": 0.020373
+        },
+        "cloud.reconstruction": {
+          "median": 0.12486399999999999,
+          "events": 128,
+          "p95": 0.126976,
+          "min": 0.120768,
+          "max": 0.315168,
+          "mean": 0.12564925
+        },
+        "reconstruction.exposure": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007264,
+          "min": 0.006144,
+          "max": 0.007424,
+          "mean": 0.007017
+        },
+        "display.histogram": {
+          "median": 0.091168,
+          "events": 128,
+          "p95": 0.093248,
+          "min": 0.09024,
+          "max": 0.093536,
+          "mean": 0.09178775
+        },
+        "display.meter": {
+          "median": 0.012208,
+          "events": 128,
+          "p95": 0.012416,
+          "min": 0.010176,
+          "max": 0.012608,
+          "mean": 0.0116055
+        },
+        "display.exposure": {
+          "median": 0.037856,
+          "events": 128,
+          "p95": 0.038272,
+          "min": 0.037568,
+          "max": 0.038976,
+          "mean": 0.0379225
+        },
+        "rr.guides": {
+          "median": 0.096752,
+          "events": 128,
+          "p95": 0.098496,
+          "min": 0.094368,
+          "max": 0.098688,
+          "mean": 0.09716775
+        },
+        "native.dlss": {
+          "median": 3.7225599999999996,
+          "events": 128,
+          "p95": 3.7505279999999996,
+          "min": 3.693568,
+          "max": 3.75712,
+          "mean": 3.72776475
+        },
+        "world.total": {
+          "median": 14.190719999999999,
+          "events": 128,
+          "p95": 14.348256,
+          "min": 13.502431999999999,
+          "max": 15.155263999999999,
+          "mean": 14.195921499999999
+        },
+        "composition.present": {
+          "median": 0.053472,
+          "events": 128,
+          "p95": 0.054048,
+          "min": 0.052416,
+          "max": 0.054335999999999995,
+          "mean": 0.053453749999999994
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 14.2831,
+      "wallP95Ms": 14.7639,
+      "renderThreadActiveCpuMs": {
+        "p95": 15.625,
+        "p50": 0.0,
+        "max": 31.25,
+        "mean": 2.2145669291338583
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    },
+    {
+      "scene": "sunset",
+      "stage": 3,
+      "gpuMs": 14.1766715,
+      "wallMs": 14.27059527559055,
+      "fps": 70.0741616371443,
+      "cloudPassesMs": 1.6075567499999999,
+      "cloudViewMs": 0.8162737499999999,
+      "cloudSourceMs": 0.040468,
+      "cloudShadowMs": 0.46104799999999996,
+      "cloudCompositeMs": 0.15416649999999998,
+      "cloudHistoryMs": 0.0104685,
+      "presentMs": 0.088582,
+      "geometrySha256": "549f345563cba8db809bac7d92ee5759565520c13c63e04ec13866286a156381",
+      "image": "evidence/cloud-art-20261019/qa-cloud-art-guard-sunset-1/evidence/profile-cloud3-static.png",
+      "passes": {
+        "cloud.art.noise": {
+          "median": 0.039791999999999994,
+          "events": 128,
+          "p95": 0.040319999999999995,
+          "min": 0.039231999999999996,
+          "max": 0.041728,
+          "mean": 0.03983825
+        },
+        "cloud.ambient.diagnostic": {
+          "median": 0.059424,
+          "events": 128,
+          "p95": 0.061599999999999995,
+          "min": 0.059039999999999995,
+          "max": 0.19225599999999998,
+          "mean": 0.062956
+        },
+        "atmosphere.multiple": {
+          "median": 0.008192,
+          "events": 128,
+          "p95": 0.008447999999999999,
+          "min": 0.006208,
+          "max": 0.00864,
+          "mean": 0.00817275
+        },
+        "atmosphere.sky": {
+          "median": 0.081984,
+          "events": 128,
+          "p95": 0.084064,
+          "min": 0.081536,
+          "max": 0.21443199999999998,
+          "mean": 0.084615
+        },
+        "atmosphere.lighting": {
+          "median": 0.116864,
+          "events": 128,
+          "p95": 0.11891199999999999,
+          "min": 0.11648,
+          "max": 0.309056,
+          "mean": 0.12113175
+        },
+        "cloud.shadow": {
+          "median": 0.454688,
+          "events": 128,
+          "p95": 0.461952,
+          "min": 0.45024,
+          "max": 0.6272639999999999,
+          "mean": 0.46104799999999996
+        },
+        "cloud.shadow.diagnostic": {
+          "median": 0.196432,
+          "events": 128,
+          "p95": 0.19849599999999998,
+          "min": 0.19414399999999998,
+          "max": 0.37468799999999997,
+          "mean": 0.20363199999999998
+        },
+        "motion.camera": {
+          "median": 0.034783999999999995,
+          "events": 128,
+          "p95": 0.035199999999999995,
+          "min": 0.034304,
+          "max": 0.167936,
+          "mean": 0.035986
+        },
+        "indirect.trace": {
+          "median": 4.621727999999999,
+          "events": 128,
+          "p95": 4.830016,
+          "min": 3.91472,
+          "max": 4.916608,
+          "mean": 4.5104412499999995
+        },
+        "sun.trace": {
+          "median": 0.582384,
+          "events": 128,
+          "p95": 0.7998719999999999,
+          "min": 0.574912,
+          "max": 0.9328639999999999,
+          "mean": 0.6396495
+        },
+        "ray.direct": {
+          "median": 0.096288,
+          "events": 128,
+          "p95": 0.11830399999999999,
+          "min": 0.09584,
+          "max": 0.244576,
+          "mean": 0.10126425
+        },
+        "ray.reflection": {
+          "median": 0.03888,
+          "events": 128,
+          "p95": 0.039008,
+          "min": 0.036767999999999995,
+          "max": 0.226848,
+          "mean": 0.039728
+        },
+        "ray.composite": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020768,
+          "min": 0.02,
+          "max": 0.15334399999999998,
+          "mean": 0.022573749999999997
+        },
+        "rough.reflection": {
+          "median": 1.8790399999999998,
+          "events": 128,
+          "p95": 2.2990079999999997,
+          "min": 1.8552959999999998,
+          "max": 2.34336,
+          "mean": 1.9434585
+        },
+        "rough.composite": {
+          "median": 0.026976,
+          "events": 128,
+          "p95": 0.028672,
+          "min": 0.02656,
+          "max": 0.029056,
+          "mean": 0.02757575
+        },
+        "water.trace": {
+          "median": 0.12079999999999999,
+          "events": 128,
+          "p95": 0.12700799999999998,
+          "min": 0.11254399999999999,
+          "max": 0.13516799999999998,
+          "mean": 0.1206975
+        },
+        "water.composite": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.022208,
+          "min": 0.020191999999999998,
+          "max": 0.022496,
+          "mean": 0.020617
+        },
+        "cloud.source.state": {
+          "median": 0.007168,
+          "events": 128,
+          "p95": 0.007391999999999999,
+          "min": 0.0060799999999999995,
+          "max": 0.007552,
+          "mean": 0.0070455
+        },
+        "cloud.source.light": {
+          "median": 0.040928,
+          "events": 128,
+          "p95": 0.041152,
+          "min": 0.038688,
+          "max": 0.041248,
+          "mean": 0.040468
+        },
+        "cloud.view": {
+          "median": 0.813024,
+          "events": 128,
+          "p95": 0.8580479999999999,
+          "min": 0.761856,
+          "max": 0.9338559999999999,
+          "mean": 0.8162737499999999
+        },
+        "cloud.temporal": {
+          "median": 0.010239999999999999,
+          "events": 128,
+          "p95": 0.012288,
+          "min": 0.009951999999999999,
+          "max": 0.01232,
+          "mean": 0.0104685
+        },
+        "cloud.scattering.diagnostic": {
+          "median": 0.01232,
+          "events": 128,
+          "p95": 0.014336,
+          "min": 0.012095999999999999,
+          "max": 0.014464,
+          "mean": 0.01264525
+        },
+        "cloud.composite": {
+          "median": 0.15361599999999997,
+          "events": 128,
+          "p95": 0.158656,
+          "min": 0.149472,
+          "max": 0.159904,
+          "mean": 0.15416649999999998
+        },
+        "distant.world": {
+          "median": 0.053056,
+          "events": 128,
+          "p95": 0.053312,
+          "min": 0.050912,
+          "max": 0.053632,
+          "mean": 0.05248825
+        },
+        "reconstruction.inputs": {
+          "median": 0.020479999999999998,
+          "events": 128,
+          "p95": 0.020704,
+          "min": 0.02,
+          "max": 0.020928,
+          "mean": 0.020462499999999998
+        },
+        "cloud.reconstruction": {
+          "median": 0.077856,
+          "events": 128,
+          "p95": 0.079936,
+          "min": 0.075712,
+          "max": 0.08003199999999999,
+          "mean": 0.07824824999999999
+        },
+        "reconstruction.exposure": {
+          "median": 0.007136,
+          "events": 128,
+          "p95": 0.007232,
+          "min": 0.006111999999999999,
+          "max": 0.007424,
+          "mean": 0.007017499999999999
+        },
+        "display.histogram": {
+          "median": 0.09748799999999999,
+          "events": 128,
+          "p95": 0.099392,
+          "min": 0.096288,
+          "max": 0.100352,
+          "mean": 0.09821424999999999
+        },
+        "display.meter": {
+          "median": 0.012288,
+          "events": 128,
+          "p95": 0.012447999999999999,
+          "min": 0.011935999999999999,
+          "max": 0.01264,
+          "mean": 0.012281
+        },
+        "display.exposure": {
+          "median": 0.037872,
+          "events": 128,
+          "p95": 0.038911999999999995,
+          "min": 0.037536,
+          "max": 0.039872,
+          "mean": 0.03794375
+        },
+        "rr.guides": {
+          "median": 0.094608,
+          "events": 128,
+          "p95": 0.09648,
+          "min": 0.09232,
+          "max": 0.098496,
+          "mean": 0.095278
+        },
+        "native.dlss": {
+          "median": 3.7056959999999997,
+          "events": 128,
+          "p95": 3.7346559999999998,
+          "min": 3.679424,
+          "max": 4.116064,
+          "mean": 3.7200292499999996
+        },
+        "world.total": {
+          "median": 14.147967999999999,
+          "events": 128,
+          "p95": 14.37664,
+          "min": 13.33152,
+          "max": 14.972031999999999,
+          "mean": 14.1766715
+        },
+        "composition.present": {
+          "median": 0.088528,
+          "events": 128,
+          "p95": 0.08928,
+          "min": 0.087488,
+          "max": 0.08995199999999999,
+          "mean": 0.088582
+        },
+        "geometry.upload": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "blas.build": {
+          "events": 0,
+          "mean": 0.0
+        },
+        "tlas.build": {
+          "events": 0,
+          "mean": 0.0
+        }
+      },
+      "wallP50Ms": 14.2891,
+      "wallP95Ms": 14.7092,
+      "renderThreadActiveCpuMs": {
+        "p95": 15.625,
+        "p50": 0.0,
+        "max": 15.625,
+        "mean": 2.4606299212598426
+      },
+      "rayCounterDelta": {
+        "blasBuilds": 0,
+        "tlasBuilds": 0,
+        "blasUpdates": 0,
+        "tlasUpdates": 0
+      }
+    }
+  ],
+  "motion": {
+    "day": {
+      "sameGeometry": true,
+      "matchedPhysicalUniforms": true,
+      "captureFrames": 8,
+      "scope": "Adjacent prescribed camera frames, frozen weather/time. Readbacks are untimed and GIF is slowed to 100 ms/frame, not runtime FPS. Does not prove all camera speeds or cloud animation are artifact-free.",
+      "reports": [
+        {
+          "phase": "reference",
+          "graphReloadOrdinal": 1,
+          "sequence": "motion",
+          "sourceGeometrySha256": "914a536476192018b6bcca71401fe339751efbcf0ae3975c40de6470a69bd8a6",
+          "warmupFrames": 128,
+          "prepMotionFrames": 256,
+          "preparationStableFrames": 16,
+          "captureFrames": 8,
+          "frames": [
+            {
+              "index": 0,
+              "logicalFrame": 128,
+              "historyValid": true,
+              "pose": [
+                -130.97801932600117,
+                76.0,
+                -70.45603865200235,
+                153.434948822922
+              ],
+              "reconstructionFramesRecorded": 402,
+              "nativeEvaluations": 402,
+              "uniformSha256": "24b725e6fb96f565a1da7ae3f7a16afc8245bdcbb77bc55e6bc93d6164fecfac",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.0,
+                -0.16666666,
+                -0.484375,
+                0.29012346
+              ]
+            },
+            {
+              "index": 1,
+              "logicalFrame": 129,
+              "historyValid": true,
+              "pose": [
+                -130.87988397734634,
+                76.0,
+                -70.40697097767493,
+                154.023760914851
+              ],
+              "reconstructionFramesRecorded": 403,
+              "nativeEvaluations": 403,
+              "uniformSha256": "f6b05c6b680426e1a1fab9e89e2c31b05bc431f2f50135a1997790402fff6a26",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.25,
+                0.16666669,
+                0.0,
+                -0.16666666
+              ]
+            },
+            {
+              "index": 2,
+              "logicalFrame": 130,
+              "historyValid": true,
+              "pose": [
+                -130.78198504534205,
+                76.0,
+                -70.35802151167279,
+                154.61115450687672
+              ],
+              "reconstructionFramesRecorded": 404,
+              "nativeEvaluations": 404,
+              "uniformSha256": "d21d3b70fccdfb76e3be80ee39d1558e4f21f30e3e8c797328879ca24b3f3e69",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.25,
+                -0.3888889,
+                -0.25,
+                0.16666669
+              ]
+            },
+            {
+              "index": 3,
+              "logicalFrame": 131,
+              "historyValid": true,
+              "pose": [
+                -130.68455837709044,
+                76.0,
+                -70.30930817754698,
+                155.19571451638635
+              ],
+              "reconstructionFramesRecorded": 405,
+              "nativeEvaluations": 405,
+              "uniformSha256": "46eb28644f1a5491d242d008a8a20cb0af7ace2def64836c606b8993e055a2af",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.375,
+                -0.055555552,
+                0.25,
+                -0.3888889
+              ]
+            },
+            {
+              "index": 4,
+              "logicalFrame": 132,
+              "historyValid": true,
+              "pose": [
+                -130.58783868196892,
+                76.0,
+                -70.26094832998622,
+                155.77603268711553
+              ],
+              "reconstructionFramesRecorded": 406,
+              "nativeEvaluations": 406,
+              "uniformSha256": "a394b21eb864ff81751d90c2fe15f68b8172c85bd4f97dc3df829bccf5b24871",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.125,
+                0.2777778,
+                -0.375,
+                -0.055555552
+              ]
+            },
+            {
+              "index": 5,
+              "logicalFrame": 133,
+              "historyValid": true,
+              "pose": [
+                -130.49205896619463,
+                76.0,
+                -70.21305847209908,
+                156.35071098176115
+              ],
+              "reconstructionFramesRecorded": 407,
+              "nativeEvaluations": 407,
+              "uniformSha256": "3632b55479061f9307855e1dd53ae1300822d77bf0a4d0dce4d72c2bf2477c49",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.125,
+                -0.2777778,
+                0.125,
+                0.2777778
+              ]
+            },
+            {
+              "index": 6,
+              "logicalFrame": 134,
+              "historyValid": true,
+              "pose": [
+                -130.39744997149225,
+                76.0,
+                -70.16575397474789,
+                156.91836494997554
+              ],
+              "reconstructionFramesRecorded": 408,
+              "nativeEvaluations": 408,
+              "uniformSha256": "c6fe6d21f3bc022dca0263d1c2cde12ef7ec7d9b1cecc18361ff455930ff80ad",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.375,
+                0.055555582,
+                -0.125,
+                -0.2777778
+              ]
+            },
+            {
+              "index": 7,
+              "logicalFrame": 135,
+              "historyValid": true,
+              "pose": [
+                -130.30423961921673,
+                76.0,
+                -70.11914879861013,
+                157.47762706362863
+              ],
+              "reconstructionFramesRecorded": 409,
+              "nativeEvaluations": 409,
+              "uniformSha256": "fc15da2f8b214665814f5dfdc618ade617aab4c43c3bac46aa05e0a5d5b681c9",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.4375,
+                0.3888889,
+                0.375,
+                0.055555582
+              ]
+            }
+          ],
+          "inputFormats": {
+            "cloud.view": "RGBA16_FLOAT",
+            "cloud.accum": "RGBA16_FLOAT",
+            "cloud.geometry": "RGBA32_FLOAT",
+            "cloud.compose.coefficients": "RGBA32_FLOAT",
+            "distant.world.hdr": "RGBA16_FLOAT",
+            "cloud.reconstruction.depth": "R32_FLOAT",
+            "cloud.reconstruction.motion": "RG16_FLOAT",
+            "reconstruction.exposure": "R32_FLOAT",
+            "display.exposure": "RGBA32_FLOAT",
+            "reconstruction.depth": "R32_FLOAT"
+          },
+          "reconstruction": {
+            "outputWidth": 2560,
+            "motionResource": "cloud.reconstruction.motion",
+            "evaluations": 1380,
+            "depthResource": "cloud.reconstruction.depth",
+            "displayToneMapper": 2,
+            "outputHeight": 1440,
+            "inputHeight": 960,
+            "colorResource": "distant.world.hdr",
+            "mode": "dlss-ray-reconstruction",
+            "displayFormat": "RGBA8_UNORM",
+            "exposureResource": "reconstruction.exposure",
+            "inputWidth": 1707
+          },
+          "uniformComparisonExcludedByteRanges": [
+            [
+              1120,
+              1132
+            ],
+            [
+              1144,
+              1152
+            ]
+          ],
+          "uniformComparisonScope": "All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification."
+        },
+        {
+          "phase": "candidate",
+          "graphReloadOrdinal": 2,
+          "sequence": "motion",
+          "sourceGeometrySha256": "914a536476192018b6bcca71401fe339751efbcf0ae3975c40de6470a69bd8a6",
+          "warmupFrames": 128,
+          "prepMotionFrames": 256,
+          "preparationStableFrames": 16,
+          "captureFrames": 8,
+          "frames": [
+            {
+              "index": 0,
+              "logicalFrame": 128,
+              "historyValid": true,
+              "pose": [
+                -130.97801932600117,
+                76.0,
+                -70.45603865200235,
+                153.434948822922
+              ],
+              "reconstructionFramesRecorded": 402,
+              "nativeEvaluations": 402,
+              "uniformSha256": "a7c0798c1170a9d40ffd1629745db69ffe75f65af3d59040ecedf1362b0a2b91",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.0,
+                -0.16666666,
+                -0.484375,
+                0.29012346
+              ]
+            },
+            {
+              "index": 1,
+              "logicalFrame": 129,
+              "historyValid": true,
+              "pose": [
+                -130.87988397734634,
+                76.0,
+                -70.40697097767493,
+                154.023760914851
+              ],
+              "reconstructionFramesRecorded": 403,
+              "nativeEvaluations": 403,
+              "uniformSha256": "c1f3fa13b4c3bf1702c9bd05a86f7c81f55c25b87309e3916945487e5f12bdae",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.25,
+                0.16666669,
+                0.0,
+                -0.16666666
+              ]
+            },
+            {
+              "index": 2,
+              "logicalFrame": 130,
+              "historyValid": true,
+              "pose": [
+                -130.78198504534205,
+                76.0,
+                -70.35802151167279,
+                154.61115450687672
+              ],
+              "reconstructionFramesRecorded": 404,
+              "nativeEvaluations": 404,
+              "uniformSha256": "690d9b61c18db784d45e35a7483e5aec443ae854e7dd65fad4aef046e6d19098",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.25,
+                -0.3888889,
+                -0.25,
+                0.16666669
+              ]
+            },
+            {
+              "index": 3,
+              "logicalFrame": 131,
+              "historyValid": true,
+              "pose": [
+                -130.68455837709044,
+                76.0,
+                -70.30930817754698,
+                155.19571451638635
+              ],
+              "reconstructionFramesRecorded": 405,
+              "nativeEvaluations": 405,
+              "uniformSha256": "dec543a0d1bf9c2f291421cb69a5ff1638ccdf0840896ee8bfc2bbe182aa2078",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.375,
+                -0.055555552,
+                0.25,
+                -0.3888889
+              ]
+            },
+            {
+              "index": 4,
+              "logicalFrame": 132,
+              "historyValid": true,
+              "pose": [
+                -130.58783868196892,
+                76.0,
+                -70.26094832998622,
+                155.77603268711553
+              ],
+              "reconstructionFramesRecorded": 406,
+              "nativeEvaluations": 406,
+              "uniformSha256": "32f4a4d892b20b95d3a9b868743ea6e2c7baa3671e37223b0614d1fea033278a",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.125,
+                0.2777778,
+                -0.375,
+                -0.055555552
+              ]
+            },
+            {
+              "index": 5,
+              "logicalFrame": 133,
+              "historyValid": true,
+              "pose": [
+                -130.49205896619463,
+                76.0,
+                -70.21305847209908,
+                156.35071098176115
+              ],
+              "reconstructionFramesRecorded": 407,
+              "nativeEvaluations": 407,
+              "uniformSha256": "f550bf34f0c6aac013bf6ed753f95fb72fc4cc0219ea33b633963bceb9efa7fb",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.125,
+                -0.2777778,
+                0.125,
+                0.2777778
+              ]
+            },
+            {
+              "index": 6,
+              "logicalFrame": 134,
+              "historyValid": true,
+              "pose": [
+                -130.39744997149225,
+                76.0,
+                -70.16575397474789,
+                156.91836494997554
+              ],
+              "reconstructionFramesRecorded": 408,
+              "nativeEvaluations": 408,
+              "uniformSha256": "b933141979fc41de010e693729fe1790c0e0c152b9c2efe4c6d558dd16cb9666",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.375,
+                0.055555582,
+                -0.125,
+                -0.2777778
+              ]
+            },
+            {
+              "index": 7,
+              "logicalFrame": 135,
+              "historyValid": true,
+              "pose": [
+                -130.30423961921673,
+                76.0,
+                -70.11914879861013,
+                157.47762706362863
+              ],
+              "reconstructionFramesRecorded": 409,
+              "nativeEvaluations": 409,
+              "uniformSha256": "226acef4c3975e7e62be6f02f606134bc15085c9ff118172b739196d6fd2c02b",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.4375,
+                0.3888889,
+                0.375,
+                0.055555582
+              ]
+            }
+          ],
+          "inputFormats": {
+            "cloud.view": "RGBA16_FLOAT",
+            "cloud.accum": "RGBA16_FLOAT",
+            "cloud.geometry": "RGBA32_FLOAT",
+            "cloud.compose.coefficients": "RGBA32_FLOAT",
+            "distant.world.hdr": "RGBA16_FLOAT",
+            "cloud.reconstruction.depth": "R32_FLOAT",
+            "cloud.reconstruction.motion": "RG16_FLOAT",
+            "reconstruction.exposure": "R32_FLOAT",
+            "display.exposure": "RGBA32_FLOAT",
+            "reconstruction.depth": "R32_FLOAT"
+          },
+          "reconstruction": {
+            "outputWidth": 2560,
+            "motionResource": "cloud.reconstruction.motion",
+            "evaluations": 1587,
+            "depthResource": "cloud.reconstruction.depth",
+            "displayToneMapper": 2,
+            "outputHeight": 1440,
+            "inputHeight": 960,
+            "colorResource": "distant.world.hdr",
+            "mode": "dlss-ray-reconstruction",
+            "displayFormat": "RGBA8_UNORM",
+            "exposureResource": "reconstruction.exposure",
+            "inputWidth": 1707
+          },
+          "uniformComparisonExcludedByteRanges": [
+            [
+              1120,
+              1132
+            ],
+            [
+              1144,
+              1152
+            ]
+          ],
+          "uniformComparisonScope": "All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification."
+        }
+      ]
+    },
+    "sunset": {
+      "sameGeometry": true,
+      "matchedPhysicalUniforms": true,
+      "captureFrames": 8,
+      "scope": "Adjacent prescribed camera frames, frozen weather/time. Readbacks are untimed and GIF is slowed to 100 ms/frame, not runtime FPS. Does not prove all camera speeds or cloud animation are artifact-free.",
+      "reports": [
+        {
+          "phase": "reference",
+          "graphReloadOrdinal": 1,
+          "sequence": "motion",
+          "sourceGeometrySha256": "d2c9333adb17156aa0057e1df4752154fa5c0144f3cd0fe840ff3d9fa4e79f23",
+          "warmupFrames": 128,
+          "prepMotionFrames": 256,
+          "preparationStableFrames": 16,
+          "captureFrames": 8,
+          "frames": [
+            {
+              "index": 0,
+              "logicalFrame": 128,
+              "historyValid": true,
+              "pose": [
+                -130.97801932600117,
+                76.0,
+                -70.45603865200235,
+                153.434948822922
+              ],
+              "reconstructionFramesRecorded": 402,
+              "nativeEvaluations": 402,
+              "uniformSha256": "9dbdf383a6f26ac3d274774bc1f05e2d9f9e533f8cfb05a57fe5c1dc8d5113ae",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.0,
+                -0.16666666,
+                -0.484375,
+                0.29012346
+              ]
+            },
+            {
+              "index": 1,
+              "logicalFrame": 129,
+              "historyValid": true,
+              "pose": [
+                -130.87988397734634,
+                76.0,
+                -70.40697097767493,
+                154.023760914851
+              ],
+              "reconstructionFramesRecorded": 403,
+              "nativeEvaluations": 403,
+              "uniformSha256": "5741aeb49d6aec8763b5baec13f5bbe096d53219109954febcbba027af0ce29f",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.25,
+                0.16666669,
+                0.0,
+                -0.16666666
+              ]
+            },
+            {
+              "index": 2,
+              "logicalFrame": 130,
+              "historyValid": true,
+              "pose": [
+                -130.78198504534205,
+                76.0,
+                -70.35802151167279,
+                154.61115450687672
+              ],
+              "reconstructionFramesRecorded": 404,
+              "nativeEvaluations": 404,
+              "uniformSha256": "65791671bfaca2e5da92eb121ed93c7d17b88eccf799085af2e7cdcb6a6ad2e0",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.25,
+                -0.3888889,
+                -0.25,
+                0.16666669
+              ]
+            },
+            {
+              "index": 3,
+              "logicalFrame": 131,
+              "historyValid": true,
+              "pose": [
+                -130.68455837709044,
+                76.0,
+                -70.30930817754698,
+                155.19571451638635
+              ],
+              "reconstructionFramesRecorded": 405,
+              "nativeEvaluations": 405,
+              "uniformSha256": "e8f16e19068a856b9786e9a0f99b7a6cecdc8048b4a54b0e6f1adaa4113b5145",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.375,
+                -0.055555552,
+                0.25,
+                -0.3888889
+              ]
+            },
+            {
+              "index": 4,
+              "logicalFrame": 132,
+              "historyValid": true,
+              "pose": [
+                -130.58783868196892,
+                76.0,
+                -70.26094832998622,
+                155.77603268711553
+              ],
+              "reconstructionFramesRecorded": 406,
+              "nativeEvaluations": 406,
+              "uniformSha256": "e77793e0a63f035813d7ba40522f6f9d131637e0fe42c6f062fbcf9b31f44465",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.125,
+                0.2777778,
+                -0.375,
+                -0.055555552
+              ]
+            },
+            {
+              "index": 5,
+              "logicalFrame": 133,
+              "historyValid": true,
+              "pose": [
+                -130.49205896619463,
+                76.0,
+                -70.21305847209908,
+                156.35071098176115
+              ],
+              "reconstructionFramesRecorded": 407,
+              "nativeEvaluations": 407,
+              "uniformSha256": "980fc85a16cb80999b864474a91c19027426013036c598db37c25c5c5a5f93c1",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.125,
+                -0.2777778,
+                0.125,
+                0.2777778
+              ]
+            },
+            {
+              "index": 6,
+              "logicalFrame": 134,
+              "historyValid": true,
+              "pose": [
+                -130.39744997149225,
+                76.0,
+                -70.16575397474789,
+                156.91836494997554
+              ],
+              "reconstructionFramesRecorded": 408,
+              "nativeEvaluations": 408,
+              "uniformSha256": "0415d8a100dd6aeae4649847bd0c5f9efb5c4e56daa3eef19b95639bcd8d799f",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.375,
+                0.055555582,
+                -0.125,
+                -0.2777778
+              ]
+            },
+            {
+              "index": 7,
+              "logicalFrame": 135,
+              "historyValid": true,
+              "pose": [
+                -130.30423961921673,
+                76.0,
+                -70.11914879861013,
+                157.47762706362863
+              ],
+              "reconstructionFramesRecorded": 409,
+              "nativeEvaluations": 409,
+              "uniformSha256": "a92d9d19139de9eb801c78a838b13d841a5285084a889c18a45872c7d548002b",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.4375,
+                0.3888889,
+                0.375,
+                0.055555582
+              ]
+            }
+          ],
+          "inputFormats": {
+            "cloud.view": "RGBA16_FLOAT",
+            "cloud.accum": "RGBA16_FLOAT",
+            "cloud.geometry": "RGBA32_FLOAT",
+            "cloud.compose.coefficients": "RGBA32_FLOAT",
+            "distant.world.hdr": "RGBA16_FLOAT",
+            "cloud.reconstruction.depth": "R32_FLOAT",
+            "cloud.reconstruction.motion": "RG16_FLOAT",
+            "reconstruction.exposure": "R32_FLOAT",
+            "display.exposure": "RGBA32_FLOAT",
+            "reconstruction.depth": "R32_FLOAT"
+          },
+          "reconstruction": {
+            "inputWidth": 1707,
+            "outputWidth": 2560,
+            "motionResource": "cloud.reconstruction.motion",
+            "evaluations": 1310,
+            "depthResource": "cloud.reconstruction.depth",
+            "displayToneMapper": 2,
+            "outputHeight": 1440,
+            "inputHeight": 960,
+            "colorResource": "distant.world.hdr",
+            "mode": "dlss-ray-reconstruction",
+            "displayFormat": "RGBA8_UNORM",
+            "exposureResource": "reconstruction.exposure"
+          },
+          "uniformComparisonExcludedByteRanges": [
+            [
+              1120,
+              1132
+            ],
+            [
+              1144,
+              1152
+            ]
+          ],
+          "uniformComparisonScope": "All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification."
+        },
+        {
+          "phase": "candidate",
+          "graphReloadOrdinal": 2,
+          "sequence": "motion",
+          "sourceGeometrySha256": "d2c9333adb17156aa0057e1df4752154fa5c0144f3cd0fe840ff3d9fa4e79f23",
+          "warmupFrames": 128,
+          "prepMotionFrames": 256,
+          "preparationStableFrames": 16,
+          "captureFrames": 8,
+          "frames": [
+            {
+              "index": 0,
+              "logicalFrame": 128,
+              "historyValid": true,
+              "pose": [
+                -130.97801932600117,
+                76.0,
+                -70.45603865200235,
+                153.434948822922
+              ],
+              "reconstructionFramesRecorded": 402,
+              "nativeEvaluations": 402,
+              "uniformSha256": "9f7b83185f1537cc5b96615f7d9d897c9c232a4017f5af441493b1936a02c24a",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.0,
+                -0.16666666,
+                -0.484375,
+                0.29012346
+              ]
+            },
+            {
+              "index": 1,
+              "logicalFrame": 129,
+              "historyValid": true,
+              "pose": [
+                -130.87988397734634,
+                76.0,
+                -70.40697097767493,
+                154.023760914851
+              ],
+              "reconstructionFramesRecorded": 403,
+              "nativeEvaluations": 403,
+              "uniformSha256": "bfd7592ffc4463985b0baff5f98a18c7d098617e77972d6eaa587517c7a7c32c",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.25,
+                0.16666669,
+                0.0,
+                -0.16666666
+              ]
+            },
+            {
+              "index": 2,
+              "logicalFrame": 130,
+              "historyValid": true,
+              "pose": [
+                -130.78198504534205,
+                76.0,
+                -70.35802151167279,
+                154.61115450687672
+              ],
+              "reconstructionFramesRecorded": 404,
+              "nativeEvaluations": 404,
+              "uniformSha256": "b7feb847c7e9615cfbf80be4cb502b65229a0cabc6c5370af1c7e290fa75b3ee",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.25,
+                -0.3888889,
+                -0.25,
+                0.16666669
+              ]
+            },
+            {
+              "index": 3,
+              "logicalFrame": 131,
+              "historyValid": true,
+              "pose": [
+                -130.68455837709044,
+                76.0,
+                -70.30930817754698,
+                155.19571451638635
+              ],
+              "reconstructionFramesRecorded": 405,
+              "nativeEvaluations": 405,
+              "uniformSha256": "7449142141f44cb320deae69231ab3e509da37b94ad4ba876fc38c6fabc7d7e1",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.375,
+                -0.055555552,
+                0.25,
+                -0.3888889
+              ]
+            },
+            {
+              "index": 4,
+              "logicalFrame": 132,
+              "historyValid": true,
+              "pose": [
+                -130.58783868196892,
+                76.0,
+                -70.26094832998622,
+                155.77603268711553
+              ],
+              "reconstructionFramesRecorded": 406,
+              "nativeEvaluations": 406,
+              "uniformSha256": "9b71342e6f5aab162d836d71199a45df8cb04ce13b8c364fad246b45f719e2ab",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.125,
+                0.2777778,
+                -0.375,
+                -0.055555552
+              ]
+            },
+            {
+              "index": 5,
+              "logicalFrame": 133,
+              "historyValid": true,
+              "pose": [
+                -130.49205896619463,
+                76.0,
+                -70.21305847209908,
+                156.35071098176115
+              ],
+              "reconstructionFramesRecorded": 407,
+              "nativeEvaluations": 407,
+              "uniformSha256": "96ad7c6a199b625cd120c23c5e9d61bf8dec7867a2e9177ef941129afc4e7893",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.125,
+                -0.2777778,
+                0.125,
+                0.2777778
+              ]
+            },
+            {
+              "index": 6,
+              "logicalFrame": 134,
+              "historyValid": true,
+              "pose": [
+                -130.39744997149225,
+                76.0,
+                -70.16575397474789,
+                156.91836494997554
+              ],
+              "reconstructionFramesRecorded": 408,
+              "nativeEvaluations": 408,
+              "uniformSha256": "0a4d331ac01bae2695ccf505e3bc4a2ca9add310113f0dd5d731e548e9a0f292",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                0.375,
+                0.055555582,
+                -0.125,
+                -0.2777778
+              ]
+            },
+            {
+              "index": 7,
+              "logicalFrame": 135,
+              "historyValid": true,
+              "pose": [
+                -130.30423961921673,
+                76.0,
+                -70.11914879861013,
+                157.47762706362863
+              ],
+              "reconstructionFramesRecorded": 409,
+              "nativeEvaluations": 409,
+              "uniformSha256": "60a83be89c5db94d09c16ee494aaa7a4efd195856380579d664789258a0b13c6",
+              "uniformsMatchReferenceOutsideAsIdentity": true,
+              "currentPreviousJitter": [
+                -0.4375,
+                0.3888889,
+                0.375,
+                0.055555582
+              ]
+            }
+          ],
+          "inputFormats": {
+            "cloud.view": "RGBA16_FLOAT",
+            "cloud.accum": "RGBA16_FLOAT",
+            "cloud.geometry": "RGBA32_FLOAT",
+            "cloud.compose.coefficients": "RGBA32_FLOAT",
+            "distant.world.hdr": "RGBA16_FLOAT",
+            "cloud.reconstruction.depth": "R32_FLOAT",
+            "cloud.reconstruction.motion": "RG16_FLOAT",
+            "reconstruction.exposure": "R32_FLOAT",
+            "display.exposure": "RGBA32_FLOAT",
+            "reconstruction.depth": "R32_FLOAT"
+          },
+          "reconstruction": {
+            "inputWidth": 1707,
+            "outputWidth": 2560,
+            "motionResource": "cloud.reconstruction.motion",
+            "evaluations": 1506,
+            "depthResource": "cloud.reconstruction.depth",
+            "displayToneMapper": 2,
+            "outputHeight": 1440,
+            "inputHeight": 960,
+            "colorResource": "distant.world.hdr",
+            "mode": "dlss-ray-reconstruction",
+            "displayFormat": "RGBA8_UNORM",
+            "exposureResource": "reconstruction.exposure"
+          },
+          "uniformComparisonExcludedByteRanges": [
+            [
+              1120,
+              1132
+            ],
+            [
+              1144,
+              1152
+            ]
+          ],
+          "uniformComparisonScope": "All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification."
+        }
+      ]
+    }
+  },
+  "runs": {
+    "day": "qa-cloud-art-guard-day-1",
+    "sunset": "qa-cloud-art-guard-sunset-1",
+    "motionDay": "qa-cloud-art-guard-motion-day-1",
+    "motionSunset": "qa-cloud-art-guard-motion-sunset-1"
+  },
+  "stability": {
+    "reloadAndResize": "Passed in guard-day-1; actual RR recreation and GPU resource retirement logged",
+    "limits": "Not a 32-chunk, long-session, storm, fast-flight or inside-cloud stress result. Eight matched adjacent frames cover the prescribed short turn/walk only."
+  },
+  "visualAssessment": {
+    "day": "Visible smaller edge breakup and sharper silhouettes; less diffuse woolly blending.",
+    "sunset": "Warm gold/orange retained; reduced grey low-horizon film. Flat bases still occur and art direction remains subjective.",
+    "motion": "No obvious dragged cloud silhouette in the inspected eight-frame pairs. This is a visual observation, not proof of zero temporal artifact at all speeds.",
+    "notClaimed": "No physical accuracy, universal 60 FPS, universal artifact-free sky or user acceptance claim."
+  },
+  "failedAndSuperseded": {
+    "qa-cloud-art-resolve-day-1": "Invalid cloud.transport display binding; startup rejected. Corrected to cloud.compose.coefficients.",
+    "preRRSharpen": "Cubic filtering before RR alone had little visible value; superseded by post-RR cloud composition.",
+    "alphaGuard": "Final guard runs include the correction that prevents an empty variance/alpha history clip interval."
+  },
+  "commands": [
+    "$env:JAVA_HOME=Join-Path $env:APPDATA 'PrismLauncher/java/java-runtime-epsilon'; $env:JAVA_TOOL_OPTIONS='-Djdk.net.unixdomain.tmpdir=C:/Users/bodyabuilder/Documents/Codex/2026-10-13/new-chat/work/tmp'; & ../../work/gradle-runtime/gradle-9.4.1/bin/gradle.bat build --offline --no-daemon",
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -RayReconstruction -CloudArtStep 3 -QaDirectory work/NEW-DAY -ProfileTime 3000 -ProfilePlan 'cloud0-static,cloud1-static,cloud2-static,cloud3-static,cloud3-motion,reload,resize' -PrepareGeometry -TimeoutSeconds 900",
+    "Repeat with fresh QaDirectory and ProfileTime 12600 for sunset",
+    "./tools/Run-PerformanceProfile.ps1 -RealtimeStep 5 -RayReconstruction -CloudArtStep 3 -CloudSequence -QaDirectory work/NEW-MOTION -ProfileTime 3000 -ProfilePlan motion -PrepareGeometry -TimeoutSeconds 900",
+    "Repeat motion with fresh QaDirectory and ProfileTime 12600"
+  ],
+  "artifactSha256": "843053283AC4A6CE644FE230FC181874FB759596BE2EB1914BA7D70B82F4B574",
+  "nativeAdapterSha256": "336b169e246ae54206af25a79aa361d9ea2d12564935073c95a2e790a25c97b7",
+  "shaderSha256": {
+    "examples\\ray-lighting\\alpha-diagnostic.comp": "ed10b86f6ecfd793751078a5621aac599625dd81db8194d753b889b2a7724ff9",
+    "examples\\ray-lighting\\atmosphere-lighting.comp": "e92f71f3d60155c3411037934fc5a58e4f05246450cab262830cfc458bbe1b33",
+    "examples\\ray-lighting\\atmosphere-multiple.comp": "86aa35c8aaed0627cc2d8ed4ee13049e286f0b9cd6bb734ebc898e37604edaae",
+    "examples\\ray-lighting\\atmosphere-sky.comp": "a5a0c5ce3948b1f642fc93259eab72a6d74707bc0fd66e743b51f3003daadb92",
+    "examples\\ray-lighting\\atmosphere.glsl": "051250e13ff2cdca864efe37e39c9d9fcd9bfdcb1e8f3d2cca3cff1e0388b56a",
+    "examples\\ray-lighting\\camera-motion.comp": "a277cb1069abf1fffcc6b73716f2963f344d02decbe75e8c4ba36eabf968dd97",
+    "examples\\ray-lighting\\cloud-ambient-diagnostic.comp": "ca27a7068966bc3f9d4171b12ef7da50622f37ab1fa290c1faa18ebb9a9d81dd",
+    "examples\\ray-lighting\\cloud-cellular.glsl": "423bced7e39b8e79464edfaf62b7558eb1e6e02011e2f4af5e3f4688d9d91024",
+    "examples\\ray-lighting\\cloud-column-diagnostic.comp": "cd420bd5596dcc8cf52691b0a2537f9d063639d6314c0fba9c695cb1d3e17f28",
+    "examples\\ray-lighting\\cloud-column-samples.comp": "a6e9d968e03ac76cb3222a8c92781b26afbe35c3b00b2aa3b161d772f9fa7edb",
+    "examples\\ray-lighting\\cloud-composite.comp": "38484269b87e26bbe4cfeaca6f6573cec9ca7664a9edbc30665ff840589b4394",
+    "examples\\ray-lighting\\cloud-environment.comp": "5d57cbdb75de87f8926fe5770ea156e077b073371d8e9b62d65b4077a89dfa46",
+    "examples\\ray-lighting\\cloud-field-diagnostic.comp": "43a877af736ae5e3115f8ebad2350bed59a64c32dee9959b4e3e808fee9910d4",
+    "examples\\ray-lighting\\cloud-field.glsl": "a7528af1e480b5aa944c5b0ced3cb3f8261dcb99d09b286419f863762ebc533a",
+    "examples\\ray-lighting\\cloud-lighting-noise-diagnostic.comp": "729e8b98cd35836b3fb8c5b897cdb0479e7053a8551f4155e85f47d3fd44c976",
+    "examples\\ray-lighting\\cloud-lighting-noise.comp": "125ddc33af0ccd0d052c96b10eae00dbb96eec14c25791a8865fd7182c46c21b",
+    "examples\\ray-lighting\\cloud-lighting.comp": "45c108b99247a10f8d50941c70c943a1a3f9bb97c4ce0e5ca0db0015be1001f7",
+    "examples\\ray-lighting\\cloud-noise-diagnostic.comp": "2c385710ced7d7cb6c430862cbdbdc2b6351ad97dd00cfbe5050d325a3d095ce",
+    "examples\\ray-lighting\\cloud-reconstruction.comp": "0dc8de4e1053f46cbf7fd5b3f557679416964482e1b04b8443531a543ae0f125",
+    "examples\\ray-lighting\\cloud-sampling.glsl": "d448f5c13b0bedcbc368be682863bc64af30d39fa485fe631e85ab629baac981",
+    "examples\\ray-lighting\\cloud-scattering-diagnostic.comp": "761ae3e9dd53ac0615f09cd60a017dca2626e23173e05e893b081b46224285c8",
+    "examples\\ray-lighting\\cloud-scattering.glsl": "59eec63f03594b14f976efb92ddad517583a8acc7b75f72960b82c11002deffd",
+    "examples\\ray-lighting\\cloud-shadow-diagnostic.comp": "ad4dac6df08fad2b0d9c0e4e12a1d2a522058a42fdd23ee47cf87634f037d20a",
+    "examples\\ray-lighting\\cloud-shadow.comp": "1bc985d30c2a1690364ece96c2c119c548fcf5f07f2e15acfc1d2ddd0da7820c",
+    "examples\\ray-lighting\\cloud-shadow.glsl": "3c49de76e651ecd8aef90452171c7414d0981233369b680c9f153f1fec13cdb0",
+    "examples\\ray-lighting\\cloud-source-cache.comp": "01c1ecbd64076d3c486563249f5cf8881948d513da4caa76e8b962c55e18eb8c",
+    "examples\\ray-lighting\\cloud-source-grid.glsl": "fe1e5290c73c2ee512e72e16d7322ae0abe7129a6b816b05246e050e680cac63",
+    "examples\\ray-lighting\\cloud-view-density.glsl": "65a7288c2499aad6f96277b3c9d701382c03789540deb43e6c40bbdefb3d53aa",
+    "examples\\ray-lighting\\cloud-view.comp": "dd3d81607e25f63e31c27b63cbd27665ae79cb5a5a81337cfdb80dc2906620e0",
+    "examples\\ray-lighting\\cloud-volume.glsl": "34409b8ca0411cae71d896e6ef8e2f79e6c812553be2dc79af72dbfdba5146d0",
+    "examples\\ray-lighting\\direct.comp": "d21052d0e78d37361e99ad389815c388bedfdb5657fb39dbfbbbfcad4b06be8a",
+    "examples\\ray-lighting\\display-mapping.glsl": "a581d32f1e2f52065170e638860867695912cd9e9ae7c8d0f65aca325604c33e",
+    "examples\\ray-lighting\\distant-world.comp": "930d67efa3a7623e46bf900d2f45018b10da03cde4c95ef12d658cbc6abe87a4",
+    "examples\\ray-lighting\\emission-sampling.glsl": "00d4474bc295dd923fbff537707d17dc5b49cff6598c1429110fb831f4370a8c",
+    "examples\\ray-lighting\\emitted-radiance.glsl": "90274101b354a80f5b09ba553d5523fb60c8161c5b3be1201f419e8aed1f8222",
+    "examples\\ray-lighting\\exposure-adapt.comp": "8636054ef5d2b7b34c0e54fa6b9853f0ae898a5ada964181536a87a0ab2c67ab",
+    "examples\\ray-lighting\\exposure-display.fsh": "45465bd81e9f6a0da24bc401936d6e44c165bc2ffc008d514f9e44cc41f706c9",
+    "examples\\ray-lighting\\exposure-histogram.comp": "b227b73073f425259f95d6477fe281e5c94269de3ef3cbd8effb81bda3db6087",
+    "examples\\ray-lighting\\exposure-meter.comp": "040b6b03e2cce4e80195524f5792899849e400f46c42c3e5ff0aea25e9464df5",
+    "examples\\ray-lighting\\exposure-metering.glsl": "c0fb0cb17d9952a44eee36b26dfe698dcbb50bcd548e26cb9d438cb5b78cdea6",
+    "examples\\ray-lighting\\foliage-diagnostic.comp": "e0c37bf6e861b326648e68ba5a98ecf0804e3a79c4bcd1c21d038bbae41b1522",
+    "examples\\ray-lighting\\foliage.glsl": "40d6006ee40c39cd5fd121c195531e60bea64de8dacd506d2ff10c6f19fcc21a",
+    "examples\\ray-lighting\\ggx-reflection.glsl": "0ab8c01a9cc25c511dc5586ad73adc9d70451415f6662fedc24bb5c9a2fd799f",
+    "examples\\ray-lighting\\hit-materials.comp": "a8a90914e3225baa97095a6060799e16be021ca558f987b2aeb5c28365c85e49",
+    "examples\\ray-lighting\\indirect-environment.comp": "2c4852dbfa813d618c872b8be71d630a73f9774a549fefe3d9299c946043e7b2",
+    "examples\\ray-lighting\\indirect-sampling-diagnostic.comp": "0082293d9551e85799b0bc62b26e8515b154510d8ba5da1d83c0d6e929be9b35",
+    "examples\\ray-lighting\\indirect-sampling.glsl": "b06445d30e3ec238179314958acead74cf78398eb0c9b6bc29b2f5a18508a7a5",
+    "examples\\ray-lighting\\indirect-spatial.glsl": "09206d5d4e93b64c950015f78097fdb5ae3c797ed36aab73694088a00f91707d",
+    "examples\\ray-lighting\\indirect-state.comp": "ef26976f9b7f260b84f4df66131502b153200cfc19ed32abb8fd8e5deffa1808",
+    "examples\\ray-lighting\\indirect-temporal.comp": "d6d26be334571ee6416c028bb9c270585c9c6ff69a0ed780a165e8d2fc1ac6ab",
+    "examples\\ray-lighting\\indirect.comp": "660bc104edc22ec2da09bacc42b0cf958e551731574911c44801ffa627b1f55f",
+    "examples\\ray-lighting\\integer-wrap.glsl": "b059d181409c85cbdf22011ba2b85a34b43691373fc4d81913c4ba630013f708",
+    "examples\\ray-lighting\\leaf-optics-diagnostic.comp": "ad2bee5c99110d7e1e4abb7be92600345a8cc6d18bbecdee5a1269eed3a6f0b6",
+    "examples\\ray-lighting\\leaf-optics.glsl": "4f07d617fc3bddec9d25e114608f3d983cbe57f96c91cb66f0beea3f4075f7d1",
+    "examples\\ray-lighting\\material-surface.glsl": "49b16d7ad228ebaf825264fa3379377ea5106ff3f2bc43ca7597e03c166cda1e",
+    "examples\\ray-lighting\\night-lighting.glsl": "b684cd4065b079588b023a3fb2abc358441de797c0c3f2676fd22681ba44a70e",
+    "examples\\ray-lighting\\present.fsh": "8805a261f4ec249b3c5749030987cf783e80b13ae694d152c75f7fd632bbf478",
+    "examples\\ray-lighting\\qa-ray-query-counts.glsl": "8a6a0307ec78ac191c93f5398631997bf16c741f1ac4f588d08e0afdcd8879c9",
+    "examples\\ray-lighting\\README.md": "3a225e4264541a930f7a08df89c1979f3acfad622e94599f334db6b10da65f0f",
+    "examples\\ray-lighting\\realtime-cloud-light.comp": "737601e75b91eff0e20b48e64badb593a55f9843b67a9798f0af8f17529c1b20",
+    "examples\\ray-lighting\\realtime-cloud-state.comp": "20e0169886e83102709cda9bee0f677e75260f06e29379f56e7b7501e0596989",
+    "examples\\ray-lighting\\realtime-cloud-temporal.comp": "77796750cff074b0017f7bea219bed23782ca9b6c6dc48965cc20837618122c1",
+    "examples\\ray-lighting\\realtime-sun.comp": "50a6242996647d51ed46dcf7a2cf77136be51fc0af53e1d4bffadd314a037625",
+    "examples\\ray-lighting\\reconstruction-exposure.comp": "253093edefbf33b514d51229fdbb7ac8224457e8d685fcf805165063cfd4f330",
+    "examples\\ray-lighting\\reconstruction-inputs.comp": "7022f56f28ccd0bad2d5a73cb4d42c799b15b282a026b8c94014dfeb7ee0bc1c",
+    "examples\\ray-lighting\\reflection-composite.comp": "535999ae969089ec263e5b1bcb93861b7546223418d648112f4172389fa034f6",
+    "examples\\ray-lighting\\reflections.comp": "7ca3fea40f05dd7aba9805f4b391cf12afb973fbde8564d076f06a894fa9aa12",
+    "examples\\ray-lighting\\rough-reflections.comp": "e5e7acf419dc609685866552091ec368058802235df8bb19c728dc4d51743d8b",
+    "examples\\ray-lighting\\rr-guides.comp": "c4dfc2164580eef0d09f556bca486ff4ea49fcbd03a92d0a46179ddcff9de44f",
+    "examples\\ray-lighting\\secondary-lighting.glsl": "f67b816984b113a20a953bb2d391eba1c5a87e7bb8ed46cc82dcaf93093c0144",
+    "examples\\ray-lighting\\sun-source.glsl": "94d5c7062e40a2f49490d71bfbed4e54b344e63fafba5f44aa9d8cff07e2a4df",
+    "examples\\ray-lighting\\surface-lighting.glsl": "6878183ddc3fd89767c6c3ad693eadc906825f182460af71f1970d0ccf1317b6",
+    "examples\\ray-lighting\\SURFACE_ATTRIBUTES.md": "9997e7cf289b77c68fe3595785fb1a8e9e37fdf6b65efc1e611b4ab056729d95",
+    "examples\\ray-lighting\\terrain-gbuffer.fsh": "2b3f03203a1d132a20092abf2c69533c138a68b295577fb056a2b0e0915227de",
+    "examples\\ray-lighting\\terrain-material.vsh": "264c4df40dc2e2ce68d90612102b457651605dfdb2017cc0e909a14039da0609",
+    "examples\\ray-lighting\\translucent-fallback.fsh": "ab8dcb6c2959e58ca9af3cbbef4d1dad206783ad5ffd08f1c50e600f130755bd",
+    "examples\\ray-lighting\\translucent-water.fsh": "ab12600ab92947a68e2612a85e01915d757690c452cd608081488e4b7fb09db9",
+    "examples\\ray-lighting\\water-composite.comp": "179934b6cf55079745faf35c60c6cdb6ac73dcd287257269650298ce08f046d0",
+    "examples\\ray-lighting\\water-optics.glsl": "b4c2571094bc36c2dc5021b7ab22b072377d33057e733bb6cbbb9ca83a1ca744",
+    "examples\\ray-lighting\\water.comp": "b42911a798ba86b4616381751588d0e6065b334d5c8433eab9e659544146e23f"
+  },
+  "userInstanceUpdated": false,
+  "archive": "evidence/cloud-art-20261019 (local, ignored; original game samples not published)"
+}

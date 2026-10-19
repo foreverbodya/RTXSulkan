@@ -41,6 +41,18 @@ if($Step -ge 5){
     $manifest.options['REALTIME_ATMOSPHERE_CACHE']=@{default=1;values=@(1)}
     ($manifest.passes|Where-Object{$_.name -eq 'atmosphere.multiple'}).reads['PreviousMultiple']='atmosphere.multiple@previous'
     $manifest.options['REALTIME_CLOUDS']=@{default=1;values=@(1)}
+    $manifest.resources['cloud.clear.base']=@{format='RGBA16_FLOAT'}
+    ($manifest.passes|Where-Object{$_.name -eq 'cloud.composite'}).writes+=@('cloud.clear.base')
+    ($manifest.passes|Where-Object{$_.name -eq 'distant.world'}).reads['CloudClearBase']='cloud.clear.base'
+    foreach($pass in $manifest.passes|Where-Object{$_.name -in @('display.meter','display.histogram')}){$pass.reads['CloudMeter']='cloud.compose.coefficients'}
+    $manifest.reconstruction.displayReads['CloudDisplay']='cloud.compose.coefficients'
+    $manifest.reconstruction.displayReads['CloudDisplayDepth']='reconstruction.depth'
+    $manifest.resources['cloud.art.noise']=@{format='RGBA8_UNORM';size=@(130,130,130)}
+    $manifest.passes+=@{name='cloud.art.noise';compute='shaders/cloud-lighting-noise.comp';localSize=@(8,8,8);reads=@{CloudNoise='$texture/cloud-cellular'};writes=@('cloud.art.noise')}
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../examples/ray-lighting/cloud-lighting-noise.comp') -Destination (Join-Path $PackDirectory 'shaders/cloud-lighting-noise.comp')
+    foreach($pass in $manifest.passes|Where-Object{$_.reads.ContainsKey('CloudLayout') -and $_.reads.ContainsKey('CloudNoise')}){
+        $pass.reads['CloudLightingNoise']='cloud.art.noise';$pass.linearReads=@(@($pass.linearReads)+@('CloudLightingNoise')|Where-Object{$_})
+    }
     $manifest.options['CLOUD_LIGHTING_VOLUME']=@{default=1;values=@(1)}
     $manifest.resources['cloud.source.light']=@{format='RGBA16_FLOAT';size=@(96,32,96);history=$true}
     $manifest.resources['cloud.source.ambient']=@{format='RG16_FLOAT';size=@(96,32,96);history=$true}
@@ -50,8 +62,8 @@ if($Step -ge 5){
         $pass.reads['CloudLightingVolume']='cloud.source.light';$pass.reads['CloudAmbientVolume']='cloud.source.ambient'
         $pass.linearReads=@(@($pass.linearReads)+@('CloudLightingVolume','CloudAmbientVolume')|Where-Object{$_})
     }
-    $manifest.passes+=@{name='cloud.source.light';compute='shaders/realtime-cloud-light.comp';localSize=@(8,4,8);
-        reads=@{CloudLayout='$texture/vanilla-clouds';CloudNoise='$texture/cloud-cellular';State='cloud.source.state';PreviousLight='cloud.source.light@previous';PreviousAmbient='cloud.source.ambient@previous';PreviousState='cloud.source.state@previous'};writes=@('cloud.source.light','cloud.source.ambient')}
+    $manifest.passes+=@{name='cloud.source.light';compute='shaders/realtime-cloud-light.comp';localSize=@(8,4,8);linearReads=@('CloudLightingNoise');
+        reads=@{CloudLayout='$texture/vanilla-clouds';CloudNoise='$texture/cloud-cellular';CloudLightingNoise='cloud.art.noise';State='cloud.source.state';PreviousLight='cloud.source.light@previous';PreviousAmbient='cloud.source.ambient@previous';PreviousState='cloud.source.state@previous'};writes=@('cloud.source.light','cloud.source.ambient')}
     # Explicit quarter width/height: 427x240 for DLSS Quality input 1707x960.
     # Only the cloud layer uses this scale; world reconstruction stays 1440p.
     foreach($name in @('cloud.view','cloud.accum')){$manifest.resources[$name]=@{format='RGBA16_FLOAT';scale=0.25;history=$true}}
@@ -60,7 +72,7 @@ if($Step -ge 5){
     $environmentPass=$manifest.passes|Where-Object{$_.name -eq 'cloud.environment'}
     $environmentPass.reads['PreviousSky']='cloud.environment@previous'
     $environmentPass.reads['PreviousCloudState']='cloud.source.state@previous'
-    $manifest.passes+=@{name='cloud.temporal';compute='shaders/realtime-cloud-temporal.comp';localSize=@(8,8,1);
+    $manifest.passes+=@{name='cloud.temporal';compute='shaders/realtime-cloud-temporal.comp';localSize=@(8,8,1);linearReads=@('Previous');
         reads=@{Current='cloud.view';Geometry='cloud.geometry';Previous='cloud.accum@previous';PreviousGeometry='cloud.geometry@previous'};writes=@('cloud.accum')}
     ($manifest.passes|Where-Object{$_.name -eq 'cloud.composite'}).reads.CloudView='cloud.accum'
     foreach($name in @('realtime-cloud-light.comp','realtime-cloud-temporal.comp','realtime-cloud-state.comp')){

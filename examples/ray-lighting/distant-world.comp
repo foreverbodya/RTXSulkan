@@ -9,6 +9,9 @@ void main() {
     ivec2 p=ivec2(gl_GlobalInvocationID.xy),size=imageSize(Output0);
     if(any(greaterThanEqual(p,size)))return;
     vec4 base=texelFetch(Base,p,0);
+#if CLOUD_ART_STEP >= 3
+    base=texelFetch(CloudClearBase,p,0);
+#endif
     float depth=texelFetch(Depth,p,0).r,waterValid=0.0;
     uvec2 source=texelFetch(Surface,p,0).rg;
 #ifdef WATER_HDR
@@ -49,6 +52,9 @@ void main() {
             // cloud horizon ring downward creates radial spokes inside clouds.
             // C + T*mix(surface,sky,w) preserves the actual foreground volume.
             vec4 cloud=texelFetch(CloudCoefficients,p,0);
+#if CLOUD_ART_STEP >= 3
+            cloud=vec4(0,0,0,1);
+#endif
             vec3 disk=atmVisibleSky(ClearSky,Lighting,direction)-atmSky(ClearSky,direction);
             target=cloud.rgb+cloud.a*(atmSky(ClearSky,skyDirection)+disk);
 #else

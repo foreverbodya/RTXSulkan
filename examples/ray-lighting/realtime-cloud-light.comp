@@ -18,9 +18,10 @@ void main() {
         return;
     }
     // Fixed work per cell, amortized over every camera/environment sample.
-    float solar=sun.y>0.0?cinematicCloudOpticalDepthImpl(CloudLayout,p,sun,16384.0,24,false):0.0;
-    float up=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,1,0),CLOUD_THICKNESS,8,false);
-    float down=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,-1,0),CLOUD_THICKNESS,8,false);
+    int solarSteps=CLOUD_ART_STEP>=2?6:24,ambientSteps=CLOUD_ART_STEP>=2?4:8;
+    float solar=sun.y>0.0?cinematicCloudOpticalDepthImpl(CloudLayout,p,sun,16384.0,solarSteps,false):0.0;
+    float up=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,1,0),CLOUD_THICKNESS,ambientSteps,false);
+    float down=cinematicCloudOpticalDepthImpl(CloudLayout,p,vec3(0,-1,0),CLOUD_THICKNESS,ambientSteps,false);
     imageStore(Output0,cell,vec4(exp(-solar*CLOUD_ORDER_EXTINCTION),1));
     imageStore(Output1,cell,vec4(cinematicCloudHemisphereTransmission(up),cinematicCloudHemisphereTransmission(down),0,1));
 }

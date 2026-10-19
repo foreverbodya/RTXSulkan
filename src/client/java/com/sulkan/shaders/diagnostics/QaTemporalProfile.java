@@ -27,10 +27,10 @@ import java.util.zip.GZIPOutputStream;
 
 /** Untimed sequential real-world A/A/B/A, with independent graph and native histories. */
 public final class QaTemporalProfile {
-    private static final boolean FOLIAGE=Boolean.getBoolean("sulkan.qaFoliageSequence");
-    private static final int WARMUP=FOLIAGE?128:256,FRAMES=FOLIAGE?8:128,PREPARE_STABLE_FRAMES=16;
+    private static final boolean FOLIAGE=Boolean.getBoolean("sulkan.qaFoliageSequence"),CLOUD=Boolean.getBoolean("sulkan.qaCloudSequence"),SHORT=FOLIAGE||CLOUD;
+    private static final int WARMUP=SHORT?128:256,FRAMES=SHORT?8:128,PREPARE_STABLE_FRAMES=16;
     private static final float STEP=1.0f/60.0f;
-    private static final List<String> PHASES=FOLIAGE?(Boolean.getBoolean("sulkan.qaFoliageComparison")?List.of("reference","candidate"):List.of("candidate")):List.of("reference-1","reference-2","candidate","reference-3");
+    private static final List<String> PHASES=SHORT?(Boolean.getBoolean("sulkan.qaFoliageComparison")||CLOUD?List.of("reference","candidate"):List.of("candidate")):List.of("reference-1","reference-2","candidate","reference-3");
     private static volatile FrameClock currentClock;
     private static final Executor WRITER=Executors.newSingleThreadExecutor(task->{
         var thread=new Thread(task,"Sulkan independent temporal evidence");thread.setDaemon(true);return thread;
@@ -70,7 +70,7 @@ public final class QaTemporalProfile {
         manifestPath=directory.getParent().resolve("shaders/RayLighting/sulkan.json");
         candidateManifest=Files.readString(manifestPath);
         var candidate=JsonParser.parseString(candidateManifest).getAsJsonObject();
-        if(!FOLIAGE) {
+        if(!SHORT) {
         int environmentBindings=0;
         for(var element:candidate.getAsJsonArray("passes")) {
             var pass=element.getAsJsonObject();
@@ -94,6 +94,7 @@ public final class QaTemporalProfile {
         reference.add("passes",passes);referenceManifest=json(reference);
         } else referenceManifest=Boolean.getBoolean("sulkan.qaFoliageComparison")?Files.readString(directory.getParent().resolve("foliage-reference.json")):candidateManifest;
         var reconstruction=candidate.getAsJsonObject("reconstruction");
+        if(CLOUD)for(String r:List.of("cloud.view","cloud.accum","cloud.geometry","cloud.compose.coefficients"))addInput(candidate,r);
         for(String slot:List.of("color","depth","motion","exposure"))addInput(candidate,reconstruction.get(slot).getAsString());
         if(reconstruction.has("displayReads"))for(var entry:reconstruction.getAsJsonObject("displayReads").entrySet())addInput(candidate,entry.getValue().getAsString());
         if(FOLIAGE){
@@ -128,6 +129,7 @@ public final class QaTemporalProfile {
         System.setProperty("sulkan.qaProfileGroupY","8");
         Files.writeString(manifestPath,phase().equals("candidate")?candidateManifest:referenceManifest);
         var phaseOptions=new LinkedHashMap<>(options);
+        if(CLOUD)phaseOptions.put("CLOUD_ART_STEP",phase().equals("candidate")?3d:0d);
         if(Boolean.getBoolean("sulkan.qaFoliageComparison")){
             phaseOptions.put("QA_FOLIAGE_MOTION_FIX",phase().equals("candidate")?1d:0d);
             phaseOptions.put("REALTIME_RAY_LOD",phase().equals("candidate")?1d:0d);
@@ -141,7 +143,7 @@ public final class QaTemporalProfile {
     public double[] pose() {
         var pose=base.clone();int index=logicalIndex<0?(prepMotionFrames<prepMotionTarget()?prepMotionFrames:0):logicalIndex;
         if(sequence.equals("motion")) {
-            double s=Math.sin(Math.floorMod(index,FOLIAGE?128:FRAMES)*2.0*Math.PI/(FOLIAGE?128:FRAMES));
+            double s=Math.sin(Math.floorMod(index,SHORT?128:FRAMES)*2.0*Math.PI/(SHORT?128:FRAMES));
             pose[0]+=2*s;pose[2]+=s;pose[3]+=12*s;
         }
         return pose;
@@ -226,7 +228,7 @@ public final class QaTemporalProfile {
             // AS generation is local to a newly created graph. Its identity is
             // independently checked by the exact source hash and pending=0 above.
             byte[] reference=referenceUniforms[index];
-            for(int p=0;p<uniform.length;p++)if((p<1120 || p>=1132) && (!FOLIAGE || p<1144) && uniform[p]!=reference[p]) {firstMismatch=p;break;}
+            for(int p=0;p<uniform.length;p++)if((p<1120 || p>=1132) && (!SHORT || p<1144) && uniform[p]!=reference[p]) {firstMismatch=p;break;}
             if(firstMismatch!=-1) {
                 // Preserve the small witness before aborting; normal captures stay asynchronous.
                 String prefix=String.format(Locale.ROOT,"%03d",index);
@@ -256,7 +258,7 @@ public final class QaTemporalProfile {
                 }
             }catch(Exception failure){throw new java.util.concurrent.CompletionException(failure);}
         },WRITER));
-        if(FOLIAGE || index==0 || index==63 || index==127)for(var input:inputFormats.entrySet()) {
+        if(SHORT || index==0 || index==63 || index==127)for(var input:inputFormats.entrySet()) {
             String resource=input.getKey();
             if(FOLIAGE){
                 boolean rr=NativePackRuntime.diagnosticReconstruction().get("mode").equals("dlss-ray-reconstruction");
@@ -279,7 +281,7 @@ public final class QaTemporalProfile {
         report.put("prepMotionFrames",prepMotionFrames);report.put("preparationStableFrames",stableFrames);
         report.put("captureFrames",FRAMES);report.put("frames",List.copyOf(frames));report.put("inputFormats",inputFormats);
         report.put("reconstruction",NativePackRuntime.diagnosticReconstruction());
-        report.put("uniformComparisonExcludedByteRanges",FOLIAGE?List.of(List.of(1120,1132),List.of(1144,1152)):List.of(List.of(1120,1132)));
+        report.put("uniformComparisonExcludedByteRanges",SHORT?List.of(List.of(1120,1132),List.of(1144,1152)):List.of(List.of(1120,1132)));
         report.put("uniformComparisonScope","All actual uniform bytes except graph-local AS generation/pending words and (foliage mode only) emitter buffer device address. Pending must be zero and exact source geometry matches independently. Emitter count and every physical camera/environment value must match. Raw uniform bytes retained without modification.");
         writeJson(phaseDirectory.resolve("sequence.json"),report);reports.add(report);
         LogUtils.getLogger().info("SULKAN_TEMPORAL_PHASE_PASS phase={} sequence={} captures={} adjacent=true",phase(),sequence,frames.size());

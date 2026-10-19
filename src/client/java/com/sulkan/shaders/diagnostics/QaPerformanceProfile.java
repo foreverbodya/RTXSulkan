@@ -67,13 +67,17 @@ final class QaPerformanceProfile {
     }
     private String phase(){return plan.get(phaseIndex);}
     private int phaseFrames(){return path().equals("travel")?2048:FRAMES;}
-    private String path(){return phase().replace("narrow-","").replace("-repeat","");}
+    private String path(){return phase().replaceFirst("^cloud[0-3]-","").replace("narrow-","").replace("-repeat","");}
     private void configure()throws Exception{
         geometryPreparationStart=GeometryCpuMetrics.snapshot();preparationStartNs=System.nanoTime();
         System.setProperty("sulkan.qaProfilePhase",phase());
         System.setProperty("sulkan.qaProfileGroupY",phase().startsWith("narrow-")?"4":"8");
         String group=phase().startsWith("off-")?phase().substring(4):"";
         System.setProperty("sulkan.qaProfileDisabled",group);
+        if(phase().startsWith("cloud")){
+            var options=new TreeMap<>(NativePackRuntime.diagnosticOptions());options.put("CLOUD_ART_STEP",(double)(phase().charAt(5)-'0'));
+            NativePackRuntime.applyOptions(com.sulkan.shaders.runtime.ShaderRuntime.config().selectedPackId(),options);
+        }
         if(canonicalComparison || path().equals("reload")){
             if(canonicalComparison)Files.writeString(directory.getParent().resolve("shaders/RayLighting/sulkan.json"),phase().startsWith("narrow-")?canonicalCandidate:canonicalReference);
             if(fastPreparation){System.setProperty("sulkan.qaProfilePrepareGeometry","true");preparingReload=true;}

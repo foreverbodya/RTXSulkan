@@ -288,7 +288,7 @@ final class GraphFrame {
             if(qaFixedEnvironment==null)qaFixedEnvironment=this.environment.clone();
             System.arraycopy(qaFixedEnvironment,0,this.environment,0,12);
             System.arraycopy(qaFixedEnvironment,31,this.environment,31,3);
-            if(Boolean.getBoolean("sulkan.qaFoliageSequence"))System.arraycopy(qaFixedEnvironment,20,this.environment,20,16);
+            if(Boolean.getBoolean("sulkan.qaFoliageSequence") || Boolean.getBoolean("sulkan.qaCloudSequence"))System.arraycopy(qaFixedEnvironment,20,this.environment,20,16);
          }
          for (float value : this.environment) {
             this.bytes.putFloat(value);

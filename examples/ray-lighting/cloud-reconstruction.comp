@@ -29,7 +29,7 @@ void main() {
     vec4 current=Projection*View*vec4(relative,1.0);
     float projected=current.w>1e-8?current.z/current.w:0.0;
     bool selected=false;
-#if CLOUD_RECONSTRUCTION_GUIDES == 1
+#if CLOUD_RECONSTRUCTION_GUIDES == 1 && CLOUD_ART_STEP < 3
     // Use the finite proxy only where the volume dominates the composed pixel,
     // lies in its full-resolution ray segment, and is in front of its surface.
     selected=opacity>=0.5 && segment.z>=0.0 && proxy>=segment.z && proxy<=segment.w

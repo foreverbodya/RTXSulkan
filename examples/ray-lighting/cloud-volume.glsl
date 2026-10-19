@@ -53,14 +53,34 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
     vec3 ambientDown=atmIrradiance(clearLighting,vec3(0,-1,0))/6.283185307179586;
     float cosine=clamp(dot(direction,sun),-1.0,1.0);
     vec3 phase=cinematicCloudOrderPhases(cosine);
+#if CLOUD_ART_STEP >= 2
+    phase+=vec3(.055,.035,.02)*pow(max(cosine,0.0),18.0);
+#endif
     int count=clamp(samples,1,256);
     float stepSize=max(min((end-begin)/float(count),6.0),(end-begin)/256.0);
     vec3 transmission=vec3(1);
     float weightedDistance=0.0,weightSum=0.0;vec3 radiance=vec3(0);
+#if CLOUD_ART_STEP >= 1
+    float cursor=begin;
+    for(int i=0;i<1024;i++) {
+        float front=cursor;if(front>=end || max(transmission.x,max(transmission.y,transmission.z))<.004)break;
+        // Coarse in empty weather cells; never jump over an occupied support cell.
+        vec3 cellPoint=origin+direction*(front+.001);
+        if(cinematicCloudEmptyWeather(layoutTexture,cellPoint)){
+            vec2 grid=(cellPoint.xz+vec2(cinematicCloudPhase(),3.960000038))/CLOUD_CELL_SIZE-.5;
+            vec2 boundary=(floor(grid)+step(vec2(0),direction.xz)-grid)*CLOUD_CELL_SIZE;
+            vec2 crossing=boundary/mix(vec2(1e-8),direction.xz,greaterThan(abs(direction.xz),vec2(1e-8)));
+            float skip=min(abs(direction.x)>1e-8?crossing.x:1e6,abs(direction.z)>1e-8?crossing.y:1e6);
+            cursor+=min(max(skip+.002,.25),end-front);continue;
+        }
+        stepSize=CLOUD_ART_STEP>=2?clamp(3.0+front*.003,3.0,24.0):clamp(3.0+front*.006,3.0,48.0);
+        cursor+=min(stepSize,end-front);
+#else
     for(int i=0;i<256;i++) {
         float front=begin+float(i)*stepSize;if(front>=end)break;
+#endif
         float ds=min(stepSize,end-front),distance=front+ds*0.5;
-#if CLOUD_VIEW_DENSITY_SUBSTEPS == 1
+#if CLOUD_VIEW_DENSITY_SUBSTEPS == 1 && CLOUD_ART_STEP == 0
         vec4 column=cinematicCloudDensityColumn(layoutTexture,origin+direction*front,direction,ds);
         if(column.x<=0.0)continue;
         distance=front+column.y;
@@ -69,6 +89,9 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
 #else
         vec3 p=origin+direction*distance;
         float extinction=cinematicCloudDensity(layoutTexture,p);
+#if CLOUD_ART_STEP >= 2
+        extinction*=1.0-smoothstep(4500.0,8000.0,distance);
+#endif
         if(extinction<=0.0)continue;
         vec3 weight=cinematicCloudStepWeights(extinction*ds,transmission);
 #endif
@@ -99,6 +122,17 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
 #endif
         }
 #endif
+        #if CLOUD_ART_STEP >= 2
+        // Three bounded local light probes add visible billow contrast. The
+        // cached volume supplies the broad light; no long nested integration.
+        float localOptical=0.0;
+        for(int lightStep=0;lightStep<3;lightStep++){
+            float d=lightStep==0?8.0:lightStep==1?24.0:56.0;
+            float width=lightStep==0?16.0:lightStep==1?24.0:32.0;
+            localOptical+=cinematicCloudDensityImpl(layoutTexture,p+sun*d,true)*width;
+        }
+        solarVisibility=mix(solarVisibility,exp(-localOptical*CLOUD_ORDER_EXTINCTION),.72);
+#endif
         float solarScattering=sun.y>0.0?dot(weight*phase,solarVisibility):0.0;
         vec3 ambient=ambientUp*ambientVisibility.x+ambientDown*ambientVisibility.y;
         vec3 source=0.995*tint*(solar*solarScattering+ambient*weight.x);
@@ -110,6 +144,17 @@ vec4 cinematicCloudTransport(sampler2D layoutTexture,sampler2D clearLighting,vec
         weightedDistance+=weight.x*distance;weightSum+=weight.x;
     }
     if(weightSum>1e-6)proxyDistance=weightedDistance/weightSum;
+#if CLOUD_ART_STEP >= 2
+    // Artistic coverage contrast: remove wispy grey film and keep the linear
+    // in-cloud sunset color, instead of sharpening already tone-mapped RGB.
+    float opacity=clamp(1.0-transmission.x,0.0,1.0);
+    float coverage=smoothstep(.08,.85,opacity);
+#if CLOUD_ART_STEP >= 3
+    if(origin.y<cinematicCloudBottom() || origin.y>cinematicCloudBottom()+CLOUD_THICKNESS)
+        coverage*=smoothstep(.015,.07,abs(direction.y));
+#endif
+    radiance*=coverage/max(opacity,1e-6);transmission.x=1.0-coverage;
+#endif
     return vec4(radiance,transmission.x);
 }
 #endif
