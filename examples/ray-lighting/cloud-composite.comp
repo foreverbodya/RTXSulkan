@@ -14,7 +14,7 @@ vec4 cloudCubic(float x){
     return vec4(-.5*x+x*x-.5*x*x*x,1-2.5*x*x+1.5*x*x*x,
         .5*x+2*x*x-1.5*x*x*x,-.5*x*x+.5*x*x*x);
 }
-vec4 cloudSharpResolve(vec2 uv,float maximum,out float proxy){
+vec4 cloudSharpResolve(vec2 uv,float maximum,out float proxy,out vec2 alphaRange){
     ivec2 size=textureSize(CloudView,0);vec2 q=uv*vec2(size)-.5;
     ivec2 base=ivec2(floor(q));vec4 wx=cloudCubic(fract(q.x)),wy=cloudCubic(fract(q.y));
     vec4 total=vec4(0),lo=vec4(1e30),hi=vec4(-1e30);float mass=0,proxyMass=0;proxy=0;
@@ -27,6 +27,7 @@ vec4 cloudSharpResolve(vec2 uv,float maximum,out float proxy){
         float positive=max(w,0.0)*geometry.y;proxy+=positive*geometry.x;proxyMass+=positive;
     }
     proxy=proxyMass>1e-7?proxy/proxyMass:0;
+    alphaRange=mass>1e-5?vec2(lo.a,hi.a):vec2(1);
     if(mass<=1e-5)return vec4(0,0,0,1);
     // Negative cubic lobes recover edge contrast. Bound them by existing local
     // transport samples so no bright fringe or negative transmittance is added.
@@ -67,8 +68,8 @@ void main() {
     cinematicCloudFootprint(p,size,textureSize(CloudView,0),cells,weights);
     float proxy=cloudProxy(cells,weights),mode=0.0,mass=1.0;int mask=15;
 #if REALTIME_CLOUDS == 1
-    // Resolve only existing quarter-pixel-count samples. Never launch another
-    // cloud march from this full-resolution composition pass.
+    // The default resolves existing quarter-resolution samples. The optional
+    // silhouette refinement below reuses the existing full-ray integrator.
     if(intersects) {
         vec4 compatible=vec4(0);
         for(int i=0;i<4;i++) {
@@ -125,7 +126,20 @@ void main() {
 #endif
 #endif
 #if CLOUD_ART_STEP >= 3
-    if(intersects)transport=cloudSharpResolve(uv,maximum,proxy);
+    if(intersects){
+        vec2 alphaRange;
+        transport=cloudSharpResolve(uv,maximum,proxy,alphaRange);
+#if CLOUD_EDGE_RETRACE == 1
+        // Reuse the existing full ray only across distant opacity boundaries.
+        // Smoothly enter the refinement so moving quarter-resolution samples
+        // cannot switch abruptly between two different edge reconstructions.
+        float refine=smoothstep(.12,.45,alphaRange.y-alphaRange.x)*smoothstep(192.0,512.0,maximum);
+        if(refine>0.0){
+            float fineProxy;vec4 fine=cloudFullRay(ray,maximum,fineProxy);
+            transport=mix(transport,fine,refine);proxy=mix(proxy,fineProxy,refine);
+        }
+#endif
+    }
 #endif
     imageStore(Output0,p,vec4(transport.rgb+texelFetch(Base,p,0).rgb*transport.a,1));
 #if REALTIME_CLOUDS == 1
