@@ -50,6 +50,8 @@ param(
     [switch] $RoughDenoiseComparison,
     [switch] $RoughNoiseSequence,
     [switch] $WaterHdr,
+    [ValidateSet(0,1)][int]$WaterSurface=0,
+    [switch]$WaterSurfaceComparison,
     [switch] $SkyMotion,
     [switch] $HeldItemCapture,
     [switch] $VisualWorld,
@@ -187,6 +189,7 @@ if($HeldItemCapture -and ($VisualWorld -or $RaySurfaceProbe)){throw 'HeldItemCap
 if($SkyMotion -and (!$WorldDlss -or $VisualWorld)){throw 'SkyMotion requires synthetic WorldDlss QA'}
 if($BounceComparison -and (!$VisualWorld -or !$LeafIndirect -or !$IndirectSpatial -or $IndirectBounces -ne $ComparisonLowBounces -or $ComparisonHighBounces -le $ComparisonLowBounces)){throw 'BounceComparison requires VisualWorld, LeafIndirect, IndirectSpatial, initial bounce count equal to the low count, and a higher comparison count'}
 if($WaterHdr -and (!$RayLighting -or !$Reflections -or !$WorldDlss -or $RayHitMaterials)){throw 'WaterHdr QA requires RayLighting/Reflections/WorldDlss without RayHitMaterials'}
+if(($WaterSurface -ne 0 -or $WaterSurfaceComparison) -and (!$WaterHdr -or !$VisualWorld)){throw 'WaterSurface QA requires WaterHdr in the natural VisualWorld capture'}
 if($WaterHdr){$TemporalInputs=$true}
 if($AutoExposure -and !$WorldDlss){throw 'AutoExposure QA requires WorldDlss'}
 if($LeafIndirect){$IndirectTemporal=$true;$FoliageTransmission=$true}
@@ -324,6 +327,7 @@ if ($RayVisibility -or $RayLighting) {
     if($AutoExposure) {$createArguments.AutoExposure=$true}
     if($RayLighting){$createArguments.DisplayToneMapper=$DisplayToneMapper}
     if($WaterHdr) {$createArguments.WaterHdr=$true;$createArguments.WaterDiagnostic=!$VisualWorld}
+    $createArguments.WaterSurface=$WaterSurface;$createArguments.WaterSurfaceComparison=[bool]$WaterSurfaceComparison
     & (Join-Path $PSScriptRoot $creator) @createArguments | Out-Null
     if($RayQueryCounts){& (Join-Path $PSScriptRoot 'Enable-QaRayQueryCounts.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) | Out-Null}
     if($CloudNoisePairs){& (Join-Path $PSScriptRoot 'Enable-QaCloudNoisePairs.ps1') -PackDirectory (Join-Path $qaPath ('shaders/'+$packName)) -PerturbVolume:$CloudNoisePairsPerturb | Out-Null}

@@ -18,6 +18,8 @@ param(
     [switch]$TemporalProfile,
     [switch]$CloudSequence,
     [switch]$LightingAudit,
+    [ValidateSet(0,1)][int]$WaterSurface=0,
+    [switch]$WaterSurfaceComparison,
     [ValidatePattern('^[A-Z][A-Z0-9_]*$')][string]$BeautyOption,
     [switch]$RayReconstruction,
     [ValidateRange(0,3)][int]$CloudArtStep=0,
@@ -50,7 +52,7 @@ try {
         -BeautyOption $BeautyOption -LightingAudit:$LightingAudit -CloudSequence:$CloudSequence -CloudArtStep $CloudArtStep -RayReconstruction:$RayReconstruction -FoliageSequence $FoliageSequence -TemporalProfile:$TemporalProfile -RayQueryCounts:$RayQueryCounts -CanonicalPackComparison:$CanonicalPackComparison -PrepareGeometry:$PrepareGeometry -SkipImageComparison:$SkipImageComparison -NativeFrameComparison:$NativeFrameComparison -ProfileTime $ProfileTime -ComputeExperiment $ComputeExperiment -WorkgroupExperiment:$WorkgroupExperiment -RayLighting -VisualWorld -PerformanceProfile -ProfilePlan $ProfilePlan -RenderDistance $RenderDistance -CameraPitch -10 `
         -Reflections -RoughReflections -RoughDenoise 1 -Atmosphere -MultipleScattering -FoliageTransmission `
         -DiffuseIndirect -LeafIndirect -IndirectTemporal -IndirectSpatial -IndirectBounces 8 -IndirectSamples 4 -FoliageOptics 2 `
-        -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -DistantWorld -CloudPreview `
+        -AutoExposure -DisplayToneMapper 2 -NightSky -WaterHdr -WaterSurface $WaterSurface -WaterSurfaceComparison:$WaterSurfaceComparison -DistantWorld -CloudPreview `
         -CloudDensityProfile 1 -CloudViewDensitySubsteps 1 -CloudReconstructionGuides -WorldDlss -GpuTimings `
         -NativeLibrary (Join-Path $workspace 'outputs/sulkan-cinematic/build/native/dlss/sulkan_ngx_probe.dll') `
         -RuntimeDirectory (Join-Path $workspace 'work/dlss-sdk/lib/Windows_x86_64/rel') -MaxFps 260 -DisableVsync -TimeoutSeconds $TimeoutSeconds
